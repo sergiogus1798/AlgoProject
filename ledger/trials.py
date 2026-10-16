@@ -126,7 +126,8 @@ def deflated(returns: np.ndarray, sigma: float, n_eff: int) -> Deflated:
     """The deflated Sharpe of one survivor, against everything the study ever tried.
 
     Args:
-        returns: That strategy's per-period returns.
+        returns: That strategy's per-period returns, in time order (observations are counted
+            as `plateau.effective_n` says, autocorrelation-adjusted: encargo 75 E).
         sigma: The pooled spread from `accumulated`, in the same unit as those returns.
         n_eff: Independent trials, from `population_n_eff` or from `accumulated["n"]`.
 
@@ -135,16 +136,6 @@ def deflated(returns: np.ndarray, sigma: float, n_eff: int) -> Deflated:
         and it asks "given everything ever tried"; feed it the clustered count and it asks
         "given everything ever tried that was actually different". Report both -- the raw
         count overstates the penalty and the clustered one understates it.
-    """
-    sharpe, skew, kurtosis = moments(returns)
-    return plateau.deflated_sharpe(sharpe, sigma, n_eff, len(returns), skew, kurtosis)
-
-
-def deflated_autocorrelated(returns: np.ndarray, sigma: float, n_eff: int) -> Deflated:
-    """`deflated`, its observation count the autocorrelation-effective one (encargo 75 E).
-
-    Not read in production: it is measured beside `deflated` on the store and the step-8
-    harvests, and replaces it only with the owner's yes (`plateau.effective_n`).
     """
     sharpe, skew, kurtosis = moments(returns)
     n_obs = plateau.effective_n(returns)

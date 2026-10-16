@@ -101,7 +101,7 @@ def deflated_sharpe(
         sharpe: The selected configuration's Sharpe, **per observation**.
         sigma_sr: Standard deviation of the trial Sharpes, in the **same unit**.
         n_eff: Trials with a distinct result.
-        n_obs: Observations behind `sharpe`.
+        n_obs: Independent observations behind `sharpe` (`effective_n(returns)`, not len).
         skew: Skew of that configuration's returns.
         kurtosis: Raw kurtosis, 3 for a normal, as `core.significance.moments` returns it.
 
@@ -140,8 +140,7 @@ def effective_n(returns: np.ndarray) -> float:
         the Bartlett kernel keeps it non-negative where raw ρ sums can go below -1/2. Capped
         at n: a negative ρ estimate on a short series is mostly noise, and deflation must
         never grant more certainty than the i.i.d. count. NaN with fewer than 3 returns or
-        a flat series. Written beside `deflated_sharpe`'s i.i.d. `n_obs` (encargo 75 E);
-        production does not read it until the owner says so.
+        a flat series. Production's `n_obs` for `deflated_sharpe` (encargo 75 E, owner 2026-10-16).
     """
     x = np.asarray(returns, dtype=np.float64)
     n = x.size

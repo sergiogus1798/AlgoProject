@@ -8,7 +8,7 @@
 | B | Borrar las copias y llamar a la única, con tests que fijen los números | hecho — `tests/test_metrics_unique.py` fija las cifras de las copias borradas; quedan las formas rápidas (núcleo numba, mcRetest, CSCV) atadas a las mismas reglas por test. Sin tocar: el PF del Monte Carlo de cartera (NaN sin pérdida, difiere más allá del caso plano) y los años `(días+1)` de `verdict/metrics.py` — cartera congelada |
 | C | Ventanas: `last_day()`, `drift()` y `latest_harvest()` únicos | hecho — `core.assetdata.first_day/last_day`, `gate.inputs.drift`, `core.paths.latest_harvest` (lanza error con proyecto y databank en vez de `None`). Pendiente: ALPHA/SEED al ledger — `improvement`, `replication` y `monkeyExcess` no tienen `config.yaml` al que apuntar |
 | D | Semilla del benchmark por madre; NaN explícito; `share_null` vacío; terciles de régimen | D1, D2 (core: `Psr.state`, `Deflated.state`), D3 y D5 hechos (D5: 0 de 123 lotes reales lanzan). D2 de `portfolio/…/deflate.py` y D4 (su único llamador es el MC de cartera) bloqueados por la cartera congelada |
-| E | DSR/PSR con n efectivo: **medir antes y después, aplicar solo con el sí del dueño** | medido, parado en E3: 64.261 estrategias de 66 cosechas del paso 8, 1.472 → 1.458 pasan (14 caen, todas marginales, USDJPY M30 doubleROC); store 0 cambios de 681. Espera el sí del dueño |
+| E | DSR/PSR con n efectivo: **medir antes y después, aplicar solo con el sí del dueño** | hecho (aplicado 2026-10-16, sí del dueño): `ledger.trials.deflated` usa `plateau.effective_n`, `deflated_autocorrelated` borrada. Medido: 64.261 estrategias de 66 cosechas del paso 8, 1.472 → 1.458 pasan (14 caen, todas marginales, USDJPY M30 doubleROC); store 0 cambios de 681. |
 
 ## Tu oficio
 

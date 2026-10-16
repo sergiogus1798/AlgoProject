@@ -77,8 +77,11 @@ eran la misma estrategia guardada dos veces.
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
-- C: ¿UUID o hash, a la vista de la prueba?
-- D: identidades viejas que se funden en una.
+- C: **decidido (dueño, 2026-10-16): hash por ahora**; el UUID después de probar MC, SPP, WFM y las hermanas del paso 12.
+- D2: **hecho 2026-10-16**: CSV sueltos reclavados (19.030 filas en 1.271 CSV).
+- D3/D4: **decidido**: reclavado de gorilla cuando acabe su workflow en curso.
+- D5: **decidido**: las 22 carpetas del archivo con claves viejas tienen su propia tarea, más adelante.
+- E1: **decidido (dueño, 2026-10-16)**: `bin/remote.sh` deja lanzar un workflow si falta el `MIRROR_OK` de gorilla (nunca ha salido una copia; avisa por stderr) y, una vez existe, se niega si dice «copying». Hecho en `bin/remote.sh`.
 
 ## Lo que no tocas
 

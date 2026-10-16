@@ -7,7 +7,9 @@
 #   - no SQX running there: `git pull --ff-only` first; if it fails, nothing runs (exit 97).
 #   - SQX running there: no pull — the code is never changed under a run — and it says so.
 #   - a workflow (command word bin/workflow.sh, or python3 -m pipeline.autopilot…) asked for on a mirror whose last data copy did not end (`logs/MIRROR_OK.<name>`,
-#     written by bin/mirror-data.sh, says «copying»): nothing runs (exit 95).
+#     written by bin/mirror-data.sh, says «copying»): nothing runs (exit 95). With no such file at all
+#     (no mirror has ever succeeded) the workflow runs with a warning (owner, 2026-10-16, encargo 76 E1);
+#     once the file exists it must not say «copying».
 #   - a workflow running there (`pgrep -f` on pipeline.autopilot / bin/workflow.sh — it leaves no
 #     lock or pid file, so the process name is the marker): nothing runs (exit 96).
 #
@@ -30,7 +32,7 @@ cd "$ROOT" || exit 1
 
 DETACH=0
 [ "${1:-}" = "--detach" ] && { DETACH=1; shift; }
-[ $# -ge 2 ] || { sed -n '2,19p' "$0"; exit 2; }
+[ $# -ge 2 ] || { sed -n '2,21p' "$0"; exit 2; }
 NAME="$1"; shift
 [ "${1:-}" = "collect" ] && { shift; exec python3 -m portfolio.common.construct.adopt "$NAME" "$@"; }
 
@@ -45,7 +47,9 @@ read -r HOST REPO DATA <<< "$_CFG"
 # never one that merely names it in an argument (a grep, a log path).
 if [[ "$1" == bin/workflow.sh || "$1" == */bin/workflow.sh \
    || ( "$1" == python* && "${2:-}" == -m && "${3:-}" == pipeline.autopilot* ) ]]; then
-  OK=$(cat "$DATA/logs/MIRROR_OK.$NAME" 2>/dev/null || echo "never mirrored by this version")
+  OK=$(cat "$DATA/logs/MIRROR_OK.$NAME" 2>/dev/null) || {
+    OK="never mirrored by this version"
+    echo "remote: warning: no MIRROR_OK.$NAME yet (no mirror has ever succeeded) — running anyway" >&2; }
   [[ "$OK" != copying* ]] || {
     echo "remote: the last data copy to $NAME did not end ($OK): run bin/mirror-data.sh first" >&2; exit 95; }
 fi

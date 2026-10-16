@@ -8,7 +8,7 @@ Fed our convention, `tschm/jsharpe` (MIT) reproduces `core.significance.psr`, `m
 - **Where the Sharpe's variance is evaluated.** Ours: at the OBSERVED Sharpe (`variance_factor(SR…)`). jsharpe: UNDER THE NULL, at SR0 — so against benchmark 0 its PSR ignores skew and kurtosis entirely (variance 1/T). Ours punishes a left-skewed series and rewards a right-skewed one.
 - **n−1 (ours) against T**, and **`1 +` in MinTRL (ours)** against none.
 - **SR ≤ SR0**: ours `needed=None`; jsharpe squares the negative gap and answers a finite length.
-The expected maximum of K trials is the same formula in both. jsharpe has no DSR function: it is its PSR with SR0 = that expected maximum. Do not "fix" either side to match the other; if the project ever switches convention, PSR, MinTRL and DSR switch together.
+The expected maximum of K trials is the same formula in both. jsharpe has no DSR function: it is its PSR with SR0 = that expected maximum. Since 2026-10-16 production DSR (`ledger.trials.deflated`) feeds `deflated_sharpe` the autocorrelation-effective n (`plateau.effective_n`, encargo 75 E3; see research/dsr-effective-n-barely-moves) instead of the row count; `core.significance.psr` still uses n−1. Do not "fix" either side to match the other; if the project ever switches convention, PSR, MinTRL and DSR switch together.
 
 ## Evidence
 `python3 tests/test_inference_vs_jsharpe.py` — 24 deterministic series (normal, left/right skew,

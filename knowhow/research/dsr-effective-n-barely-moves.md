@@ -1,14 +1,14 @@
 ---
 q: Does correcting the DSR's n for autocorrelation of daily P&L change which SQX strategies pass?
-kw: deflated sharpe effective n; n_eff Newey-West Bartlett; autocorrelated daily returns; DSR 0.95; plateau.effective_n; trials.deflated_autocorrelated; encargo 75 E2
+kw: deflated sharpe effective n; n_eff Newey-West Bartlett; autocorrelated daily returns; DSR 0.95; plateau.effective_n; encargo 75 E2-E3
 tag: 🔬  date: 2026-10-16  see: research/trade-t-vs-frequency-and-skew
 ---
 # SQX builds' daily P&L has no positive autocorrelation: the effective-n DSR moves 14 of 64,261
 `n_eff = n/(1+2·Σ w_k ρ_k)` (Bartlett weights, Newey–West lag `floor(4(n/100)^(2/9))`, capped at n)
 leaves n untouched for 98 % of strategies: their autocorrelation sum is ≤ 0. It is a guard for
 strategies that hold positions over days, not a correction today's populations need.
-Production DSR still uses n; the alongside version (`core.surface.plateau.effective_n`,
-`ledger.trials.deflated_autocorrelated`) waits for the owner's decision (encargo 75 E3).
+Production DSR uses it since 2026-10-16 (owner's yes, encargo 75 E3): `ledger.trials.deflated` feeds
+`core.surface.plateau.deflated_sharpe` the n of `plateau.effective_n`; the old len(returns) version is deleted.
 
 ## Evidence
 Step-8 harvests, 66 of them, build IS daily P&L, σ = population spread of per-day Sharpes,

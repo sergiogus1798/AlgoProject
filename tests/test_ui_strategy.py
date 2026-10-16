@@ -22,7 +22,7 @@ from ui.daemon.tearsheet import borrow, oos2  # noqa: E402
 # strategy (4.8.424) and the harvest rows of that strategy alone, laid out as the routes look.
 ROOT = Path(__file__).resolve().parent / "fixtures" / "ui_strategy"
 PROJECT, DATABANK = "Test_XAUUSD_H1_ruptura_mcptR", "Results"
-IDENTITY = "c46024907a20d055132d0ce3509c17af133b85a2de07d5f5ebdb7dbe5ede8b98"
+IDENTITY = "d361f8d55fa23ca5fc07db5f8ea9652ec07d34a288e4068d9ccaf91c4bd687a3"
 LOCKED = "reservado: se abre tras los pasos 17, 18 y 19"
 NO_EXPORT = (
     "OOS2 abierto, sin export: exporta el retest oos2"  # no oos2 cosecha exists yet
