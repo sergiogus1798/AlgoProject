@@ -1,13 +1,17 @@
 """Bring a gorilla project's survivors to leaseWeb for step 26 (owner, 2026-10-15, D-1 = A).
 
 Only what step 26 needs, never the whole store: each survivor's folder (its `strategy.sqx` and
-the zips beside it) and the ledger rows of its asset × timeframe. Every name lands with the
+the zips beside it), the ledger rows of its asset × timeframe, and what `core.archive` reads of the
+project: its `registry.csv` row (appended, install marked `_gorilla`, only if absent) and its
+`reports/<P>/` folder. Both come from `source` alone, so `listing` is unchanged. Every name lands with the
 `_gorilla` suffix (rule 12) and nothing local is overwritten.
 
-Two halves: `listing` runs ON gorilla through `bin/remote.sh` (read-only) and prints JSON;
-`collect` runs here and pulls what that JSON names with rsync over the ssh alias.
+Everything runs here and only reads gorilla over the ssh alias (rsync): `fetch_plans` copies the
+manifests and ledger names, `listing` turns them into a plan, `collect` pulls what the plan names.
+`portfolio.common.construct.adopt` is the command; it archives what this lands.
 """
 
+import csv
 import json
 import os
 import shutil
@@ -16,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from core.paths import DATA, MIRRORS, ROOT
+from core.paths import DATA, MIRRORS
 
 SUFFIX = "_gorilla"
 LEDGER = "ledger"
@@ -53,6 +57,46 @@ def _rsync(src: str, dest: Path) -> None:
         raise
 
 
+def _registry(project: str, source: str, dest: Path, dry: bool) -> str:
+    """Append gorilla's registry row of the project to the local registry when it has none; never rewrites."""
+    mine = dest / "projects" / "registry.csv"
+    names = (
+        {r["name"] for r in csv.DictReader(mine.open(encoding="utf-8", newline=""))}
+        if mine.exists()
+        else set()
+    )
+    if project in names:
+        return f"existe    registry: {project}; no se añade"
+    if dry:
+        return f"traería   registry: {project}"
+    tmp = dest / "store" / ".collect-registry.csv"
+    try:
+        subprocess.run(
+            ["rsync", "-a", f"{source}projects/registry.csv", str(tmp)],
+            check=True,
+            capture_output=True,
+        )
+        with tmp.open(encoding="utf-8", newline="") as fh:
+            reader = csv.DictReader(fh)
+            rows = [r for r in reader if r["name"] == project]
+    finally:
+        tmp.unlink(missing_ok=True)
+    if not rows:
+        return f"AVISO     registry: gorilla no tiene fila de {project}"
+    row = rows[-1]
+    row["install"] += (
+        SUFFIX  # a gorilla row never reads as one of this machine's installs
+    )
+    mine.parent.mkdir(parents=True, exist_ok=True)
+    fresh = not mine.exists()
+    with mine.open("a", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, reader.fieldnames or [])
+        if fresh:
+            writer.writeheader()
+        writer.writerow(row)
+    return f"traída    registry: {project} (install {row['install']})"
+
+
 def collect(
     plan: dict[str, Any], source: str, dest: Path | None = None, dry: bool = False
 ) -> list[str]:
@@ -72,9 +116,8 @@ def collect(
         if (p / "manifest.json").is_file()
     }
     for rel in plan["folders"]:
-        cell, name = rel.split("/")
-        base, ident = name.rsplit(" ", 1)
-        target = dest / "store" / f"{cell}{SUFFIX}" / f"{base}{SUFFIX} {ident}"
+        ident = rel.rsplit(" ", 1)[-1]
+        target = landing(rel, dest)
         if ident in local_ids and not target.exists():
             out.append(f"ya local  {rel} (misma identidad {ident}); no se trae")
         elif target.exists():
@@ -93,6 +136,14 @@ def collect(
             out.append(
                 f"{'traería  ' if dry else 'traída   '} {rel} -> {target.relative_to(dest)}"
             )
+    out.append(_registry(plan["project"], source, dest, dry))
+    reports = dest / "reports" / plan["project"]
+    if not dry:
+        reports.mkdir(parents=True, exist_ok=True)
+        _rsync(
+            f"{source}reports/{plan['project']}/", reports
+        )  # --ignore-existing: resumable
+    out.append(f"{'traería  ' if dry else 'traídos  '} reports/{plan['project']}")
     for name in plan["ledgers"]:
         tmp = dest / "store" / f".collect-{name}"
         mine = dest / LEDGER / (Path(name).stem + SUFFIX + ".jsonl")
@@ -124,44 +175,58 @@ def collect(
     return out
 
 
-def main(argv: list[str]) -> int:
-    """`list <project>` (on gorilla) · `<server> <project> [--dry-run]` (here, via bin/remote.sh)."""
-    if argv and argv[0] == "list":
-        print(json.dumps(listing(argv[1])))
-        return 0
-    if len(argv) < 2 or argv[0] not in MIRRORS:
-        print(
-            "uso: bin/remote.sh gorilla collect <PROYECTO> [--dry-run]", file=sys.stderr
-        )
-        return 2
-    server, project, dry = argv[0], argv[1], "--dry-run" in argv
+def fetch_plans(
+    server: str, project: str | None, scratch: Path
+) -> list[tuple[dict[str, Any], str]]:
+    """Read-only: gorilla's manifests and ledger names into `scratch`, then one plan per project.
+
+    Nothing runs on gorilla (no pull, no code over there): rsync copies the small metadata and
+    `listing` reads it here. Returns `(plan, source)` for the project asked, or for every project
+    that holds a survivor whose identity this machine holds in no cell of its own — a mirrored
+    store is not gorilla's work.
+    """
+    source = f"{MIRRORS[server]['ssh']}:{DATA.relative_to(Path.home())}/"
+    cmd = ["rsync", "-a", "--prune-empty-dirs"]
+    for rule in (
+        "store/",
+        "store/*/",
+        "store/*/*/",
+        "store/*/*/manifest.json",
+        "ledger/",
+        "ledger/*.jsonl",
+    ):
+        cmd += ["--include", rule]
     r = subprocess.run(
-        [
-            str(ROOT / "bin" / "remote.sh"),
-            server,
-            "python3",
-            "-m",
-            "core.store.collect",
-            "list",
-            project,
-        ],
-        capture_output=True,
-        text=True,
+        [*cmd, "--exclude", "*", source, f"{scratch}/"], capture_output=True, text=True
     )
     if r.returncode:
-        print(r.stderr.strip() or r.stdout.strip(), file=sys.stderr)
-        return r.returncode
-    lines = r.stdout.strip().splitlines()
-    if not lines:
-        raise RuntimeError(f"{server} returned no listing for {project}")
-    plan = json.loads(lines[-1])
-    if not plan["folders"]:
-        print(f"{server}: ningún superviviente guardado de {project}", file=sys.stderr)
-        return 1
-    source = f"{MIRRORS[server]['ssh']}:{plan['data']}/"
-    print("\n".join(collect(plan, source, dry=dry)))
-    return 0
+        raise RuntimeError(f"no se pudo leer {server} ({source}): {r.stderr.strip()}")
+    held = {
+        p.name.rsplit(" ", 1)[-1]
+        for p in (DATA / "store").glob("*/*")
+        if (p / "manifest.json").is_file()
+        and not p.name.split(" ")[-2].endswith(SUFFIX)
+    }
+    names = {
+        json.loads(m.read_text(encoding="utf-8"))["origin"]["project"]
+        for m in (scratch / "store").glob("*/*/manifest.json")
+    }
+    plans = [listing(n, scratch) for n in sorted(names) if project in (None, n)]
+    if (
+        project is None
+    ):  # gorilla's own, kept ones: `_gorilla` in the name, never a thrown-away `Test_`
+        plans = [
+            p
+            for p in plans
+            if SUFFIX in p["project"]
+            and not p["project"].startswith("Test_")
+            and any(f.rsplit(" ", 1)[-1] not in held for f in p["folders"])
+        ]
+    return [(p, source) for p in plans]
 
 
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+def landing(plan_folder: str, dest: Path = DATA) -> Path:
+    """Where `collect` lands one of a plan's folders (the `_gorilla` suffixed store folder)."""
+    cell, name = plan_folder.split("/")
+    base, ident = name.rsplit(" ", 1)
+    return dest / "store" / f"{cell}{SUFFIX}" / f"{base}{SUFFIX} {ident}"

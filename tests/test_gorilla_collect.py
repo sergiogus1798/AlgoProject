@@ -17,6 +17,12 @@ def plant(data: Path, ident: str = "1530c225") -> None:
     origin: dict[str, str] = {"project": "Test_A", "symbol": "DAX40", "timeframe": "H1"}
     (folder / "manifest.json").write_text(json.dumps({"origin": origin}))
     (data / "ledger").mkdir()
+    (data / "projects").mkdir()
+    (data / "projects" / "registry.csv").write_text(
+        "name,install,symbol\r\nTest_A,SQX_w2,DAX40\r\n", newline=""
+    )
+    (data / "reports" / "Test_A").mkdir(parents=True)
+    (data / "reports" / "Test_A" / "r.csv").write_text("a\n")
     (data / "ledger" / "DAX40_H1_simple_long.jsonl").write_text('{"a": 1}\n{"a": 2}\n')
     (data / "ledger" / "DAX40_H1_other_P.jsonl").write_text(
         '{"x": 1}\n'
@@ -45,7 +51,7 @@ def test_collect_lands_suffixed_and_never_overwrites(tmp_path: Path) -> None:
     (got / "strategy.sqx").write_bytes(b"edited")  # a second collect leaves it alone
     again = collect.collect(plan, f"{gor}/", here)
     assert (got / "strategy.sqx").read_bytes() == b"edited"
-    assert again[0].startswith("existe") and "0 filas nuevas" in again[1]
+    assert again[0].startswith("existe") and "0 filas nuevas" in again[-1]
     assert out[0].startswith("traída")
 
 
@@ -77,3 +83,43 @@ def test_failed_rsync_leaves_no_folder(
     assert not list((here / "store").glob("*/*")) and not list(
         (here / "store").glob(".collect-*")
     )
+
+
+def test_registry_row_and_reports_come_marked_and_append_only(tmp_path: Path) -> None:
+    """The registry row is appended once with a gorilla install; reports land; a repeat changes nothing."""
+    gor, here = tmp_path / "gorilla", tmp_path / "here"
+    plant(gor)
+    (here / "projects").mkdir(parents=True)
+    reg = here / "projects" / "registry.csv"
+    reg.write_text("name,install,symbol\r\nOther,SQX_w1,EURUSD\r\n", newline="")
+    plan = collect.listing("Test_A", gor)
+    collect.collect(plan, f"{gor}/", here)
+    assert reg.read_bytes().decode() == (
+        "name,install,symbol\r\nOther,SQX_w1,EURUSD\r\nTest_A,SQX_w2_gorilla,DAX40\r\n"
+    )
+    assert (here / "reports" / "Test_A" / "r.csv").read_text() == "a\n"
+    again = collect.collect(plan, f"{gor}/", here)
+    assert (
+        reg.read_bytes().decode().count("Test_A") == 1
+        and "existe    registry" in again[1]
+    )
+
+
+def test_archive_names_what_is_missing(tmp_path: Path) -> None:
+    """A survivor no report judges, or a cell that gives no family, fails naming it (rule 11)."""
+    from portfolio.common.construct import adopt
+
+    folder = tmp_path / "S 1_gorilla abcd1234"
+    folder.mkdir()
+    man = {
+        "identity": "f" * 64,
+        "cell": "DAX40_H1_simple_long",
+        "origin": {"symbol": "DAX40", "timeframe": "H1"},
+    }
+    (folder / "manifest.json").write_text(json.dumps(man))
+    with pytest.raises(RuntimeError, match="ningún informe"):
+        adopt._archive("Test_A", folder, {})
+    man["cell"] = "OTHER"
+    (folder / "manifest.json").write_text(json.dumps(man))
+    with pytest.raises(RuntimeError, match="familia"):
+        adopt._archive("Test_A", folder, {})

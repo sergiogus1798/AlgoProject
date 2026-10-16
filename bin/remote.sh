@@ -11,10 +11,11 @@
 #
 # Usage:
 #   bin/remote.sh gorilla <command...>            run it in the clone, wait, return its exit code
-#   bin/remote.sh gorilla collect <PROJECT> [--dry-run]
-#                                                 bring that project's survivors (.sqx + store folder +
-#                                                 ledger rows, suffix _gorilla) to this machine for step 26;
-#                                                 only reads on gorilla (core/store/collect.py)
+#   bin/remote.sh gorilla collect [<PROJECT>] [--dry-run]
+#                                                 bring a project's survivors (store folder, ledger rows,
+#                                                 registry row, reports; suffix _gorilla) here and archive
+#                                                 them; no project = every one not here yet. Only reads
+#                                                 gorilla, no pull (portfolio/common/construct/adopt.py)
 #   bin/remote.sh --detach gorilla <command...>   launch it detached (it survives the SSH
 #                                                 session), print its PID and its log, return
 #
@@ -29,7 +30,7 @@ DETACH=0
 [ "${1:-}" = "--detach" ] && { DETACH=1; shift; }
 [ $# -ge 2 ] || { sed -n '2,19p' "$0"; exit 2; }
 NAME="$1"; shift
-[ "${1:-}" = "collect" ] && { shift; exec python3 -m core.store.collect "$NAME" "$@"; }
+[ "${1:-}" = "collect" ] && { shift; exec python3 -m portfolio.common.construct.adopt "$NAME" "$@"; }
 
 _CFG=$(python3 -c '
 import sys

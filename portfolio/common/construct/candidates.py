@@ -148,6 +148,28 @@ def in_pool(project: str) -> bool:
     )
 
 
+def _best(entries: list[dict], carried: set[str]) -> dict:
+    """The furthest judgment of one identity; a mother the workflow carried to 16.5 is a survivor."""
+    if any(e["strategy"] in carried for e in entries):
+        words = ", ".join(sorted({f"{e['study']} {e['word']}" for e in entries}))
+        return {
+            "class": "survivor",
+            "step": "16.5",
+            "study": "llevada al 16.5",
+            "word": f"[{words}]",
+            "databank": "Results",
+        }
+    return _furthest(entries)
+
+
+def judged(project: str) -> dict[str, dict]:
+    """Every judged identity of a project with its furthest judgment (class, step, databank, study, word)."""
+    carried = _carried(project)
+    return {
+        i: _best(e, carried) for i, e in _judgments(DATA / "reports" / project).items()
+    }
+
+
 def _report(project: str, project_dir: Path) -> None:
     """Print one project's header, its candidates' archive commands, and what was left out."""
     by_identity = _judgments(project_dir) if in_pool(project) else {}
@@ -159,16 +181,7 @@ def _report(project: str, project_dir: Path) -> None:
     left_out: Counter = Counter()
     carried = _carried(project)
     for identity, entries in by_identity.items():
-        best = _furthest(entries)
-        if any(e["strategy"] in carried for e in entries):
-            words = ", ".join(sorted({f"{e['study']} {e['word']}" for e in entries}))
-            best = {
-                "class": "survivor",
-                "step": "16.5",
-                "study": "llevada al 16.5",
-                "word": f"[{words}]",
-                "databank": "Results",
-            }
+        best = _best(entries, carried)
         if best["class"] == "other":
             left_out[best["word"]] += 1
             continue
