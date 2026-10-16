@@ -2,6 +2,7 @@
 """Two databanks in, one joined cosecha out: the build window and the retest window."""
 
 import argparse
+import difflib
 import random
 import shutil
 import time
@@ -183,6 +184,28 @@ def main() -> None:
         f"solo en OOS {len(set(after) - set(build) - set(alias))}"
     )
     if alias:
+        # What differs between the first pairs, for whoever must tell a reused name from
+        # runtime state the identity does not strip (24 of 10,000 in ONE build, 2026-10-16).
+        seen = harvest_dir(a.project, a.databank, date.today().isoformat())
+        seen.mkdir(parents=True, exist_ok=True)
+        (seen / "alias-diff.txt").write_text(
+            "\n".join(
+                "\n".join(
+                    list(
+                        difflib.unified_diff(
+                            sqxfile.rules(build[ib]).splitlines(),
+                            sqxfile.rules(after[ia]).splitlines(),
+                            build[ib].name,
+                            after[ia].name,
+                            n=0,
+                            lineterm="",
+                        )
+                    )[:80]
+                )
+                for ia, ib in list(alias.items())[:3]
+            )
+        )
+        print(f"diferencias de los 3 primeros: {seen / 'alias-diff.txt'}")
         raise SystemExit(
             f"COSECHA PARADA: {len(alias)} estrategias del OOS comparten nombre con "
             f"una del build y tienen otra identidad (nombre reutilizado o fichero "
