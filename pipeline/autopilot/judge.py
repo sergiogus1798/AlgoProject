@@ -230,7 +230,7 @@ def judge(
     Returns:
         `n`, `hechos` (rows gathered), `corte` (what was done, one line), and when a verdict
         was written `before`, `after`, `limbo`, `seed`. A step with neither rules nor medoids
-        writes its facts and cuts nothing.
+        writes its facts and a ledger row with nothing cut (S4, owner 2026-10-16).
     """
     out.mkdir(parents=True, exist_ok=True)
     found = facts.gather(project, n)
@@ -240,6 +240,8 @@ def judge(
         criteria.resolved(spec.get("rules") or [], tags(project)), project
     )
     if not rules and not spec.get("medoids"):
+        seen = found["strategy"].nunique() if len(found) else 0
+        ledger_row(project, n, spec, seen, seen, segment)  # S4 A: a row with 0 cut
         return {
             "n": n,
             "hechos": len(found),

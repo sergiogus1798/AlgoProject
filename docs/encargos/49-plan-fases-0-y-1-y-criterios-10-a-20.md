@@ -34,10 +34,10 @@ Modelo: **S** = Sonnet, mecánico · **O** = Opus, diseño o estadística (regla
 | 0.8 | Cerrar el 22 público (SSH sólo por Tailscale) | — (dueño) | — | 🔴 dueño 2026-10-14: «cerrarlo, tras probar Tailscale desde fuera»; `ufw` pide `sudo` |
 | 1.1 | Hoja de decisiones en PDF | — | — | ✅ |
 | 1.2 | Firma provisional de los pasos 6 y 8 | — (dueño) | 1.1 | 🟡 paso 8 y `dev` hechos por el 65; paso 6 y lo pendiente de OPEN #93 → encargo **50** |
-| 1.3 | Registro completo | S | — | 🟡 borrado el relleno de `Test_Calib_*` (2026-10-15); el repaso por paso dice que 11.5, 16 y 16.5 (`rules: []`) no dejan fila: `judge.judge` sale antes de `ledger_row`; ¿deben dejarla? |
+| 1.3 | Registro completo | S | — | ✅ borrado el relleno de `Test_Calib_*` (2026-10-15); los pasos sin regla (11.5, 16, 16.5) dejan su fila con 0 cortes (S4 = A, 2026-10-16) |
 | 1.4 | Autopilot: lo mínimo para una población nula | S | — | 🟡 código hecho, falta la prueba en SQX |
 | 1.5 | Nulos y curva de mínimos | O | — | → encargo **50** (OPEN #88, #91) |
-| 1.6 | Regla o razón escrita en 10, 12, 14, 16 y 20 | O + S | — | 🟡 10, 14, 18, 18.5 y 20 ✅ por el 65; quedan **12 y 16** y la higiene del YAML (§3); umbrales de crossmarket, crossTF y spp ya en el ledger (2026-10-15); los cortes viejos de mcRetest (P14-7) siguen: `gates.py` alimenta `scoring`, `report` y las columnas de la ventana |
+| 1.6 | Regla o razón escrita en 10, 12, 14, 16 y 20 | O + S | — | 🟡 10, 14, 18, 18.5 y 20 ✅ por el 65; quedan **12 y 16** y la higiene del YAML (§3); umbrales de crossmarket, crossTF y spp ya en el ledger (2026-10-15); mcRetest (P14-7): el veredicto se queda como columna informativa, no corta (S3 = B, dueño 2026-10-16) |
 | 1.7 | Monos por la cadena en Python | O | 1.3 | 🟡 → encargo **53** |
 | 1.8 | Monos seleccionados en SQX | O | 1.4, 1.7 | ⬜ → encargo **53** |
 | 1.9 | Congelación final de umbrales | — (dueño) | 1.6, 1.7, 1.8 | ⬜ |
@@ -190,7 +190,7 @@ debajo Limbo, nunca Falla (P12-1, P12-6), con T0-T4 al lado como hechos `crossTF
 3. **Umbrales al ledger** (S). Verificado el 2026-10-15: `ledger/thresholds.yaml` no tiene ninguna
    clave `crossmarket.*`, `crossTF.*`, `mcRetest.*` ni `spp.*`, y ningún `config.yaml` de los cuatro
    lleva `ledger:`.
-   - **mcRetest:** P14-7 → **borrar** los cortes viejos (`studies/breakage/mcRetest/verdict/gates.py`
+   - **mcRetest:** P14-7 → ~~borrar~~ **revisado el 2026-10-16 (S3 = B): el veredicto se conserva como columna informativa**; lo de abajo queda sin hacer. Antes: borrar los cortes viejos (`studies/breakage/mcRetest/verdict/gates.py`
      y su bloque `gates:` del `config.yaml`, con `tooltips.py`, README y tests), no moverlos. Grep
      de llamadores antes. Si con eso OPEN #19 («three Monte Carlo thresholds are placeholders») se
      queda sin objeto, ciérrala con `/open-close`.

@@ -64,6 +64,27 @@ def test_a_judged_step_with_cut_null_annotates_and_cuts_nothing() -> None:
         )
 
 
+def test_a_step_without_rules_still_signs_a_row_that_cuts_nothing() -> None:
+    """S4 A (owner, 2026-10-16): 11.5, 16 and 16.5 leave their ledger row, n_in == n_out."""
+    rows = []
+    cfg = {"steps": {"16": {"segment": "build"}}}
+    found = pd.DataFrame(
+        [{"strategy": s, "identity": s, "key": "k", "value": 0.0} for s in "AAB"]
+    )
+    about = {"symbol": "XAUUSD", "timeframe": "H1", "family": "mono"}
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        patched(judge.facts, gather=lambda p, n: found),
+        patched(judge, tags=lambda p: set()),
+        patched(judge.survivors, about=lambda p: about),
+        patched(judge.record, log=lambda sid, row: rows.append(row)),
+    ):
+        judge.judge("Test_x", "16", "custodian", Path(tmp) / "p16", cfg)
+    assert [(r["step"], r["segment"], r["n_in"], r["n_out"]) for r in rows] == [
+        (16.0, "build", 2, 2)
+    ]
+
+
 def test_the_judge_that_cuts_everybody_signs_the_ledger_and_the_run_ends_in_fin() -> (
     None
 ):
