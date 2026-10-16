@@ -71,7 +71,7 @@ def _experiment(
     def score(combos: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Stage A's objective on the build arrays."""
         return stagea.best(
-            stagea.evaluate(stage_a, combos, PLAN, cfg), cfg["funded"]["risk_grid"]
+            stagea.evaluate(stage_a, combos, PLAN, cfg), stagea.levels(PLAN, cfg)
         )
 
     def judged(short: pd.DataFrame) -> dict:
@@ -119,7 +119,7 @@ def _experiment(
 def _fast_cfg() -> dict:
     """A config small enough to repeat a whole search and its null many times."""
     cfg = small_cfg(shortlist_size=2, n_paths=200, sweep_days=[5])
-    cfg["funded"].update(risk_grid=[0.005, 0.01], horizon_days=30)
+    cfg["funded"].update(risk_grid=[0.1, 0.2], horizon_days=30)
     return cfg
 
 

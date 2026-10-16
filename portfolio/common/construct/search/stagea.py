@@ -18,10 +18,24 @@ def room(stage: dict) -> float:
     return min(stage["daily_loss"], stage["max_loss"])
 
 
+def levels(plan: Plan, cfg: dict) -> np.ndarray:
+    """The risk grid in balance fractions for `plan`: `r = q x daily_room` (owner, 2026-10-16, K4 = A).
+
+    `funded.risk_grid` holds quotas q: each member's worst build day costs q x the plan's
+    daily-loss room. The room is the tightest challenge stage's `daily_loss`, a fraction of the
+    initial balance.
+
+    Returns:
+        float64 [L], risk r as a fraction of the initial balance.
+    """
+    daily = min(s["daily_loss"] for s in plan["stages"] if s["stage"] != "funded")
+    return np.asarray(cfg["funded"]["risk_grid"], dtype=np.float64) * daily
+
+
 def open_cap(plan: Plan, cfg: dict) -> np.ndarray:
     """The most risk a combination may have open at once, per challenge stage (owner, 2026-10-05).
 
-    K members each risking r of the initial balance on a trade risk K x r when all are open
+    K members each risking r (`levels()`, a fraction of the initial balance) on a trade risk K x r when all are open
     together (the worst case; no netting, no per-symbol cap). That may not exceed
     `funded.open_risk_cap` of the stage's maximum daily loss -- the catalogue's `daily_loss`,
     a fraction of the initial balance whatever the firm then measures the day's floor from.
@@ -69,11 +83,11 @@ def evaluate(data: StageAData, combos: np.ndarray, plan: Plan, cfg: dict) -> np.
             `funded.open_risk_cap`).
 
     Returns:
-        float64 [M, L] — one column per `cfg["funded"]["risk_grid"]` level; NaN where the level
+        float64 [M, L] — one column per `levels(plan, cfg)` level; NaN where the level
         is infeasible for that combination: its tightest member's lot below `min_lot / 2`, or
         its members times the level above the open-risk cap (`capped`).
     """
-    grid = np.asarray(cfg["funded"]["risk_grid"], dtype=np.float64)
+    grid = levels(plan, cfg)
     horizon = int(cfg["funded"]["horizon_days"])
     min_lot = float(cfg["funded"]["min_lot"])
     size = float(plan["size"])
@@ -105,12 +119,12 @@ def evaluate(data: StageAData, combos: np.ndarray, plan: Plan, cfg: dict) -> np.
     return out
 
 
-def best(scores: np.ndarray, grid: list[float]) -> tuple[np.ndarray, np.ndarray]:
+def best(scores: np.ndarray, grid: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Each row's best P(pass) and the risk level it was reached at.
 
     Args:
         scores: `evaluate()` output.
-        grid: The risk levels its columns follow.
+        grid: The risk levels its columns follow (`levels()`).
 
     Returns:
         `(best_p, best_r)`, each length `scores.shape[0]`; NaN where every level was infeasible.

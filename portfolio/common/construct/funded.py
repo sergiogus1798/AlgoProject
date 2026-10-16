@@ -171,7 +171,7 @@ def build(pool_name: str, plan_key: str, cfg: dict, seed: int) -> dict[str, Any]
     )
 
     levels_log: list[np.ndarray] = []
-    grid = np.asarray(cfg["funded"]["risk_grid"])
+    grid = stagea.levels(plan, cfg)
 
     def score(combos: np.ndarray) -> np.ndarray:
         """One generation's best P(pass) per combination, over the risk grid; logs the chosen level."""
@@ -180,7 +180,7 @@ def build(pool_name: str, plan_key: str, cfg: dict, seed: int) -> dict[str, Any]
         result["cap"]["capped"] += int(
             stagea.capped((combos >= 0).sum(axis=1), grid, plan, cfg).sum()
         )
-        best_p, best_r = stagea.best(scored, cfg["funded"]["risk_grid"])
+        best_p, best_r = stagea.best(scored, grid)
         levels_log.append(best_r)
         return best_p
 

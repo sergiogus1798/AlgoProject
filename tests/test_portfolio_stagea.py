@@ -79,7 +79,7 @@ def _plan(size: float, target: float) -> dict:
     stage = {
         "stage": "phase1",
         "target": target,
-        "daily_loss": 0.9,
+        "daily_loss": 1.0,
         "max_loss": 0.9,
         "max_loss_mode": "static",
         "daily_basis": "balance",
@@ -167,7 +167,7 @@ combos[0, :2] = [0, 1]
 combos[1, :6] = [0, 1, 2, 3, 4, 5]  # includes "big" (index 5)
 scores = stagea.evaluate(data, combos, plan, cfg)
 for row, idxs in enumerate([[0, 1], [0, 1, 2, 3, 4, 5]]):
-    for col, r in enumerate(cfg["funded"]["risk_grid"]):
+    for col, r in enumerate(stagea.levels(plan, cfg)):
         if np.isnan(scores[row, col]):
             continue  # infeasible for this combo/level — checked separately below
         expected = _reference(
@@ -188,7 +188,7 @@ check("feasible level (r=0.01) is feasible", not np.isnan(big_row[4]), big_row)
 
 # --- open-risk cap (owner, 2026-10-05): members x risk <= fraction x the plan's daily loss ----------
 # the plan's daily loss is 0.9 of the balance; 0.02 / 0.9 of it leaves 2 % of the balance open at once
-capped_cfg = {"funded": {**cfg["funded"], "open_risk_cap": 0.02 / 0.9}}
+capped_cfg = {"funded": {**cfg["funded"], "open_risk_cap": 0.02}}
 combos_cap = np.full((2, 4), -1, dtype=np.int32)
 combos_cap[0, :2] = [0, 1]
 combos_cap[1] = [0, 1, 2, 3]
@@ -209,14 +209,22 @@ check(
 )
 check(
     "capped() names the same pairs, per stage when the risk differs by stage",
-    stagea.capped(
-        np.array([2, 4]), np.array(cfg["funded"]["risk_grid"]), plan, capped_cfg
-    ).tolist()
+    stagea.capped(np.array([2, 4]), stagea.levels(plan, cfg), plan, capped_cfg).tolist()
     == np.isnan(held).tolist()
     and stagea.capped(
         np.array([4]), np.array([[0.005], [0.006]]), plan, capped_cfg
     ).tolist()
     == [[False, True]],
+)
+check(
+    "levels(): r = q x the plan's daily-loss room",
+    np.allclose(
+        stagea.levels(
+            catalog.plan("hantec:enhanced:10000:USD"),
+            {"funded": {"risk_grid": [0.1, 1.0]}},
+        ),
+        [0.005, 0.05],
+    ),
 )
 trail = {
     **plan,
@@ -378,7 +386,7 @@ check(
     scores5.sum(),
 )
 check("best() picks the finite-max column", True, "")
-best_p, best_r = stagea.best(scores5, FUNDED_CFG["funded"]["risk_grid"])
+best_p, best_r = stagea.best(scores5, stagea.levels(plan_enhanced, FUNDED_CFG))
 row0_valid = ~np.isnan(scores5[0])
 check(
     "best() matches a manual argmax on row 0",

@@ -32,7 +32,7 @@ def risk_grid(plan: Plan, cfg: dict) -> np.ndarray:
         float64 [C, phases], risk per trade as a fraction of the initial balance.
     """
     phases = len(judge.stage_names(plan))
-    return np.array(list(itertools.product(cfg["funded"]["risk_grid"], repeat=phases)))
+    return np.array(list(itertools.product(stagea.levels(plan, cfg), repeat=phases)))
 
 
 def flavours(

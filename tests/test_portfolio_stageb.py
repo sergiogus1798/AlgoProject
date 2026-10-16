@@ -48,7 +48,7 @@ def small_cfg(**stageb_knobs: object) -> dict:
     cfg = {**config.load(), "compute": {"max_ram_gb": 8, "worker_ram_gb": 1.5}}
     cfg["equity"]["firm_clocks"]["test"] = "UTC"
     cfg["funded"].update(
-        risk_grid=[0.002, 0.005, 0.01], horizon_days=40, open_risk_cap=100.0
+        risk_grid=[0.04, 0.1, 0.2], horizon_days=40, open_risk_cap=100.0
     )  # never binds
     cfg["stageb"].update(
         dict(
@@ -84,7 +84,7 @@ def searched(
         [list(c) + [-1] * (max(sizes) - len(c)) for c in sets], dtype=np.int32
     )
     best_p, best_r = stagea.best(
-        stagea.evaluate(prepared, combos, plan, cfg), cfg["funded"]["risk_grid"]
+        stagea.evaluate(prepared, combos, plan, cfg), stagea.levels(plan, cfg)
     )
     return pd.DataFrame(
         {

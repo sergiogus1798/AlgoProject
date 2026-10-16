@@ -10,7 +10,7 @@ The active method in `lastSettings.xml` (`Method[@use="true"]`) is `ATRRiskBased
 a stop of X·ATR(20) a trade's P&L would be SQX's × 4 / (1000 · X) × r · S, but since step 24 was deleted
 (2026-10-11) no strategy has a stop: the portfolio engine keeps this money management and scales it by one
 constant per strategy, `1 / worst_day` — its worst build day of floating loss, the sum of the MAE of the
-trades closing that day (`portfolio/common/construct/inputs/risk.py`, OPEN #113 (1), 2026-10-15).
+trades closing that day (`portfolio/common/construct/inputs/risk.py`, OPEN #113 (1), 2026-10-15). The level `r` is a quota of the plan's daily-loss room, `r = q × room` (`search/stagea.levels`, owner 2026-10-16), not a fixed fraction of the balance.
 
 ## Evidence
 - Archived USDJPY M30 `4d679e…/2026-09-28T0919/strategy.sqx`, 2026-09-30: every other method in

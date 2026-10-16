@@ -27,6 +27,7 @@ inputs ─▶ equity ─▶ pairs ─▶ search ─▶ weights ─▶ verdict �
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `adopt.py` | THE COMMAND: bring gorilla's survivors here and archive them, in one go (owner, 2026-10-16). | — | — |
 | `candidates.py` | THE COMMAND: list every archivable survivor and near-survivor of every workflow step; runs none. | `python3 -m portfolio.common.construct.candidates [--project P]` | reports' `verdict.csv` → printed commands |
 | `funded.py` | THE COMMAND: build a funded portfolio -- universe, sizing, pair screen, greedy seeds + GA. | `python3 -m portfolio.common.construct.funded --seed N --pool <name> --plan hantec:enhanced:10000:USD [--firm hantec] --set funded.open_risk_cap=<fraction>` | pool, plan → `AlgoData/portfolio/runs/<stamp>_<pool>_<plan>/` |
 | `funded_b.py` | THE COMMAND: stage B and the funded verdict on an existing stage-A run. | `python3 -m portfolio.common.construct.funded_b --seed N --run <run folder> --set funded.open_risk_cap=<fraction> --set stageb.t1_gap=close_to_open_blocks` | stage-A run → `shortlist.parquet`, `stageb.parquet`, `verdict.json`, `handoff/` next to it |
@@ -94,5 +95,9 @@ its worst build day of floating loss (`worst_day`: the sum of the MAE of the bui
 SQX dollars at SQX's own money management) and `factor = 1 / worst_day`. So a level `r` of the risk grid
 means «this member's worst build day costs `r` of the initial balance», and `funded.open_risk_cap` bounds the
 SUM of those worst days, members × r, against the plan's daily-loss room (`search/stagea.open_cap`). The
-grid's and the cap's comments in `config.yaml` still speak of stops: same numbers, new meaning. Not yet run on
+grid's and the cap's comments in `config.yaml` still speak of stops: same numbers, new meaning.
+**The grid is a quota (2026-10-16, owner K4 = A):** `funded.risk_grid` holds `q` in 0.1..1.0, and a plan's
+levels are `r = q × daily_room` (`search/stagea.levels`: the tightest challenge stage's `daily_loss`), so
+`q = 1` spends the whole daily-loss limit on one member's worst day. `real.py` has no plan and still reads
+the raw grid (see OPEN). Not yet run on
 the rehearsal pool (no engine run while the campaign holds the machine).

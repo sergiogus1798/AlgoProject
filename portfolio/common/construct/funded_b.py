@@ -123,7 +123,7 @@ def _null_shortlists(
         """Stage A's objective: each row's best P(pass) over the risk grid, and that level."""
         return stagea.best(
             stagea.evaluate(prepared, combos, world["plan"], cfg),
-            cfg["funded"]["risk_grid"],
+            stagea.levels(world["plan"], cfg),
         )
 
     return [
