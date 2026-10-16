@@ -178,7 +178,13 @@ def _main_env(
         (r / "manifest.json").write_text("{}")
     seen: dict = {"manifests": [], "exports": 0}
 
-    def tables(taken: dict, work: Path, whole: dict, banks: dict | None = None) -> dict:
+    def tables(
+        taken: dict,
+        work: Path,
+        whole: dict,
+        banks: dict | None = None,
+        twins: dict | None = None,
+    ) -> dict:
         """Fake `harvest.tables`: record the manifests present, return one frame pair."""
         seen["manifest_at_tables"] = {
             b: (r / "manifest.json").exists() for b, r in raw.items()

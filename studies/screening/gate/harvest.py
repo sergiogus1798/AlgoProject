@@ -181,7 +181,7 @@ def main() -> None:
     print(
         f"{a.databank}: {len(build)} · {a.oos_databank}: {len(after)} · "
         f"emparejadas por identidad {len(matched)} · mismo nombre e identidad distinta {len(alias)} · sin OOS {len(missing)} · "
-        f"solo en OOS {len(set(after) - set(build) - set(alias))}"
+        f"solo en OOS {len(after) - len(matched) - len(alias)}"
     )
     if alias:
         # What differs between the first pairs, for whoever must tell a reused name from
@@ -228,7 +228,8 @@ def main() -> None:
     ):  # packed in place below: a kill mid-write must read stale, not fresh
         (folder / "manifest.json").unlink(missing_ok=True)
     banks = taken_banks(a, install)
-    sides = collect.tables(taken, out / "_work", whole, banks)
+    twins = {pairs[i][1]: i for i in matched if i not in after}  # paired inlined
+    sides = collect.tables(taken, out / "_work", whole, banks, twins)
     for side, folder in whole.items():
         export(
             folder,
