@@ -2,6 +2,8 @@
 
 from typing import Any
 
+import pandas as pd
+
 from mt5 import guard, live
 
 # MT5's ENUM_SYMBOL_SWAP_MODE → SQX's <Swap type>. The ones left out (swap in the base or the
@@ -46,6 +48,49 @@ def read(symbol: str, account: dict) -> dict[str, Any]:
         "account_currency": held["currency"],
         "first_bar": first.get("first") if isinstance(first, dict) else None,
     }
+
+
+GAP_SHARE = (
+    0.5  # a month with under this share of the firm's median month of H1 bars is a hole
+)
+
+
+def holes(times: pd.Series, window: tuple[str, str]) -> list[str]:
+    """The whole months of the window where the firm's server has too few bars to trade.
+
+    Args:
+        times: The H1 bar times the server gave for the window.
+        window: (first day, last day), YYYY-MM-DD.
+
+    Returns:
+        «YYYY-MM» of each whole month inside the window with fewer H1 bars than `GAP_SHARE` of
+        the median whole month. The yardstick is the firm's own median, not SQX's feed: no
+        second data path, and one hole in 24 months never moves a median (🔬 Hantec
+        USDJPY/GBPJPY: 2022-06 and 2023-01 with no bars; December still holds ~85 % of it).
+        The window's partial first and last months are never judged.
+    """
+    first, last = (pd.Timestamp(d) for d in window)
+    months = pd.period_range(first, last, freq="M")
+    months = [
+        m for m in months if m.start_time >= first and m.end_time.normalize() <= last
+    ]
+    if not months:
+        return []
+    per = (
+        pd.Series(1, index=pd.to_datetime(times).dt.to_period("M"))
+        .groupby(level=0)
+        .sum()
+    )
+    per = per.reindex(months, fill_value=0)
+    return [str(m) for m, n in per.items() if n < GAP_SHARE * per.median()]
+
+
+def gap_months(symbol: str, account: dict, window: tuple[str, str]) -> list[str]:
+    """`holes` of the H1 bars the firm's server gives for the window (one query)."""
+    got = live.series("bars", symbol, window[0], window[1], "H1", account)
+    if not got["rows"]:
+        return []
+    return holes(pd.Series(pd.read_parquet(got["file"])["time"]), window)
 
 
 def for_sqx(

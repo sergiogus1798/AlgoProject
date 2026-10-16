@@ -342,6 +342,19 @@ def main() -> None:
         26, segments(data, window), asset
     )  # the door before the CPU: the ledger row asks it again at the end
     meta["from"], meta["to"] = window
+    gaps = {}
+    try:
+        for firm in costs:
+            row = firms.usable(asset)[firm]
+            gaps[firm] = conditions.gap_months(row["symbol"], row["account"], window)
+            if gaps[firm]:
+                print(
+                    f"{firms.label(firm)}: sin barras en {', '.join(gaps[firm])}: "
+                    "las operaciones de esos meses no se comparan",
+                    flush=True,
+                )
+    finally:
+        wine.close_terminal()
     ctx = {
         "strategy": strategy,
         "asset": asset,
@@ -390,6 +403,7 @@ def main() -> None:
                     data["instrument"],
                     zones,
                     mode,
+                    gaps[firm],
                 )
                 record.log(
                     ledger_study.study_id(asset, timeframe, "mt5verify"),

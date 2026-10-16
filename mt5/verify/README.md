@@ -87,3 +87,13 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
   another server.
 - **An asset whose `mt5:` does not name a firm stops that firm** — never guessed
   (encargo 35 §1 #3).
+
+## Months with no bars on a firm's server
+
+`earliest()` only cuts the window's start. Holes inside it (Hantec: no bars 2022-06 and
+2023-01 on USDJPY/GBPJPY) are read once per firm after the window is known
+(`conditions.gap_months`, H1 bars): a whole month with under half the firm's median month of
+bars is a hole (`conditions.holes`; the firm's own median, so no second data path). `judge.firm_result(gaps=)`
+drops the trades of BOTH sides opened in those months before every row and curve (MT5 cannot trade
+there, SQX's trades there are no fault of the EA); row 1's note names the months and the count, and
+`summary.firms.<firm>` carries `gap_months` and `excluded_sqx`.

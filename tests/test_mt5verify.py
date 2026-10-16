@@ -102,9 +102,9 @@ def judged(failures: list[str]) -> None:
     )["summary"]
     if got["state"] != "fail" or got["row_1"] != 0.0:
         failures.append(f"sin operaciones en MT5 no falla la fila 1: {got}")
-    # row 1 is the worse of the two ways against 95 %: 60/63 = 95.2 % still passes, 60/64 does not
+    # row 1 is the worse of the two ways against 90 %: 60/66 = 90.9 % still passes, 60/67 does not
     extra = (
-        trades(64, 1)
+        trades(67, 1)
         .iloc[60:]
         .assign(
             **{
@@ -124,8 +124,8 @@ def judged(failures: list[str]) -> None:
         INST,
         ("EETUS", "EETUS"),
     )["summary"]
-    if got["state"] != "fail" or not got["row_1"] < 0.95:
-        failures.append(f"4 operaciones de más en MT5 no fallan la fila 1: {got}")
+    if got["state"] != "fail" or not got["row_1"] < 0.90:
+        failures.append(f"7 operaciones de más en MT5 no fallan la fila 1: {got}")
     got = judge.firm_result(
         "ftmo",
         sqx.iloc[:20],
@@ -141,6 +141,27 @@ def judged(failures: list[str]) -> None:
         failures.append(
             f"menos operaciones de SQX que el mínimo no dan «sin veredicto»: {got}"
         )
+
+
+def gapped(failures: list[str]) -> None:
+    """MT5 has no trades in a month its server has no bars for: row 1 fails unless that month
+    is left out of both sides; `holes` finds it from the bar times."""
+    cfg = firms.config()
+    sqx = trades(60, 1)
+    month = sqx["Open time"].dt.strftime("%Y-%m")
+    hole = month.value_counts().index[0]
+    mt5 = sqx[month != hole]
+    args = ("H1", 100000, cfg, "XAUUSD", INST, ("EETUS", "EETUS"))
+    bare = judge.firm_result("ftmo", sqx, mt5, *args)["summary"]
+    got = judge.firm_result("ftmo", sqx, mt5, *args, gaps=[hole])["summary"]
+    if bare["state"] != "fail" or got["row_1"] != 1.0 or got["excluded_sqx"] <= 0:
+        failures.append(f"un mes sin barras no se excluye de la fila 1: {bare} {got}")
+    bars = pd.Series(pd.date_range("2024-01-01", "2024-12-31 23:00", freq="h"))
+    bars = bars[bars.dt.month != 6]
+    if conditions.holes(bars, ("2024-01-01", "2024-12-31")) != ["2024-06"]:
+        failures.append("holes no encuentra junio de 2024 sin barras")
+    if conditions.holes(bars, ("2024-01-15", "2024-06-10")) != []:
+        failures.append("holes juzga meses parciales o inventa huecos")
 
 
 def priced(failures: list[str]) -> None:
@@ -446,7 +467,18 @@ def started(failures: list[str]) -> None:
 def main() -> None:
     """Run the checks."""
     failures = []
-    for check in (judged, zoned, priced, written, ini, protected, lots, modes, started):
+    for check in (
+        judged,
+        gapped,
+        zoned,
+        priced,
+        written,
+        ini,
+        protected,
+        lots,
+        modes,
+        started,
+    ):
         check(failures)
     print(
         "\n".join(failures)

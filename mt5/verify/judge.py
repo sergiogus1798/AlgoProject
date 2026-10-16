@@ -208,7 +208,7 @@ def rows(
     return out
 
 
-def firm_result(
+def firm_result(  # noqa: PLR0913
     firm: str,
     sqx: pd.DataFrame,
     mt5: pd.DataFrame,
@@ -219,6 +219,7 @@ def firm_result(
     instrument: dict,
     zones: tuple[str, str],
     mode: str = "lot",
+    gaps: list[str] | None = None,
 ) -> dict[str, Any]:
     """One firm's clock-aligned comparison: its verdict, its unpaired-trades table, its curves.
 
@@ -235,6 +236,9 @@ def firm_result(
             (`compare.to_zone`) before `clock` looks for any whole-hour shift left.
         mode: "lot" or "risk" — which sizing both sides traded (`rows`); "risk" is named in
             the verdict's label.
+        gaps: «YYYY-MM» months where this firm's server has no bars (`conditions.holes`):
+            trades of both sides opened in them are left out of every row, the curves
+            included (MT5 cannot trade there, so SQX's trades there are not the EA's fault).
 
     Returns:
         {"verdict", "lonely", "summary", "pairs", "hours", "daily_sqx", "daily_mt5", "label"}
@@ -245,11 +249,21 @@ def firm_result(
     th = cfg["thresholds"]
     sqx = compare.in_points(compare.to_zone(sqx, *zones), instrument)
     mt5 = compare.in_points(mt5, instrument)
+    gaps = gaps or []
+    n_sqx = len(sqx)
+    sqx = sqx.loc[~sqx["Open time"].dt.strftime("%Y-%m").isin(gaps)]
+    mt5 = mt5.loc[~mt5["Open time"].dt.strftime("%Y-%m").isin(gaps)]
+    excluded = n_sqx - len(sqx)
     tolerance = th["entry_tolerance_bars"] * MINUTES[timeframe]
     hours = clock(sqx, mt5, tolerance, cfg["clock"]["max_offset_h"])
     moved = shifted(sqx, hours)
     pairs = compare.pair(moved, mt5, tolerance)
     got = rows(moved, mt5, pairs, deposit, th)
+    if gaps:
+        got[0]["note"] += (
+            f" · sin las {excluded} operaciones de SQX abiertas en {', '.join(gaps)}: "
+            "el servidor de la empresa no tiene barras esos meses"
+        )
     if mode == "risk":
         got.append(sizing.loss_cap_row(moved, mt5, th))
     few = len(sqx) < th["trades_min"]
@@ -314,6 +328,8 @@ def firm_result(
         "clock_h": hours,
         "sqx_trades": len(sqx),
         "mt5_trades": len(mt5),
+        "gap_months": gaps,
+        "excluded_sqx": excluded,
         **{f"row_{r['row']}": r["value"] for r in got},
     }
     return {

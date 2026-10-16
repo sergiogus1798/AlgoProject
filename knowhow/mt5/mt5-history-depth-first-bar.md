@@ -9,6 +9,7 @@ first whose second week holds ≥ 100 H1 bars (120 whole). Monthly bars reach fu
 tester can trade, the terminal serves M1 only for its last «max bars» (one row for anything older),
 and a freshly selected symbol answers `(-1, 'Terminal: Call failed')` until synced (retried).
 «Verificar» with Desde = `MT5` (`mt5.verify.run.earliest`) starts at the latest firm's month.
+Holes INSIDE the window are a separate rule: `conditions.holes` flags a whole month with < 50 % of the firm's median month of H1 bars (Hantec USDJPY/GBPJPY: 2022-06, 2023-01), and `judge.firm_result(gaps=)` drops both sides' trades opened there (summary `gap_months`, `excluded_sqx`).
 
 ## Evidence
 - 🔬 2026-09-30, USDJPY: MN1 from 2000-03 (FTMO) and 2008-07 (Hantec). H1 bars per week: Hantec

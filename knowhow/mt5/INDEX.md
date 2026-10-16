@@ -15,9 +15,9 @@
 - `mt5-terminal-mcp-from-python` — How can Python call the MT5 terminal's own MCP read-only tools in bulk over HTTP?
 - `mt5-tester-m1-gaps-hide-news-window` — Why does a narrow news window never see a tick in the MT5 tester where the server lacks M1 bars?
 - `mt5-tester-unattended` — What must exist for an SQX EA to backtest unattended in MT5 under Wine, and why does the news filter do nothing?
-- `sqzscore-stale-previous-bar` — Why did MT5 trade a ZScore strategy 20-30x less than SQX, and what makes a handle-wrapping Sq indicator read stale values?
 - `mt5-under-wine` — How is MT5 installed under WineHQ staging, and why is its Python API unusable here?
 - `mt5-validated-pool-register` — How does the validated pool register store verdicts, and which verdict per identity wins?
 - `mt5-verify-clock-zones` — How do I convert between SQX's feed clock and a firm's MT5 server clock, since their offset varies by date?
 - `news-calendars-mt5-vs-forexfactory` — How much of Forex Factory's red folder does MT5's HIGH importance cover, and is either calendar enough for Hantec?
 - `reconcile-mae-both-sides-rebuilt` — How should live MAE be compared with the backtest's so the two are comparable?
+- `sqzscore-stale-previous-bar` — Why did MT5 trade a ZScore strategy 20-30x less than SQX (a handle-wrapping Sq indicator reading stale values)?

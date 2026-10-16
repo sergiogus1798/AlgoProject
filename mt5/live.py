@@ -41,7 +41,12 @@ def ask(verb: str, args: dict | None = None, account: dict | None = None) -> Any
 
 
 def series(
-    verb: str, symbol: str, start: str, end: str, timeframe: str = ""
+    verb: str,
+    symbol: str,
+    start: str,
+    end: str,
+    timeframe: str = "",
+    account: dict | None = None,
 ) -> dict[str, Any]:
     """Pull bars or ticks for a window into a parquet under MT5_DATA.
 
@@ -50,6 +55,7 @@ def series(
         symbol: The terminal's symbol name.
         start, end: YYYY-MM-DD or YYYY-MM-DD HH:MM, in the server's clock.
         timeframe: M1, M5, M15, M30, H1, H4, D1… for bars; empty for ticks.
+        account: `ask`'s `account`: log the terminal into it first; None keeps the open one.
 
     Returns:
         {"rows", "file", "first", "last"}; time columns become datetimes.
@@ -67,6 +73,7 @@ def series(
             "end": end,
             "out": wine.windows(csv),
         },
+        account,
     )
     if not answer["rows"]:
         return {"rows": 0, "error": answer["error"]}

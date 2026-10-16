@@ -1,5 +1,5 @@
 ---
-q: Why did MT5 trade a ZScore strategy 20-30x less than SQX, and what makes a handle-wrapping Sq indicator read stale values?
+q: Why did MT5 trade a ZScore strategy 20-30x less than SQX (a handle-wrapping Sq indicator reading stale values)?
 kw: SqZScore iCustom ZScore matched share low, MT5 11 trades vs SQX 356, z[1] smaller than SQX, CopyBuffer 1 value prev_calculated, stale bar 1, handle-wrapper indicator once per bar, iStdDev population
 tag: 🔬  date: 2026-10-16  see: mt5/mt5-tester-unattended
 ---
