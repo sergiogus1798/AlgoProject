@@ -1046,11 +1046,12 @@ thresholds:
 
   # ── Paso 26 · la verificación SQX ↔ MT5 por empresa (encargo 34 §3) ──────────────────
   - key: mt5verify.matched_min
-    value: 0.95
+    value: 0.90
     source: mt5/verify/config.yaml#thresholds.matched_min
     set_by: dueño
-    set_on: 2026-09-29
-    why: valor de partida aceptado — el EA en MT5 reproduce al menos el 95 % de las operaciones de SQX
+    set_on: 2026-10-16
+    why: >-
+      P26d del dueño (2026-10-16), era 0,95: siete USDJPY casaban 0,91-0,95 entre dos motores distintos y lo que no casaba eran cierres «Exit After X Bars» 55 min antes en MT5
 
   - key: mt5verify.entry_tolerance_bars
     value: 1
@@ -1088,11 +1089,12 @@ thresholds:
     why: valor de partida aceptado — el peor día de cada lado, en puntos de % de la cuenta
 
   - key: mt5verify.exit_same_min
-    value: 0.95
+    value: 0.90
     source: mt5/verify/config.yaml#thresholds.exit_same_min
     set_by: "provisional, propuesto por el agente del paso 26 (2026-10-11), aprobado el cambio por el dueño: igual que matched_min; pendiente de la corrida de referencia por activo × empresa"
-    set_on: 2026-10-11
-    why: parte de las operaciones emparejadas que cierran en la misma hora en MT5 y en SQX (fila 1b)
+    set_on: 2026-10-16
+    why: >-
+      P26d del dueño (2026-10-16), era 0,95: siete USDJPY casaban 0,91-0,95 entre dos motores distintos y lo que no casaba eran cierres «Exit After X Bars» 55 min antes en MT5
 
   - key: mt5verify.trades_min
     value: 30
