@@ -84,7 +84,21 @@ sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño
 
 ### Informe de las 5:40 — algoproject-95
 
-(pendiente)
+| qué | estado | commit |
+|---|---|---|
+| gorilla, 4 celdas | EURUSD M30 reversión: FIN sin superviviente · XAUUSD M15 momentum: llega al 20 y falla (R4) · **GBPJPY H1 momentum: FIN, 1 superviviente** · **USDJPY H1 momentum: FIN, 4 supervivientes** · EURUSD H1 momentum en el 16.5 | `e8b5065`, `d2acffd`, `9d2d7ef` |
+| collect | 5 supervivientes reales de gorilla en el almacén de leaseWeb (`_gorilla`), listas para el 26 | — |
+| `price_rounding` | medida reutilizable `engines.market.rounding.measure` (segmento obligatorio); 23 fichas medidas (EURUSD, 8 forex, AUDNZD, GBPJPY, AUDUSD, EURAUD, EURGBP, XAGUSD, XCUUSD…) | `592926c`, `503ccdd`, `eb74726`, `abcdfba` |
+| repreciador | medio tick hacia arriba como SQX (np.round iba al par): media población descuadrada en GBPJPY/AUDUSD → 100 % a 0,01 USD; #124 cerrada | `3341069`, `4fd652d` |
+| paso 20 | `closecurve.measured` descarta las operaciones del día con swap (comisión del oro 6,1/8,2 → 5,0): build 90 → 99,7 %, oos1 78 → 98,7 % | `c85645c` |
+| tests y limpieza | `test_real_run` con cierres reales; `stop_percentile` fuera; skill workflow con `core.assetmarkets` | `fcc1056`, `56cf3d0`, `b22805e` |
+
+**Siguientes pasos del día (viernes):**
+1. R4 → si A, tolerancia por precisión del export en `blindJoint/inputs.py` con test y `run` de XAUUSD M15 desde el 20.
+2. Paso 26 de las 5 supervivientes de gorilla en el conductor de leaseWeb, con tus cuatro parámetros y el conductor libre.
+3. D27 fase 2 (ledger por servidor, `ALGO_SERVER`) en cuanto acabe la campaña de 07.
+4. Gorilla: leer EURUSD H1 y seguir con celdas de fichas medidas (o la propuesta del director, si la vetas).
+5. Con el custodio libre: mediciones del 66 (frentes 6-7) y #112.
 
 ### Informe de las 5:40 — algoproject-18
 
