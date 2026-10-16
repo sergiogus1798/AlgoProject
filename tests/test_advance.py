@@ -114,7 +114,7 @@ def write(top: Path, lines: list[str], day: date | None = None) -> None:
 
 def fakes(
     built: dict,
-    start_reply: str = "Project started",
+    start_reply: str = f"06:00:00 Starting project '{P}'",
     logs_start: bool = True,
     start_fails: bool = False,
     within: int = 120,

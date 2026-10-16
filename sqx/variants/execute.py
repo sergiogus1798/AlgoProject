@@ -131,11 +131,7 @@ def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:
     base = banks.in_bank(_call(f"-project action=status name={project}", cfg), project)
     logs = worker_dir(cfg["role"]) / "user/log/StrategyQuant"
     seen, began = banks.mark(logs), time.monotonic()
-    reply = _call(f"-project action=start name={project}", cfg)
-    if (
-        "rror" in reply or "Cannot start" in reply
-    ):  # as ui/daemon/launch/run.py: unresolved
-        raise SystemExit(f"SQX no arrancó {project}: {reply.strip()}")
+    worker.started(_call(f"-project action=start name={project}", cfg), project)
     done, end = 0, None
     while done < expected and not end:
         time.sleep(cfg["poll_seconds"])

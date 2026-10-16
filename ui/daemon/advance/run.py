@@ -291,9 +291,9 @@ def advance(project: str, databank: str) -> None:
         workerguard.mark(role, project)
         ready(project, role)
         offsets = sqxlog.mark(preflight.WORKERS[role]["path"])
-        reply = worker.call(f"-project action=start name={project}", role)
-        if "rror" in reply or "Cannot start" in reply:  # unresolved resources
-            sys.exit(f"SQX rechazó `action=start` de {project}: {reply.strip()}")
+        worker.started(
+            worker.call(f"-project action=start name={project}", role), project
+        )
         say(60, f"{pre['task']} lanzada")
         run = watch(project, role, offsets)
     finally:

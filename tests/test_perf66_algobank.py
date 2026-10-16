@@ -180,7 +180,7 @@ def strategies() -> list[dict]:
             tf="H1",
             filter="",
             problems=0,
-            xml="",
+            xml="<StrategyFile/>",
             orders=[],
             equity={},
             stats=[],

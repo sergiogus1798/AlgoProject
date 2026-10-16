@@ -69,6 +69,21 @@ def checked(reply: str, command: str) -> str:
     return reply
 
 
+def started(reply: str, project: str) -> None:
+    """SystemExit unless `action=start` answered that it started `project`.
+
+    Args:
+        reply: What `call` returned: «HH:MM:SS Starting project 'P'» on some line when it
+            started (other log lines may come first); «Error: ...» or «Cannot start project»
+            (unresolved resources) when not.
+        project: The project the start named.
+    """
+    if f"Starting project '{project}'" not in reply:
+        raise SystemExit(
+            f"SQX rechazó `action=start` de {project}: {reply.strip()[:300]}"
+        )
+
+
 def holder() -> str:
     """Who this process is to `bin/sqx-lock.sh`, in its own order: session, $SQX_OWNER, "owner"."""
     return (

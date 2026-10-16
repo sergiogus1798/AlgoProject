@@ -183,7 +183,6 @@ def _main_env(
         work: Path,
         whole: dict,
         banks: dict | None = None,
-        twins: dict | None = None,
     ) -> dict:
         """Fake `harvest.tables`: record the manifests present, return one frame pair."""
         seen["manifest_at_tables"] = {

@@ -1,0 +1,26 @@
+{
+ "retest_oos": [
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_NIKKEI225_M30_simpleL_val/databanks/Results/Strategy 1.22.403.sqx",
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_NIKKEI225_M30_simpleL_val/databanks/OOS/Strategy 1.22.403.sqx"
+ ],
+ "crossmarket": [
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_NIKKEI225_M30_simpleL_val/databanks/Results/Strategy 1.22.403.sqx",
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_NIKKEI225_M30_simpleL_val/databanks/Retest Markets - Family/Strategy 1.22.403.sqx"
+ ],
+ "mother_copy": [
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_NIKKEI225_M30_simpleL_val/databanks/Results/Strategy 1.22.403.sqx",
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_NIKKEI225_M30_simpleL_val/databanks/CrossTF_Mothers/Strategy 1.22.403.sqx"
+ ],
+ "signal": [
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_XAUUSD_H1_ruptura_mcptS/databanks/Results/Strategy 8.22.345.sqx",
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/custodio-2026-10-13-algobank/projects/Test_XAUUSD_H1_ruptura_mcptS/databanks/OOS/Strategy 8.22.345.sqx"
+ ],
+ "wfm_reordered": [
+  "/home/sergioguslw/Desktop/SQX_w2/user/projects/Trade_NIKKEI225_M30_volatilidadL/databanks/Results/Strategy 10.11.484.sqx",
+  "/home/sergioguslw/Desktop/SQX_w2/user/projects/Trade_NIKKEI225_M30_volatilidadL/databanks/WFM/Strategy 10.11.484.sqx"
+ ],
+ "reused_name": [
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/weekly-data-update-2026-10-03/projects/AUDJPY/databanks/Results/Strategy 12.18.39.sqx",
+  "/home/sergioguslw/Desktop/AlgoData/snapshots/weekly-data-update-2026-10-03/projects/AUDJPY/databanks/OOS/Strategy 12.18.39.sqx"
+ ]
+}

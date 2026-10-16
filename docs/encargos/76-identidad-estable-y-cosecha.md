@@ -4,11 +4,11 @@
 
 | parte | qué | estado |
 |---|---|---|
-| A | Fixtures reales de cada rotura ya vista (tests que hoy fallarían) | pendiente |
-| B | `identity` = hash de la forma canónica de la lógica | pendiente |
-| C | Prueba: ¿conserva SQX un UUID estampado en el build a través de los retests? | pendiente |
-| D | Migrar las identidades del almacén con un mapa viejo→nuevo | pendiente |
-| E | Carreras y cuelgues de la recogida y de SQX | pendiente |
+| A | Fixtures reales de cada rotura ya vista (tests que hoy fallarían) | hecho 2026-10-16: 9 pares en `tests/fixtures/identity/` (7 iguales, 2 distintos; `SOURCES.json` dice de dónde sale cada uno); la identidad vieja fallaba `wfm_reordered` e `inlined_variable` |
+| B | `identity` = hash de la forma canónica de la lógica | hecho 2026-10-16: `core.sqxfile.canonical`; `twins` borrado de la cosecha y `_inlined` de `pairing.py`; ~1 ms por estrategia |
+| C | Prueba: ¿conserva SQX un UUID estampado en el build a través de los retests? | hecho 2026-10-16: **sí**, 3 de 3 en OOS, Retest Markets (15 mercados), sync y export; `Test_Identity_UUID` retirado. Falta la decisión del dueño: ¿UUID o hash? |
+| D | Migrar las identidades del almacén con un mapa viejo→nuevo | hecho 2026-10-16: 890 de 890 cambian, ninguna se funde; mapa `AlgoData/store/identity-map-2026-10.csv`; también 56 corridas MT5 y 31 filas de `pool.sqlite`. Falta: correr `python3 -m core.store rekey` en gorilla tras el push |
+| E | Carreras y cuelgues de la recogida y de SQX | hecho 2026-10-16 salvo el límite «3 × lo esperado» de `execute.py` (no hay duración esperada medida; sigue el tope de `worker.MAX_HOURS`): el arranque se lee de «Starting project» (`core.worker.started`, en los cuatro lanzadores) |
 
 ## Tu oficio
 

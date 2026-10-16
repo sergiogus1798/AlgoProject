@@ -13,6 +13,7 @@ manifests and ledger names, `listing` turns them into a plan, `collect` pulls wh
 """
 
 import csv
+import fcntl
 import json
 import os
 import shutil
@@ -25,10 +26,14 @@ from core.paths import DATA, MIRRORS
 
 # One ssh connection for every rsync of a collect: one per file tripped gorilla's limit on new
 # connections («Connection reset by peer», rsync 255) half-way through a project (📓 2026-10-16).
+# A gorilla that stops answering drops the link in 30 s and rsync gives up after 50 s without a
+# byte, instead of hanging the collect for ever (encargo 76 E).
 os.environ.setdefault(
     "RSYNC_RSH",
-    "ssh -o ControlMaster=auto -o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=60",
+    "ssh -o ControlMaster=auto -o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=60"
+    " -o ServerAliveInterval=10 -o ServerAliveCountMax=3",
 )
+RSYNC = ("rsync", "-a", "--timeout=50")
 SUFFIX = "_gorilla"
 LEDGER = "ledger"
 
@@ -56,7 +61,7 @@ def listing(project: str, data: Path = DATA) -> dict[str, Any]:
 
 def _rsync(src: str, dest: Path, *extra: str) -> None:
     """rsync that never overwrites what is already there; rsync's stderr is shown on failure."""
-    cmd = ["rsync", "-a", "--ignore-existing", *extra, src, str(dest)]
+    cmd = [*RSYNC, "--ignore-existing", *extra, src, str(dest)]
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
@@ -67,19 +72,24 @@ def _rsync(src: str, dest: Path, *extra: str) -> None:
 def _registry(project: str, source: str, dest: Path, dry: bool) -> str:
     """Append gorilla's registry row of the project to the local registry when it has none; never rewrites."""
     mine = dest / "projects" / "registry.csv"
-    names = (
-        {r["name"] for r in csv.DictReader(mine.open(encoding="utf-8", newline=""))}
-        if mine.exists()
-        else set()
-    )
-    if project in names:
+    mine.parent.mkdir(parents=True, exist_ok=True)
+
+    def names() -> set[str]:
+        """The projects the local registry already holds."""
+        if not mine.exists():
+            return set()
+        with mine.open(encoding="utf-8", newline="") as fh:
+            return {r["name"] for r in csv.DictReader(fh)}
+
+    if project in names():
         return f"existe    registry: {project}; no se añade"
     if dry:
         return f"traería   registry: {project}"
-    tmp = dest / "store" / ".collect-registry.csv"
+    # Fetched before the lock: a stalled ssh must not hold up a builder registering a project.
+    tmp = dest / "store" / f".collect-registry-{os.getpid()}.csv"
     try:
         subprocess.run(
-            ["rsync", "-a", f"{source}projects/registry.csv", str(tmp)],
+            [*RSYNC, f"{source}projects/registry.csv", str(tmp)],
             check=True,
             capture_output=True,
         )
@@ -94,14 +104,19 @@ def _registry(project: str, source: str, dest: Path, dry: bool) -> str:
     row["install"] += (
         SUFFIX  # a gorilla row never reads as one of this machine's installs
     )
-    mine.parent.mkdir(parents=True, exist_ok=True)
-    fresh = not mine.exists()
-    with mine.open("a", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, reader.fieldnames or [])
-        if fresh:
-            writer.writeheader()
-        writer.writerow(row)
-    return f"traída    registry: {project} (install {row['install']})"
+    # The same lock file as `sqx.projects.registry._locked` (core may not import sqx): a builder
+    # registering a project meanwhile would otherwise lose its row or this one.
+    with open(mine.with_name(mine.name + ".lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if project in names():
+            return f"existe    registry: {project}; no se añade"
+        fresh = not mine.exists()
+        with mine.open("a", encoding="utf-8", newline="") as fh:
+            writer = csv.DictWriter(fh, reader.fieldnames or [])
+            if fresh:
+                writer.writeheader()
+            writer.writerow(row)
+        return f"traída    registry: {project} (install {row['install']})"
 
 
 def collect(
@@ -132,7 +147,7 @@ def collect(
         else:
             if not dry:
                 # a sibling temp, renamed only on success: a failed fetch leaves nothing to skip as «existe»
-                tmp = target.with_name(f".collect-{target.name}")
+                tmp = target.with_name(f".collect-{os.getpid()}-{target.name}")
                 shutil.rmtree(tmp, ignore_errors=True)
                 tmp.mkdir(parents=True)
                 try:
@@ -159,7 +174,7 @@ def collect(
         f"{'traería  ' if dry else 'traídos  '} reports/ y harvest/ de {plan['project']}"
     )
     for name in plan["ledgers"]:
-        tmp = dest / "store" / f".collect-{name}"
+        tmp = dest / "store" / f".collect-{os.getpid()}-{name}"
         mine = dest / LEDGER / (Path(name).stem + SUFFIX + ".jsonl")
         have = (
             set(mine.read_text(encoding="utf-8").splitlines())
@@ -171,7 +186,7 @@ def collect(
             continue
         try:
             subprocess.run(
-                ["rsync", "-a", f"{source}{LEDGER}/{name}", str(tmp)],
+                [*RSYNC, f"{source}{LEDGER}/{name}", str(tmp)],
                 check=True,
                 capture_output=True,
             )
@@ -200,7 +215,7 @@ def fetch_plans(
     store is not gorilla's work.
     """
     source = f"{MIRRORS[server]['ssh']}:{DATA.relative_to(Path.home())}/"
-    cmd = ["rsync", "-a", "--prune-empty-dirs"]
+    cmd = [*RSYNC, "--prune-empty-dirs"]
     for rule in (
         "store/",
         "store/*/",

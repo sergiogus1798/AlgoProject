@@ -228,8 +228,7 @@ def main() -> None:
     ):  # packed in place below: a kill mid-write must read stale, not fresh
         (folder / "manifest.json").unlink(missing_ok=True)
     banks = taken_banks(a, install)
-    twins = {pairs[i][1]: i for i in matched if i not in after}  # paired inlined
-    sides = collect.tables(taken, out / "_work", whole, banks, twins)
+    sides = collect.tables(taken, out / "_work", whole, banks)
     for side, folder in whole.items():
         export(
             folder,

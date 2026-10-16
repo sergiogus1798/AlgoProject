@@ -206,11 +206,9 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
         began = time.time()
         offsets = sqxlog.mark(top)
         started_at = dict(offsets)  # `watch` advances `offsets`; the restore reads all
-        reply = worker.call(f"-project action=start name={project}", role)
-        if (
-            "rror" in reply or "Cannot start" in reply
-        ):  # «Project has unresolved resources»
-            sys.exit(f"SQX rechazó `action=start` de {project}: {reply.strip()}")
+        worker.started(
+            worker.call(f"-project action=start name={project}", role), project
+        )
         say(60, f"{', '.join(titles)} lanzada(s)")
         with phase("sqx", " + ".join(titles)):
             run = watch(project, role, offsets)

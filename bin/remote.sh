@@ -6,6 +6,8 @@
 # pull is a mechanism and not something to remember (owner, 2026-10-10):
 #   - no SQX running there: `git pull --ff-only` first; if it fails, nothing runs (exit 97).
 #   - SQX running there: no pull — the code is never changed under a run — and it says so.
+#   - a workflow (command word bin/workflow.sh, or python3 -m pipeline.autopilot…) asked for on a mirror whose last data copy did not end (`logs/MIRROR_OK.<name>`,
+#     written by bin/mirror-data.sh, says «copying»): nothing runs (exit 95).
 #   - a workflow running there (`pgrep -f` on pipeline.autopilot / bin/workflow.sh — it leaves no
 #     lock or pid file, so the process name is the marker): nothing runs (exit 96).
 #
@@ -34,11 +36,19 @@ NAME="$1"; shift
 
 _CFG=$(python3 -c '
 import sys
-from core.paths import MIRRORS
+from core.paths import DATA, MIRRORS
 m = MIRRORS[sys.argv[1]]
-print(m["ssh"], m.get("repo", "Desktop/AlgoProject"))' "$NAME") || {
+print(m["ssh"], m.get("repo", "Desktop/AlgoProject"), DATA)' "$NAME") || {
   echo "remote: no server \"$NAME\" under mirrors: in config/machine.yaml"; exit 2; }
-read -r HOST REPO <<< "$_CFG"
+read -r HOST REPO DATA <<< "$_CFG"
+# A workflow is a command whose word is bin/workflow.sh or `python3 -m pipeline.autopilot…`,
+# never one that merely names it in an argument (a grep, a log path).
+if [[ "$1" == bin/workflow.sh || "$1" == */bin/workflow.sh \
+   || ( "$1" == python* && "${2:-}" == -m && "${3:-}" == pipeline.autopilot* ) ]]; then
+  OK=$(cat "$DATA/logs/MIRROR_OK.$NAME" 2>/dev/null || echo "never mirrored by this version")
+  [[ "$OK" != copying* ]] || {
+    echo "remote: the last data copy to $NAME did not end ($OK): run bin/mirror-data.sh first" >&2; exit 95; }
+fi
 
 CMD=$(printf '%q ' "$@")
 if [ "$DETACH" = "1" ]; then

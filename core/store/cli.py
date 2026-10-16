@@ -7,7 +7,7 @@ import zipfile
 from pathlib import Path
 
 from core.paths import WORKERS
-from core.store import audit, save, verify, write
+from core.store import audit, rekey, save, verify, write
 
 
 def resolve(token: str) -> list[str]:
@@ -46,7 +46,7 @@ def opened(identity: str, out: Path) -> Path:
 
 
 def main() -> None:
-    """`save <project>`, `verify [identity...]`, `audit <project>`, `list`, `open <identity or name> --out DIR`."""
+    """`save <project>`, `verify [identity...]`, `audit <project>`, `list`, `open <identity or name> --out DIR`, `rekey [--dry-run]`."""
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest="verb", required=True)
     s = sub.add_parser(
@@ -76,8 +76,16 @@ def main() -> None:
         "audit", help="lo que un proyecto dejó en disco y no está en ningún zip"
     )
     au.add_argument("project")
+    rk = sub.add_parser(
+        "rekey",
+        help="tras cambiar la fórmula de la identidad, renombra cada carpeta a la suya",
+    )
+    rk.add_argument("--dry-run", action="store_true", help="sólo cuenta, no toca nada")
     a = ap.parse_args()
 
+    if a.verb == "rekey":
+        rekey.main(a.dry_run)
+        return
     if a.verb == "audit":
         falta, ajeno = audit.missing(a.project)
         for line in ajeno:

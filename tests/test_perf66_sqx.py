@@ -171,7 +171,7 @@ def test_restart_route_ends_on_project_finished_and_checks_its_replies(
     log.write_text("an earlier run: Project finished\n")
     cfg = {"role": "custodian", "project": "Test_X", "poll_seconds": 0, "sync_tries": 1}
     replies = {
-        "start": "Project started",
+        "start": "10:00:00 Starting project 'Test_X'",
         "status": iter(["In databank 10", "In databank 12"]),
     }
 
@@ -192,7 +192,7 @@ def test_restart_route_ends_on_project_finished_and_checks_its_replies(
     replies.update(
         start="Error: Project has unresolved resources", status=iter(["In databank 10"])
     )
-    with pytest.raises(SystemExit, match="no arrancó"):
+    with pytest.raises(SystemExit, match="rechazó"):
         execute.run(4, cfg, lambda pct, line: None)
     with pytest.raises(SystemExit, match="rechazó"):
         execute.synced(2, cfg, "D")

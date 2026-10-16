@@ -7,6 +7,7 @@ file and moved over it.
 """
 
 import os
+import re
 import zipfile
 from pathlib import Path
 
@@ -14,11 +15,23 @@ from core.paths import WORKERS
 from core.worker import holding, installs, listening
 
 
+def _port(role: str, install: Path) -> int | None:
+    """The install's port: the worker's own, else the one SQX wrote to its settings.xml (the master's)."""
+    if known := WORKERS.get(role, {}).get("port"):
+        return known
+    settings = install / "user/settings/settings.xml"
+    found = (
+        re.search(r"<WebServerPortUsed>(\d+)<", settings.read_text(encoding="utf-8"))
+        if settings.exists()
+        else None
+    )
+    return int(found[1]) if found else None
+
+
 def _installs() -> dict[str, tuple[Path, int | None]]:
-    """Role to (install folder, port), the master included (it has no known port)."""
+    """Role to (install folder, port), the master included."""
     return {
-        role: (p.resolve(), WORKERS.get(role, {}).get("port"))
-        for role, p in installs().items()
+        role: (p.resolve(), _port(role, p.resolve())) for role, p in installs().items()
     }
 
 

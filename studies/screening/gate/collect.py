@@ -118,7 +118,6 @@ def tables(
     work: Path,
     exports: dict[str, Path] | None = None,
     banks: dict[str, dict] | None = None,
-    twins: dict[Path, str] | None = None,
 ) -> dict[str, SideTables]:
     """Stage both databanks' strategies once, and take everything they hold in one pass.
 
@@ -131,8 +130,6 @@ def tables(
         banks: Side to its taken `.abk` (`sqx.export.membank.take`). With BOTH sides taken the
             trades come from `bankfile.pack` and no JVM runs; with either missing, both sides
             go through `orderstocsv` -- one rule, never a mix.
-        twins: Retest file to its build identity, for the pairs `pairing.pair` matched with
-            the variables inlined: their rows join under the build's identity.
 
     Returns:
         Per side: `metrics` (one row per identity, the view's columns of the block it filled,
@@ -149,7 +146,7 @@ def tables(
     shutil.rmtree(work, ignore_errors=True)  # what a run that died half-way left
     staged = work / "sqx"
     staged.mkdir(parents=True, exist_ok=True)
-    known = identities([f for files in sides.values() for f in files]) | (twins or {})
+    known = identities([f for files in sides.values() for f in files])
     direct = all((banks or {}).get(side) for side in sides)
     ids: dict[str, str] = {}
     side_of: dict[str, str] = {}
@@ -196,7 +193,7 @@ def tables(
             )
             if why:
                 print(f"{side}: .abk no vale: {why}")
-                return tables(sides, work, exports, None, twins)
+                return tables(sides, work, exports, None)
 
     out: dict[str, SideTables] = {}
     for side in sides:

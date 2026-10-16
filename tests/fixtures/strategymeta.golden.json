@@ -2,7 +2,7 @@
   "template": {
     "file": "strategy.sqx",
     "name": "Strategy 1.25.215",
-    "identity": "7c287c8609c3c6ff7c5888cfa5ca820b13f61439705cc56eb4518f2502d478d4",
+    "identity": "dc11b84f35451d64b9d4d0a5498929aac31ae98b17817878c4a0b8697e747dc5",
     "feed": "USDCHF_DarwTick_the5ers",
     "timeframe": "H1",
     "direction": "short",
@@ -156,7 +156,7 @@
   "oos_with_cfx": {
     "file": "strategymeta_oos.sqx",
     "name": "Strategy 10.13.25",
-    "identity": "c9c97f0fe71b87014f96a15dadbfc3f78140ca9695c0e44fc88cd7a57ab795c7",
+    "identity": "5edc37ecb2f40cc3af2c02c3b4f7cf788eb68acd97b4c4e7ba8f493fdf918dc4",
     "feed": "XAUUSD_M1",
     "timeframe": "M30",
     "direction": "long",
@@ -501,7 +501,7 @@
   "generic": {
     "file": "strategymeta_generic.sqx",
     "name": "Strategy 1.10.206",
-    "identity": "293f806fd420dfc27d33807ac967b64ed236b30264e59b3645fcc7560c24d125",
+    "identity": "819267206b125db92a78b672fa2ed55a933ad384d33c7a2a65fd6392c88b4be7",
     "feed": "GBPJPY_DarwTick_the5ers",
     "timeframe": "H1",
     "direction": "long",
@@ -719,7 +719,7 @@
   "grafted": {
     "file": "grafted.sqx",
     "name": "Strategy 10.13.25",
-    "identity": "bb5e6a724c58fa2e7ecc37e8ae85fd1717c82ae5cb374e282bd9f0689aeeda43",
+    "identity": "3fd77eb25320e08d1c310b20347de69f88901d06515575f3a83fab89b1564c1b",
     "feed": "XAUUSD_M1",
     "timeframe": "M30",
     "direction": "long",

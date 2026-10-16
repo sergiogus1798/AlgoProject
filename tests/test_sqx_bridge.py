@@ -154,7 +154,7 @@ def run_with(
         """core.worker.call: the start, or the next scripted status."""
         if "action=start" in command:
             started()
-            return "Project started"
+            return "10:00:00 Starting project 'Test_X'"
         return next(replies)
 
     with patched(

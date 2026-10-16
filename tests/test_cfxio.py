@@ -54,6 +54,17 @@ def test_round_trip_and_crash() -> None:
             assert not cfx.with_suffix(".cfx.tmp").exists()
 
 
+def test_the_masters_port_comes_from_its_settings() -> None:
+    """The master has no port in WORKERS: the one its settings.xml names is the one watched."""
+    with tempfile.TemporaryDirectory() as d:
+        settings = Path(d) / "user/settings/settings.xml"
+        settings.parent.mkdir(parents=True)
+        settings.write_text("<x><WebServerPortUsed>5050</WebServerPortUsed></x>")
+        assert cfxio._port("master", Path(d)) == 5050
+        settings.unlink()
+        assert cfxio._port("master", Path(d)) is None
+
+
 def test_held() -> None:
     """Role under a fake install, through a symlink and a booting JVM; None outside."""
     with tempfile.TemporaryDirectory() as d:

@@ -26,7 +26,7 @@ PROJECT, DATABANK, FAMILY = (
     "Results",
     "donchianUpperCrossUp",
 )
-IDENTITY = "47da0743d600c27cedda1f78cc30de3ebd4935f6624d8ffbf4e9cc0e0e6140dd"  # Strategy 13.14.82
+IDENTITY = "50a2caf080d4ebc374400459b294022bb57c72d9f9e472d9d54b5b33f2b165eb"  # Strategy 13.14.82
 # One of the 21 of the newest cosecha (2026-09-29; 10.11.79 was cut with the other 178). The
 # SPP export kept its file. Run it with the custodian stopped: archive refuses while SQX writes.
 SQX = (

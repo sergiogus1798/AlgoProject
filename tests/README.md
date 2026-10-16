@@ -147,6 +147,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_guard.py` | `.claude/hooks/guard.py` blocks what breaks rules 2, 4, 7 and 12 and nothing else. | — |
 | `test_histogram_clip.py` | The shared histogram clip: the axis spans percentiles 0.5-99.5 and says how many values it left out. | — |
 | `test_identity.py` | Identity resolution after the databank left every install: the cosecha, the kept .sqx, and no guess. | — |
+| `test_identity_canonical.py` | Known answers for the canonical identity: every rewrite SQX was seen making keeps it, a real change moves it. | — |
 | `test_inference_vs_jsharpe.py` | Our PSR, minimum track record, expected maximum, deflated Sharpe and trial count against tschm/jsharpe's stored outputs: the arithmetic agrees, the conventions do not, and both are pinned. | `python3 tests/test_inference_vs_jsharpe.py` |
 | `test_inspect_instruments.py` | Known-answer test for `sqx.inspect.instruments`: an instrument SQX wrote with an empty or a missing `commissions` attribute reads as "no commission declared" instead of crashing the whole listing (OPEN.md #103). The project is built here, in a temp dir — no install is read. | `python3 tests/test_inspect_instruments.py` |
 | `test_isoos_constant_column.py` | Known-answer test: a constant IS column has no p, stays in the table as NaN and cannot abort the BH step. | — |
@@ -174,6 +175,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_mcretest_place.py` | studies.breakage.mcRetest.model.place from its definition: an original at the median of its re-runs reads percentile 50 and no gap; one above every re-run reads 100; the gap is the median's distance as a share of the original and in IQRs; a task that moved nothing has no IQR distance; an original near zero has no percentage. | — |
 | `test_mcretest_psr.py` | Known-answer test: the MC Retest's analytic PSR is the ORIGINAL's per-trade PSR, never the PSR of one net total per simulation (which saturates at 1.0 and keeps the edge veto from firing). | — |
 | `test_mcretest_retention.py` | studies.breakage.mcRetest.model.retention from its definition: runs [2, 4, 6, -1] against an original of 4 keep 0.75 at the median and three in four are positive; an original at zero has no retention but still a positive share; no runs gives nothing. | — |
+| `test_metrics_unique.py` | Known-answer test: core.metrics is the one Sharpe, drawdown and profit factor, and the fast forms that stay obey it. | — |
 | `test_models.py` | Regression test for `trade_models.semester_shift`: the same calendar semester moves the same way in every market, and by batches reproduces the whole draw — what the travel test's joint shift rests on. | `python3 tests/test_models.py` |
 | `test_monkey_verdict.py` | The monkey's headline call: a NaN p-value is «no medible», never a fail (encargo 68 D21). | — |
 | `test_montecarlo_one.py` | The trade Monte Carlo's «Run solo esta estrategia»: `--strategy` runs `one.run` on that strategy alone and writes only estrategias/<name>.json; monteCarlo.json, verdict.csv, flags.csv, the manifest and every other strategy's JSON stay byte-identical, an unknown name is refused, and `--strategy` with `--portfolio` is refused. | `python3 tests/test_montecarlo_one.py` |
@@ -312,7 +314,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_spp_mapa.py` | Known-answer test for studies.breakage.spp.model.mapa: the floored grid, d / d_DD / puesto, s, m_dd, the tails, z_decay and a flat grid, all on a hand-made grid of twelve permutations. | — |
 | `test_spp_noise.py` | Known-answer test: the SPP noise gate compares the CENTRED maximum (max - mean) with sigma*sqrt(2 ln N). | — |
 | `test_spp_origin.py` | Known-answer test for OPEN.md #79: theta-zero's own level, sampled by no other tuple, must not read as the marginal profile's argmax. | — |
-| `test_spp_sharpe.py` | Known-answer test: the SPP `combinado` Sharpe is on weekdays, as SQX's and `annual_sharpe` are. | — |
+| `test_spp_sharpe.py` | Known-answer test: the SPP `combinado` Sharpe is on weekdays, as SQX's and `core.metrics` are. | — |
 | `test_spread.py` | The tick-file reader on a file written by hand, and a trade repriced at a spread worked out by hand. | — |
 | `test_spread_method.py` | The funded-firms spread method on toy ticks and a toy card. | — |
 | `test_sqx_bridge.py` | `core.worker` and `sqx.variants.execute` waiting for and talking to SQX, on fakes: no HTTP, no install. | — |
@@ -324,7 +326,9 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_stop_checks.py` | `.claude/hooks/stop_checks.py` blocks a stop only for a .py this session edited that ruff rejects. | — |
 | `test_stoploss.py` | Golden-file test for the stop-loss graft: a stop written wrong trades unprotected in silence. | `python3 tests/test_stoploss.py` |
 | `test_store.py` | The store under injected faults: a cut write, a missing file, a flipped byte, an orphan. | `python3 -m pytest tests/test_store.py` |
+| `test_store_collect.py` | collect's races and hangs (encargo 76 E): the registry append waits for the registry's lock, temps carry the PID, rsync gives up. | — |
 | `test_store_late.py` | Steps 13 to 20 in the store: who a renamed identity belongs to, and the audit that nothing is left out. | `python3 -m pytest tests/test_store_late.py` |
+| `test_store_rekey.py` | `core.store.rekey` (encargo 76 D): a folder moves to its new identity; two that become one stop it. | — |
 | `test_strategymeta.py` | Golden-file test for sqx.inspect.strategymeta: the fields the strategy panel shows. | — |
 | `test_strategymeta_fixed_distance.py` | Test for sqx.inspect.strategymeta.fixed_distance: fixed pips found, ATR/percent/level not. | — |
 | `test_studycontract.py` | The study contract refuses what the window cannot draw, and every kind renders. | `python3 tests/test_studycontract.py` |
@@ -383,6 +387,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_wfm_one.py` | Walk-Forward Matrix's «Run solo esta estrategia»: `--strategy` asks `many.one` for that strategy alone and writes only estrategias/<name>.json; wfm.json, verdict.csv, cell_excess.csv, the manifest and every other strategy's JSON stay byte-identical. | `python3 tests/test_wfm_one.py` |
 | `test_worker_lifecycle.py` | bin/sqx-worker.sh's start/stop lifecycle, without ever touching a real worker. | — |
 | `test_worker_lock.py` | bin/sqx-lock.sh's owner lock (OPEN.md #32): a fake install dir, no real worker touched. | — |
+| `test_worker_started.py` | `core.worker.started`: «Starting project» counts on any line of SQX's reply, and only for the project named. | — |
 | `test_workflow_family.py` | A Simple Strategy carries its idea family (owner, 2026-10-12): the refusal, the registry column, an old registry without it, `_family` resolving, the resume command passing it. | `python3 -m pytest tests/test_workflow_family.py` |
 | `ui_portfolios_planted.py` | The folders the PORTFOLIOS zone test reads, planted in a temp root: shared by test_ui_portfolios, not a test itself. | — |
 

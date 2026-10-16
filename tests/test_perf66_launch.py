@@ -282,7 +282,13 @@ def test_a_load_or_a_sync_that_failed_is_not_an_empty_retest(
     monkeypatch.setattr(
         sqxside.worker,
         "call",
-        lambda cmd, role: replies["load"] if "action=load" in cmd else "OK",
+        lambda cmd, role: (
+            replies["load"]
+            if "action=load" in cmd
+            else f"10:00:00 Starting project '{P}'"
+            if "action=start" in cmd
+            else "OK"
+        ),
     )
     monkeypatch.setattr(sqxside.advance_run, "ready", lambda *a: None)
     monkeypatch.setattr(sqxside.advance_run, "watch", lambda *a: {})

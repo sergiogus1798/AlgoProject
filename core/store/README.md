@@ -18,6 +18,7 @@ snapshots written by hand) stays as the reader of what was archived before.
 | `collect.py` | Bring a gorilla project's survivors to leaseWeb for step 26 (owner, 2026-10-15, D-1 = A). | no command of its own; `portfolio/common/construct/adopt.py` is it: `bin/remote.sh gorilla collect [P] [--dry-run]`, which also archives | gorilla store, ledger, registry, reports, harvest (not `_aparte`) -> the same here, `_gorilla` |
 | `extra.py` | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | imported | raw, crosstf, reports → folders to zip |
 | `late.py` | What steps 13 to 20 leave outside the report folders: the rest of each export, and the variant batch. | imported | raw, reports, variants → folders to zip |
+| `rekey.py` | Re-key the store after `core.sqxfile.identity` changed: each folder and manifest to the identity its own .sqx has now. | `python3 -m core.store rekey [--dry-run]` | store → renamed folders, `identity-map-<YYYY-MM>.csv`, backup of the manifests, the loose CSVs through every map |
 | `save.py` | Save a project's gate survivors into the store: the .sqx once, then one file per set of tests. | imported | reports, harvest, autopilot → store |
 | `verify.py` | Whether a stored strategy is whole: its file carries its identity and every file its recorded hash. | imported | folder → problems |
 | `write.py` | Write into a strategy's folder so that a cut leaves it as it was or as it will be, never half. | imported | files → `store/<cell>/<name> <identity8>/` |
@@ -71,6 +72,24 @@ WFM and blindJoint reports are filed under the mother through `lineage.csv` (the
 strategy another identity). `audit` is the check that nothing was left out. A smoke run (an empty
 file `smoke` in its autopilot folder) marks its steps `smoke: true`. Resuming a retired project
 from the store is `pipeline.autopilot.resume`.
+
+## What else holds an identity (encargo 76, review 2026-10-16)
+
+`rekey` moves the store's folders and manifests, then carries every `identity-map-*.csv` into the
+loose CSVs that are later matched against a fresh `sqxfile.identity` (dry run 2026-10-16: 19,030
+old cells in 1,271 files, not yet rewritten). The rest:
+
+| holder | where | handling |
+|---|---|---|
+| curate verdicts, export `identity.csv`/`lineage.csv`, `tf_mothers.csv`, autopilot verdicts | `reports/`, `raw/`, `autopilot/`, `harvest/` CSVs | **migrated** by `rekey` (`TABLES`), columns `*identity*` and `mother` |
+| harvest parquets (`metrics`, `equity`, `trades`) | `harvest/<P>/`, `metrics/<P>/` | re-derived: a re-harvest keys them anew; only store rows are in the map |
+| study result JSON (mcRetest provenance, decay) | `reports/<P>/…/*.json` | labels; re-derived on rerun, matched only through the verdict CSVs above |
+| the archive | `archive/<identity>/<stamp>/` (sealed) | **not migrated**: 22 of 91 folders under an old key; needs rename + manifest + parquet column + re-seal (`core/archive`) |
+| MT5 verify runs and `pool.sqlite` | `mt5/verify/*/run.json`, `pool/pool.sqlite` | migrated once by hand on 2026-10-16 (`backups/mt5-rekey-2026-10-16`); a next change needs it in this verb |
+| sisters' `fabricated_identity` | `scaling.parquet` inside the store zips (sealed) | not in the map (sisters are not stored strategies): `sqx.variants.rebuild` warns loudly on a mismatch |
+| live-fleet register | `fleet/magics.csv` | not present here; rewrite through the map where it exists |
+| identity memo of the window | `ui/memo/identities-*.pkl` | re-derived: its name carries the mtime of `core/sqxfile.py` |
+| ledger | `ledger/` | holds no strategy identity (`ledger/report.py` reads the harvest parquet by the hash it is given) |
 
 ## Not built yet
 

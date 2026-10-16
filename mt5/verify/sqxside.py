@@ -117,13 +117,9 @@ def run(
         worker.checked(worker.call(load, role), load)
         loadwait.loaded(role, since, cfg["load_s"], cfg["poll_s"], cfg["input"])
         offsets = sqxlog.mark(top)
-        reply = worker.call(f"-project action=start name={project}", role)
-        if (
-            "rror" in reply or "Cannot start" in reply
-        ):  # «Project has unresolved resources»
-            raise SystemExit(
-                f"SQX rechazó `action=start` de {project}: {reply.strip()}"
-            )
+        worker.started(
+            worker.call(f"-project action=start name={project}", role), project
+        )
         say(30, "retest en SQX con las condiciones de cada empresa")
         advance_run.watch(project, role, offsets)
         for firm, bank in outputs.items():
