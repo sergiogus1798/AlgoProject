@@ -1,0 +1,138 @@
+# Paleta «CCI en percentil bajo — USDJPY H1 largo» — familia Reversión a la media.
+#
+# Una paleta dice qué puede sortear el builder. Los pesos de partida salen de
+# `../taxonomy.yaml`, columna `mean_reversion`; aquí vive solo lo que esta paleta decide:
+#   unlabelled  qué se hace con un bloque sin etiquetar — neutral (entra a peso 1) u off
+#   overrides   un peso puesto a mano que gana sobre la taxonomía. 0 apaga el bloque
+#
+# Con `unlabelled: off` y una lista de `overrides`, la paleta ES esa lista: nada más entra.
+# Es la forma de tener una paleta curada sin esperar a que la taxonomía esté etiquetada.
+#
+# ⚠️ Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un grupo
+# sortea ese grupo y la ignora, y un bloque fijo es parte del esqueleto: ninguno de los dos
+# se puede estrechar desde aquí. Medido 2026-09-24, `knowhow/authoring/builder-block-switches.md`.
+
+name: cciPercLong_withExit_USDJPY_H1
+label: CCI en percentil bajo con salida — USDJPY H1 largo
+family: mean_reversion
+origin: propia
+based_on: cciPercLong_EURUSD_M30
+created: '2026-10-16'
+note: 'Hueco libre de entrada de cciPercLong_withExit en USDJPY H1, largo, en AND con
+  la fija: CCI en o bajo su percentil de las últimas N velas (estado de sobreventa);
+  entra a mercado. El papel del hueco lo fija assets/FAMILIAS.md para una fija de
+  reversión (USDJPY: reversión H1 largo nota C, 1,03× el coste, prior Alta, evidencia
+  débil): volatilidad (3), momentum, ruptura y tendencia (2); patrón fuera (medido en
+  USDJPY: no paga el coste, 5 de 8 celdas, máx. 0,55×) y sesión fuera (regla 15 y
+  medida: 8 de 8 celdas bajo medio coste). Misma selección que cciPercLong_EURUSD_M30.
+  Peso 3 = régimen de volatilidad en sus dos lados (ATR contra su historia, StdDev,
+  Squeeze, BBWR, cambio de distribución): ortogonal a la fija; con coste/ATR 0,10 en
+  H1, operar sólo en volatilidad alta es lo que puede pagar el coste. Peso 2 = régimen
+  de tendencia o rango (ADX, Choppiness, Hurst, KER, entropía, CSSA, SuperTrend);
+  contexto alcista de fondo, sólo su lado largo; giro al alza de otro oscilador; y la
+  reentrada desde abajo en Bollinger, Keltner o el mínimo. Peso 1 = cruces de régimen
+  y dirección de las bandas. Fuera: todo CCI (repite la fija), osciladores en zona
+  baja y estiramientos bajo la media (repiten la sobreventa), lado bajista, rupturas
+  por arriba, patrones de velas, sesión, reloj y calendario (regla 15), volumen, VWAP,
+  comparadores con valores y niveles stop/limit (entrada a mercado). La salida libre
+  de la plantilla sortea de esta MISMA lista (SQX tiene una sola por tarea Build).'
+unlabelled: 'off'
+overrides:
+  CBlock_ATRRankHighVol: 3
+  CBlock_ATRRankLowVol: 3
+  ATRPercentRankAboveLevel: 3
+  ATRPercentRankBelowLevel: 3
+  ATRPercentAboveLevel: 3
+  ATRPercentBelowLevel: 3
+  ATRRising: 3
+  ATRFalling: 3
+  ATRPercentRankRising: 3
+  ATRPercentRankFalling: 3
+  StdDevRising: 3
+  StdDevFalling: 3
+  CBlock_SqueezeOn: 3
+  CBlock_SqueezeOff: 3
+  CBlock_BBWRPercent: 3
+  CBlock_ATRCrossMAATR: 3
+  ATRPercentRankCrossUP: 3
+  ATRPercentRankCrossDown: 3
+  ATRPercentCrossUP: 3
+  ATRPercentCrossDown: 3
+  ATRChangesUp: 3
+  ATRChangesDown: 3
+  StdDevChangesUp: 3
+  StdDevChangesDown: 3
+  CBlock_KSBreakOn: 3
+  CBlock_KSBreakOff: 3
+  CBlock_WassersteinShiftHigh: 3
+  CBlock_WassersteinShiftLow: 3
+  ADXHigher: 2
+  ADXRising: 2
+  ADXLower: 2
+  ADXFalling: 2
+  CBlock_ChoppinessTrending: 2
+  ChoppinessIndexBelowLevel: 2
+  ChoppinessIndexFalling: 2
+  CBlock_ChoppinessChoppy: 2
+  ChoppinessIndexAboveLevel: 2
+  ChoppinessIndexRising: 2
+  CBlock_HursExponentIsAboveLevel_3: 2
+  CBlock_HursExponentIsAboveLevel: 2
+  CBlock_HursExponentIsAboveLevel_3_2: 2
+  CBlock_HursExponentIsAboveLevel_2: 2
+  KERaboveLevel: 2
+  KERbelowLevel: 2
+  CBlock_EntropyLow: 2
+  CBlock_EntropyHigh: 2
+  EntropyMathBelowLevel: 2
+  EntropyMathAboveLevel: 2
+  CSSAMarketRegimeBelowLevel: 2
+  CSSAMarketRegimeAboveLevel: 2
+  CBlock_CSSARegimeBelow50: 2
+  CBlock_CSSARegimeAbove50: 2
+  SuperTrendInRange: 2
+  MABarClosesAbove: 2
+  MABarOpensAbove: 2
+  MARising: 2
+  HMARising: 2
+  FasterHMAIsAboveSlowerHMA: 2
+  KAMARising: 2
+  FastKAMAAboveSlowKAMA: 2
+  LinRegRising: 2
+  LinRegBarClosesAbove: 2
+  SuperTrendUPTrend: 2
+  DEMARising: 2
+  DoubleDEMARising: 2
+  RSICrossUp: 2
+  StochSlowDCrossUp: 2
+  StochFastKCrossUp: 2
+  WPRCrossUp: 2
+  DEMCrossUp: 2
+  DVOCrossAboveLevel: 2
+  LaguerreRSICrossUP: 2
+  QQEValue1CrossAbove: 2
+  WaveTrendMainCrossAbove: 2
+  DisparityIndexCrossesAboveLevel: 2
+  CBlock_StochWeightsUp: 2
+  CBlock_SmoothedRSIRising_3_3: 2
+  OSMARising: 2
+  AWORising: 2
+  BBBarOpensAboveDownAfterOpenBelow: 2
+  KCBarOpensAboveLowerAfterOpenBelow: 2
+  BarOpensAboveLowestAfterOpenBelow: 2
+  ADXCrossUp: 1
+  ADXCrossDown: 1
+  ADXChangesUp: 1
+  ADXChangesDown: 1
+  ChoppinessIndexCrossesBelowLevel: 1
+  ChoppinessIndexCrossesAboveLevel: 1
+  EntropyMathCrossBelowLevel: 1
+  EntropyMathCrossAboveLevel: 1
+  BBUpperRising: 1
+  BBUpperFalling: 1
+  BBLowerRising: 1
+  BBLowerFalling: 1
+  KCUpperRising: 1
+  KCUpperFalling: 1
+  KCLowerRising: 1
+  KCLowerFalling: 1
