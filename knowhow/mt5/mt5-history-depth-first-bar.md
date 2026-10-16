@@ -10,6 +10,7 @@ tester can trade, the terminal serves M1 only for its last «max bars» (one row
 and a freshly selected symbol answers `(-1, 'Terminal: Call failed')` until synced (retried).
 «Verificar» with Desde = `MT5` (`mt5.verify.run.earliest`) starts at the latest firm's month.
 Holes INSIDE the window are a separate rule: `conditions.holes` flags a whole month with < 50 % of the firm's median month of H1 bars (Hantec USDJPY/GBPJPY: 2022-06, 2023-01), and `judge.firm_result(gaps=)` drops both sides' trades opened there (summary `gap_months`, `excluded_sqx`).
+⚠️ Whole H1 does not mean whole M1: 🔬 Hantec XAUUSD.h has full H1 months from 2022-06 but the tester's M1 (`Tester/bases/<server>/history/<symbol>/<year>.hcs`) is near empty to 2023-03 — `2022.hcs` 89 KB vs FTMO's 2.1 MB, History Quality 76 % vs 94 %, every SQX trade of 2022-06..2023-03 unmatched — and `holes` (H1) sees nothing.
 
 ## Evidence
 - 🔬 2026-09-30, USDJPY: MN1 from 2000-03 (FTMO) and 2008-07 (Hantec). H1 bars per week: Hantec
