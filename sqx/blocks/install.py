@@ -2,13 +2,14 @@
 """Install authored custom blocks or random groups into a stopped SQX install's settings."""
 
 import argparse
-import os
+import io
 import shutil
 import time
 from pathlib import Path
 from xml.etree import ElementTree
 
 from core import worker
+from core.fsio import atomic_write
 from core.paths import MASTER, WORKERS
 from sqx.blocks import taxonomy
 
@@ -117,9 +118,9 @@ def install(blocks: Path, into: Path) -> dict[str, list[str]]:
         root.append(item)
 
     ElementTree.indent(tree, space="  ")
-    tmp = store.with_name(store.name + ".tmp")
-    tree.write(tmp, encoding="UTF-8", xml_declaration=True)
-    os.replace(tmp, store)
+    buf = io.BytesIO()
+    tree.write(buf, encoding="UTF-8", xml_declaration=True)
+    atomic_write(store, buf.getvalue())
     return out
 
 

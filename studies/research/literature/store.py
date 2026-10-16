@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import yaml
 
+from core.fsio import atomic_write
 from core.researchpaths import research_literature_dir
 from core.study import config as study_config
 
@@ -79,12 +80,9 @@ def papers() -> dict[str, dict]:
 def save_papers(rows: dict[str, dict]) -> None:
     """Write the papers register whole, through a temp file beside it."""
     path = research_literature_dir() / "papers.jsonl"
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(
-        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows.values()),
-        encoding="utf-8",
+    atomic_write(
+        path, "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows.values())
     )
-    tmp.replace(path)
 
 
 def text_path(key: str) -> Path:

@@ -1,10 +1,10 @@
 """Where a study's results land: one JSON per strategy, and the population's JSON, page and markdown."""
 
 import json
-import os
 from pathlib import Path
 
 from core import manifest
+from core.fsio import atomic_write
 from core.paths import report_dir
 from core.study import identity
 from core.study.render import markdown, page
@@ -15,9 +15,7 @@ def _write(path: Path, text: str) -> None:
 
     No fsync, unlike `core.store.write.atomic`: a population writes one pair of files per strategy.
     """
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    tmp.write_text(text, encoding="utf-8")
-    os.replace(tmp, path)
+    atomic_write(path, text)
 
 
 def folder(export: Path, module: str) -> Path:

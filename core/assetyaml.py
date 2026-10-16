@@ -1,5 +1,6 @@
 """The assets/ YAML files read and written without losing a comment — the only round-trip here."""
 
+import io
 import re
 import threading
 from pathlib import Path
@@ -8,6 +9,8 @@ from typing import Any, cast
 import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
+
+from core.fsio import atomic_write
 
 _Y = YAML()
 _Y.preserve_quotes = True
@@ -78,10 +81,10 @@ def write(path: Path, data: object) -> None:
         data: The CommentedMap, with whatever was changed in it.
     """
     # Dumped aside first: a value YAML cannot represent must not leave the file empty.
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with _LOCK, tmp.open("w", encoding="utf-8") as f:
-        _Y.dump(data, f)
-    tmp.replace(path)
+    buf = io.StringIO()
+    with _LOCK:
+        _Y.dump(data, buf)
+    atomic_write(path, buf.getvalue())
 
 
 def hint(lines: list[str], line: int) -> str:

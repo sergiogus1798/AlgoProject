@@ -120,6 +120,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_fleet_package.py` | The deployment package's pure parts: the file name that ties an EA to a firm and size, and the chart with its magic. | — |
 | `test_fleet_progress.py` | MetaTracker's stage progress on the firm's clock, the payout, the EA comparison, the strategy record and the cross-account pairing. | — |
 | `test_fleet_risk_rules.py` | MetaTracker's stop risk, weekend and news rules at their edges, the hours[] floors, the reasons' order, and the fixture's three lights. | — |
+| `test_fsio.py` | core.fsio.atomic_write: text and bytes, seal, no leftover, overwrite. | — |
 | `test_funded_bank.py` | Known-answer tests for the bank run: the budget is a hard stop, the measures, the catalogue's terms, the table, the ledger row, the refusal. | — |
 | `test_funded_bank_run.py` | Known-answer tests for the bank run: the whole run on a synthetic path set, the ledger row, the refusal. | — |
 | `test_funded_decide.py` | Known-answer tests for the funding decision: the bank's EV by hand on a one-phase plan, the zero-edge option, the gates of the choice, the deal's ΔEV, the command. | — |

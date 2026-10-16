@@ -6,11 +6,12 @@ booting, or shutting down) is silently lost — hard rule 4. And a writer killed
 file and moved over it.
 """
 
-import os
+import io
 import re
 import zipfile
 from pathlib import Path
 
+from core.fsio import atomic_write
 from core.paths import WORKERS
 from core.worker import holding, installs, listening
 
@@ -79,14 +80,8 @@ def write(cfx: Path, members: dict[str, bytes], *, force: bool = False) -> None:
             f"Páralo: bin/sqx-worker.sh --role {role} stop"
         )
     cfx = Path(cfx)
-    tmp = cfx.with_suffix(cfx.suffix + ".tmp")
-    try:
-        with open(tmp, "wb") as f:
-            with zipfile.ZipFile(f, "w", zipfile.ZIP_DEFLATED) as z:
-                for name, blob in members.items():
-                    z.writestr(name, blob)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, cfx)
-    finally:
-        tmp.unlink(missing_ok=True)  # gone already after the replace
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, blob in members.items():
+            z.writestr(name, blob)
+    atomic_write(cfx, buf.getvalue(), durable=True)

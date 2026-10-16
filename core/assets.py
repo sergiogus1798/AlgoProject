@@ -3,7 +3,6 @@
 import csv
 import io
 import json
-import os
 import re
 import sys
 
@@ -29,6 +28,7 @@ from core.assetdata import (
 )
 from core.assetmarkets import markets, special_notes
 from core.assetranges import mc_retest
+from core.fsio import atomic_write
 from core.paths import ASSETS, feed_quality_dir
 
 
@@ -261,11 +261,7 @@ def write_dataranges() -> list[str]:
         if old != new:
             changed.append(f"{symbol}: {old.strip()}  \u2192  {new.strip()}")
             text = text.replace(block.group(), f"  {symbol}:\n{new}")
-    tmp = path.with_suffix(
-        ".yaml.tmp"
-    )  # a half-written policy would stop every asset load
-    tmp.write_text(text, encoding="utf-8")
-    os.replace(tmp, path)
+    atomic_write(path, text)  # a half-written policy would stop every asset load
     return changed
 
 

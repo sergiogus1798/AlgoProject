@@ -23,6 +23,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `exportdrv.py` | What leaves SQX through the worker: trades, and the symbol list (metrics are read off the .sqx). | request → files |
 | `fanout.py` | Independent tasks across processes, the costliest first, each result handed back as it lands. | tasks + costs → results |
 | `fleetpaths.py` | Where the live MT5 fleet's files are, and each account's plan from machine.yaml. | → `Path`, dict |
+| `fsio.py` | The one atomic writer: a file is whole or it is not there, whoever reads it meanwhile. | — |
 | `identities.py` | `sqxfile.identity` of many files across processes, the hashes kept in this process's cache. | files → identities |
 | `manifest.py` | Every export writes one of these. Without it an export cannot be reproduced or trusted. | facts → JSON |
 | `metrics.py` | The one definition of Sharpe, drawdown, profit factor and years that every step, the window and MT5 share. | returns, P&L, curves → Sharpe, drawdown, PF, years |

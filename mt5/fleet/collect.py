@@ -11,6 +11,7 @@ import pandas as pd
 import pyarrow as pa
 
 from core.fleetpaths import history_dir, live_dir
+from core.fsio import atomic_write
 from core.paths import DATA
 from mt5.fleet import guard, remote, rows
 
@@ -30,9 +31,7 @@ def log(line: str) -> None:
 
 def write_json(path: Path, obj: dict) -> None:
     """Write a JSON file atomically (temp file, then rename)."""
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj), encoding="utf-8")
-    os.replace(tmp, path)
+    atomic_write(path, json.dumps(obj))
 
 
 def append_history(beat: dict) -> bool:

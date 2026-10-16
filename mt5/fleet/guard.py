@@ -7,6 +7,7 @@ import time
 from collections.abc import Callable
 
 from core import fleetpaths
+from core.fsio import atomic_write
 from mt5.fleet.app import floors, read, state
 
 REDS = (state.RED, state.SILENT)
@@ -73,9 +74,5 @@ def run(notify: Callable[[str, str], None] = send, now: int | None = None) -> li
             continue  # stays not-red in the file: retried next minute
         after[login] = True
         sent.append(login)
-    tmp = path.with_name(
-        path.name + ".tmp"
-    )  # atomic, as mt5.fleet.collect.write_json (which imports this module)
-    tmp.write_text(json.dumps(after), encoding="utf-8")
-    os.replace(tmp, path)
+    atomic_write(path, json.dumps(after))
     return sent

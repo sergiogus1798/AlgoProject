@@ -1,12 +1,12 @@
 """The C5 ledger: one state.json per mother strategy, written atomically while stages run."""
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from core.datapaths import pipeline_dir
+from core.fsio import atomic_write
 
 BRANCH = "pipeline"
 FILE = "state.json"
@@ -74,9 +74,7 @@ def write(work: Path, state: dict) -> None:
     writes it, and that a kill mid-write must not corrupt it.
     """
     work.mkdir(parents=True, exist_ok=True)
-    tmp = work / (FILE + ".tmp")
-    tmp.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
-    os.replace(tmp, work / FILE)
+    atomic_write(work / FILE, json.dumps(state, indent=2, ensure_ascii=False))
 
 
 def begin(work: Path, stage: str) -> None:

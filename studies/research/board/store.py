@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from core.fsio import atomic_write
 from core.researchpaths import research_memory_dir
 
 
@@ -23,9 +24,7 @@ def proposals_dir() -> Path:
 
 def write(path: Path, data: dict) -> Path:
     """A dict as indented UTF-8 JSON, written whole through a temp file beside it."""
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
-    tmp.replace(path)
+    atomic_write(path, json.dumps(data, ensure_ascii=False, indent=1))
     return path
 
 

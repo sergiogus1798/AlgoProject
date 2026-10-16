@@ -66,6 +66,14 @@ def _file_counts(path: Path) -> Counter[str]:
                 for e in caught
             ):
                 out["broad_except"] += 1
+        elif (
+            isinstance(node, ast.Attribute)
+            and node.attr == "replace"
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "os"
+            and path.name != "fsio.py"
+        ):  # a hand-rolled atomic write: core.fsio.atomic_write is the one writer
+            out["os_replace"] += 1
         elif isinstance(node, ast.Call):
             f = node.func
             name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", "")
@@ -131,7 +139,13 @@ def counts(files: list[Path]) -> dict[str, int]:
     total = Counter(
         {
             c: 0
-            for c in (*RUFF_CODES, "broad_except", "unseeded_rng", "legacy_np_random")
+            for c in (
+                *RUFF_CODES,
+                "broad_except",
+                "unseeded_rng",
+                "legacy_np_random",
+                "os_replace",
+            )
         }
     )
     for (

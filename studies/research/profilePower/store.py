@@ -1,9 +1,11 @@
 """Where the power study lives on disk: the replications, and the judged tables."""
 
+import io
 from pathlib import Path
 
 import pandas as pd
 
+from core.fsio import atomic_write
 from core.researchpaths import research_profiles_dir
 
 KEY = ["symbol", "timeframe", "measure", "direction", "effect_planted", "rep", "how"]
@@ -27,9 +29,9 @@ def runs(cut: float, draws: int) -> pd.DataFrame:
 
 def save(rows: pd.DataFrame) -> None:
     """Write the replications, replacing the file whole through a temp beside it."""
-    tmp = folder() / "runs.parquet.tmp"
-    rows.to_parquet(tmp, index=False)
-    tmp.replace(folder() / "runs.parquet")
+    buf = io.BytesIO()
+    rows.to_parquet(buf, index=False)
+    atomic_write(folder() / "runs.parquet", buf.getvalue())
 
 
 def write(tables: dict[str, pd.DataFrame]) -> Path:

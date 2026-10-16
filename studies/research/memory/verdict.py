@@ -1,11 +1,12 @@
 """The verdict writer: closes a finished autopilot run's row in templates/runs.csv."""
 
 import csv
-import os
+import io
 from pathlib import Path
 from typing import Any
 
 from core.datapaths import DATA, template_runs
+from core.fsio import atomic_write
 from studies.research.memory import attempts, sources
 from studies.research.memory.causes import VOCABULARY
 from studies.research.memory.sources import CONFIG
@@ -76,12 +77,11 @@ def sentence(row: dict) -> str:
 
 def write(path: Path, rows: list[dict], fields: list[str]) -> None:
     """Rewrite a CSV through a temp file, so a crash leaves the old one."""
-    tmp = path.with_suffix(".tmp")
-    with open(tmp, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=fields)
-        w.writeheader()
-        w.writerows(rows)
-    os.replace(tmp, path)
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=fields, lineterminator="\r\n")
+    w.writeheader()
+    w.writerows(rows)
+    atomic_write(path, buf.getvalue().encode())
 
 
 def close_run(

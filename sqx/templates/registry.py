@@ -4,10 +4,11 @@
 import argparse
 import csv
 import fcntl
-import os
+import io
 from pathlib import Path
 
 from core.datapaths import template_registry, template_runs
+from core.fsio import atomic_write
 
 TEMPLATE_COLUMNS = (
     "name",
@@ -68,12 +69,11 @@ def append(
             old.update({c: v for c, v in row.items() if c in columns})
         else:
             rows.append({c: row.get(c, "") for c in columns})
-        tmp = csv_path.with_suffix(".csv.tmp")
-        with tmp.open("w", encoding="utf-8", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=columns)
-            w.writeheader()
-            w.writerows(rows)
-        os.replace(tmp, csv_path)
+        buf = io.StringIO()
+        w = csv.DictWriter(buf, fieldnames=columns, lineterminator="\r\n")
+        w.writeheader()
+        w.writerows(rows)
+        atomic_write(csv_path, buf.getvalue().encode())
     return "updated" if old else "added"
 
 

@@ -1,9 +1,8 @@
 """The simulated distribution behind a z or a p, kept so nobody reruns a test to look at it."""
 
 import hashlib
+import io
 import json
-import os
-import threading
 import re
 from pathlib import Path
 from typing import Any, cast
@@ -11,6 +10,7 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 
+from core.fsio import atomic_write
 from core.store.write import locked
 
 FILE = "distribuciones.parquet"
@@ -97,9 +97,9 @@ def record(
 
 def _write(path: Path, df: pd.DataFrame) -> None:
     """The one writer of the parquet: whole or not at all (a truncated file would stop the next save)."""
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    buf = io.BytesIO()
     df.to_parquet(
-        tmp,
+        buf,
         index=False,
         compression="zstd",
         compression_level=9,  # 19 took 24 s vs 1.6 s, file +6 %
@@ -107,7 +107,7 @@ def _write(path: Path, df: pd.DataFrame) -> None:
         use_byte_stream_split=[f"{c}.list.element" for c in LISTS],
         row_group_size=1_000,  # one group of 42,538 rows held > 2**31 list elements: unreadable
     )
-    os.replace(tmp, path)
+    atomic_write(path, buf.getvalue())
 
 
 def save(folder: Path | None, rows: list[dict]) -> None:

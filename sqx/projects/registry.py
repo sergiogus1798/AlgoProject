@@ -2,7 +2,7 @@
 
 import csv
 import fcntl
-import os
+import io
 import re
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 from core.assetmarkets import expected_sign
 from core.datapaths import project_registry
+from core.fsio import atomic_write
 from sqx.projects.rankings import describe
 
 # Owner, 2026-09-26: `Test_` is a functional test that will be thrown away, `Trade_` a project
@@ -114,17 +115,11 @@ def _write(all_rows: list[dict]) -> None:
     Call it only inside `_locked()`.
     """
     path = project_registry()
-    tmp = path.with_name(path.name + ".tmp")
-    try:
-        with tmp.open("w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=COLUMNS)
-            w.writeheader()
-            w.writerows({c: r.get(c, "") for c in COLUMNS} for r in all_rows)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, path)
-    finally:
-        tmp.unlink(missing_ok=True)  # gone already after the replace
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=COLUMNS, lineterminator="\r\n")
+    w.writeheader()
+    w.writerows({c: r.get(c, "") for c in COLUMNS} for r in all_rows)
+    atomic_write(path, buf.getvalue().encode(), durable=True)
 
 
 def record(
