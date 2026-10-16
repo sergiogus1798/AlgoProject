@@ -178,8 +178,8 @@ def tolerance(trades: pd.DataFrame, days: pd.Index, point_value: float) -> pd.Se
     top, last = held.groupby(day).max(), held.groupby(day).last()
     # a day with no event still holds what the last event left open
     carry = last.reindex(days.union(last.index)).ffill().shift().fillna(0.0)
-    lots = carry.reindex(days).fillna(0.0)
-    lots = lots.where(lots >= top.reindex(days).fillna(0.0), top.reindex(days))
+    # 🔬 a close and an open in one minute leave −4e-16 lots behind; a NaN bound fails the day
+    lots = np.maximum(carry.reindex(days).fillna(0.0), top.reindex(days).fillna(0.0))
     return (0.5 * 10.0**-places * point_value * lots).clip(lower=TOLERANCE)
 
 

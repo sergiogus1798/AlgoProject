@@ -89,6 +89,20 @@ def tolerance_failures() -> list[str]:
     allowed = joint.tolerance(held, pd.Index([D1, D2, D3]), 100.0)
     if not np.allclose(allowed, [1.0, 1.5, 1.0]) or not (1.4 <= allowed[D2] < 3.0):
         return [f"tolerancia por lotes abiertos: {allowed.tolist()}"]
+    # USDJPY M30 gorilla: 2.89 + 2.87 − 2.89 − 2.87 leaves −4e-16 lots, which left a NaN bound
+    t1, t2 = D1 + pd.Timedelta(hours=4), D1 + pd.Timedelta(hours=14)
+    drift = pd.DataFrame(
+        {
+            "Open price": [100.25, 100.5],
+            "Close price": [100.75, 101.0],
+            "Size": [2.89, 2.87],
+            "Open time": [t1, t2],
+            "Close time": [t2, D2 + pd.Timedelta(minutes=30)],
+        }
+    )
+    allowed = joint.tolerance(drift, pd.Index([D1, D2, D3]), 100.0)
+    if allowed.isna().any():
+        return [f"tolerancia con deriva de coma flotante: {allowed.tolist()}"]
 
     return []
 
