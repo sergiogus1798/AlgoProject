@@ -107,6 +107,20 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 | `67-filtro-minimo-calibrado-con-sinteticos.md` | el umbral mínimo del Build por celda (activo × TF), medido en lo que halla una hora de build sin filtros sobre series sintéticas; con su coste en estrategias rechazadas y minutos hasta 10.000 | `66` (D24 estable), `58` (generador) |
 | `69-renumerar-los-pasos-del-workflow.md` | aplazado: renumerar los pasos ahora que 22-25 no existen y el MT5 sigue siendo el 26; lo medido (77 + 82 ficheros), por qué se dejó y las tres preguntas previas | sin empezar; sólo cuando el dueño lo pida |
 
+## Tanda del 2026-10-16 — de la primera revisión estructural del código
+
+Sale de `AlgoData/audit/refactorScout/2026-10-16.md` (siete subagentes; el agente `refactorScout` la
+repite cada sábado). El dueño dijo sí a las tres refactorizaciones y a la higiene el mismo día.
+Orden: el 75 y el 76 a la vez (no comparten fichero); el 77 después, paso a paso; el 78 en paralelo,
+salvo lo que esté bajo `ui/daemon/`, que espera al 77.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `75-cifras-unicas.md` | una sola definición de Sharpe, `dd_money`/`dd_pct`, profit factor, años y ventanas en `engines/metrics.py`; semilla del benchmark por madre; NaN explícito; DSR con n efectivo medido antes de aplicarlo | — |
+| `76-identidad-estable-y-cosecha.md` | identidad = hash de la lógica canónica (y la prueba del UUID), migración del almacén, carreras y timeouts de la recogida | — |
+| `77-sacar-el-motor-de-ui-daemon.md` | plan vivo: diez pasos que llevan la orquestación de SQX de `ui/daemon` a `sqx/` y `pipeline/` hasta vaciar `ALLOW` | 75 y 76 cerrados en los ficheros que comparte |
+| `78-higiene-del-codigo.md` | borrar lo muerto, un escritor atómico, `core/proc.run` con timeout, un cliente SQX, marcas de pytest, `checks.py --fast`, contrato de estudios | 77 para lo de `ui/daemon/` |
+
 ## Tanda del 2026-10-15 — de la revisión «qué le falta al proyecto»
 
 | fichero | qué construye | depende de |

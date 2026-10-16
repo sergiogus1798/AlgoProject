@@ -35,6 +35,7 @@ FAMILIES = {
             "46-knowhow",
             "23-skills",
             "10-github",
+            "114-revision-estructural",
         ],
     ),
     # The window in the order a newcomer walks it: PROYECTO first (gallery -> project -> its

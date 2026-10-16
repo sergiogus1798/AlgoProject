@@ -206,6 +206,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | cribar una poblacion OOS entera hasta una lista de supervivientes | `studies/screening/gate/README.md` |
 | running something, or explaining to a human how to | the chapter in `AlgoData/manual-fuentes/` (`00-empezar.md`, then that module's); the owner gets the PDF in `docs/manual/` |
 | what one SQX project actually does | regenerate on demand: `sqx/inspect/dump_project.py <PROJECT>` (`OPEN.md`) |
+| whether the code needs refactoring: duplication, dead code, layering, quant inconsistencies, week over week | the newest `AlgoData/audit/refactorScout/<date>.md` — written every Saturday 04:30 by the `refactorScout` agent (`bin/weekly-refactor-scout.sh`) |
 | what is broken or pending | `OPEN.md` — read its index at the top, then only the section you need (`grep -n '^## <N>' OPEN.md`); closed issues are in `docs/OPEN-closed.md` |
 | **la secuencia entera, de la idea a la estrategia superviviente — los 26 pasos (1-26, más 10.5, 11.5, 11.7, 16.5, 18.5 y 19.5) y en cuál estás** | `docs/AgentPDFs/WORKFLOW.md` — manda sobre el orden que digan los otros dos dossiers |
 | **what to work on next** | `docs/AgentPDFs/WORKFLOW.md` §«Lo que bloquea hoy», then `OPEN.md` |
