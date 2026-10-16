@@ -3,7 +3,8 @@
 Only what step 26 needs, never the whole store: each survivor's folder (its `strategy.sqx` and
 the zips beside it), the ledger rows of its asset × timeframe, and what `core.archive` reads of the
 project: its `registry.csv` row (appended, install marked `_gorilla`, only if absent) and its
-`reports/<P>/` folder. Both come from `source` alone, so `listing` is unchanged. Every name lands with the
+`reports/<P>/` folder and its `harvest/<P>/` (the cosecha the archive freezes as `harvest/`; gorilla keeps
+no archive of its own, `_aparte` left out). All come from `source` alone, so `listing` is unchanged. Every name lands with the
 `_gorilla` suffix (rule 12) and nothing local is overwritten.
 
 Everything runs here and only reads gorilla over the ssh alias (rsync): `fetch_plans` copies the
@@ -47,9 +48,9 @@ def listing(project: str, data: Path = DATA) -> dict[str, Any]:
     }
 
 
-def _rsync(src: str, dest: Path) -> None:
+def _rsync(src: str, dest: Path, *extra: str) -> None:
     """rsync that never overwrites what is already there; rsync's stderr is shown on failure."""
-    cmd = ["rsync", "-a", "--ignore-existing", src, str(dest)]
+    cmd = ["rsync", "-a", "--ignore-existing", *extra, src, str(dest)]
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
@@ -138,12 +139,19 @@ def collect(
             )
     out.append(_registry(plan["project"], source, dest, dry))
     reports = dest / "reports" / plan["project"]
+    cosecha = dest / "harvest" / plan["project"]
     if not dry:
         reports.mkdir(parents=True, exist_ok=True)
         _rsync(
             f"{source}reports/{plan['project']}/", reports
         )  # --ignore-existing: resumable
-    out.append(f"{'traería  ' if dry else 'traídos  '} reports/{plan['project']}")
+        cosecha.mkdir(parents=True, exist_ok=True)
+        _rsync(  # `_aparte` is the whole population set aside, not a harvest: hundreds of MB
+            f"{source}harvest/{plan['project']}/", cosecha, "--exclude", "_aparte"
+        )
+    out.append(
+        f"{'traería  ' if dry else 'traídos  '} reports/ y harvest/ de {plan['project']}"
+    )
     for name in plan["ledgers"]:
         tmp = dest / "store" / f".collect-{name}"
         mine = dest / LEDGER / (Path(name).stem + SUFFIX + ".jsonl")

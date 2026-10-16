@@ -22,6 +22,11 @@ def plant(data: Path, ident: str = "1530c225") -> None:
         "name,install,symbol\r\nTest_A,SQX_w2,DAX40\r\n", newline=""
     )
     (data / "reports" / "Test_A").mkdir(parents=True)
+    for sub in ("d", "_aparte"):
+        (data / "harvest" / "Test_A" / "Results" / sub).mkdir(parents=True)
+        (data / "harvest" / "Test_A" / "Results" / sub / "trades.parquet").write_text(
+            "t"
+        )
     (data / "reports" / "Test_A" / "r.csv").write_text("a\n")
     (data / "ledger" / "DAX40_H1_simple_long.jsonl").write_text('{"a": 1}\n{"a": 2}\n')
     (data / "ledger" / "DAX40_H1_other_P.jsonl").write_text(
@@ -98,6 +103,8 @@ def test_registry_row_and_reports_come_marked_and_append_only(tmp_path: Path) ->
         "name,install,symbol\r\nOther,SQX_w1,EURUSD\r\nTest_A,SQX_w2_gorilla,DAX40\r\n"
     )
     assert (here / "reports" / "Test_A" / "r.csv").read_text() == "a\n"
+    assert (here / "harvest" / "Test_A" / "Results" / "d" / "trades.parquet").is_file()
+    assert not (here / "harvest" / "Test_A" / "Results" / "_aparte").exists()
     again = collect.collect(plan, f"{gor}/", here)
     assert (
         reg.read_bytes().decode().count("Test_A") == 1
@@ -123,3 +130,32 @@ def test_archive_names_what_is_missing(tmp_path: Path) -> None:
     (folder / "manifest.json").write_text(json.dumps(man))
     with pytest.raises(RuntimeError, match="familia"):
         adopt._archive("Test_A", folder, {})
+
+
+def test_archived_without_harvest_is_not_done(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A version with no harvest/trades.parquet is incomplete: _archive goes on to archive again."""
+    from portfolio.common.construct import adopt
+
+    monkeypatch.setattr(adopt, "archive_dir", lambda: tmp_path / "archive")
+    monkeypatch.setattr(adopt, "versions", lambda i: ["2026-10-16T0000"])
+    ident = "e" * 64
+    folder = tmp_path / "S 1_gorilla eeee"
+    folder.mkdir()
+    (folder / "manifest.json").write_text(
+        json.dumps(
+            {
+                "identity": ident,
+                "cell": "OTHER",
+                "origin": {"symbol": "A", "timeframe": "H1"},
+            }
+        )
+    )
+    version = tmp_path / "archive" / ident / "2026-10-16T0000"
+    version.mkdir(parents=True)
+    with pytest.raises(RuntimeError, match="familia"):  # got past «ya archivada»
+        adopt._archive("Test_A", folder, {})
+    (version / "harvest").mkdir()
+    (version / "harvest" / "trades.parquet").write_text("t")
+    assert adopt._archive("Test_A", folder, {}) == "ya archivada"

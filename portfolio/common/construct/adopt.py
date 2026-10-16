@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 from core.archive.read import versions
-from core.paths import DATA, MIRRORS
+from core.paths import DATA, MIRRORS, archive_dir
 from core.store import collect
 from portfolio.common.construct import candidates
 
@@ -22,8 +22,12 @@ def _archive(project: str, folder: Path, judged: dict[str, dict]) -> str:
     """Archive one landed survivor; returns «archivada» or «ya archivada», raises with the reason otherwise."""
     manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
     ident, origin = manifest["identity"], manifest["origin"]
-    if versions(ident):
-        return "ya archivada"
+    have = versions(ident)
+    if (
+        have
+        and (archive_dir() / ident / have[-1] / "harvest" / "trades.parquet").is_file()
+    ):
+        return "ya archivada"  # a version without its harvest is incomplete: archived again, newest wins
     prefix = f"{origin['symbol']}_{origin['timeframe']}_"
     if not manifest["cell"].startswith(prefix):
         raise RuntimeError(

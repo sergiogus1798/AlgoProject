@@ -15,7 +15,7 @@ snapshots written by hand) stays as the reader of what was archived before.
 | `__main__.py` | Makes `python3 -m core.store` run `cli.main`. | `python3 -m core.store …` | — |
 | `audit.py` | Whether everything a project left on disk is in the store: each folder in some zip, or ignored by name. | `python3 -m core.store audit Test_X` | project folders → printed |
 | `cli.py` | The store's command: save a project's survivors, verify what is stored, list it, open one. | `python3 -m core.store save Test_X` | args → printed |
-| `collect.py` | Bring a gorilla project's survivors to leaseWeb for step 26 (owner, 2026-10-15, D-1 = A). | no command of its own; `portfolio/common/construct/adopt.py` is it: `bin/remote.sh gorilla collect [P] [--dry-run]`, which also archives | gorilla store, ledger, registry, reports -> the same here, `_gorilla` |
+| `collect.py` | Bring a gorilla project's survivors to leaseWeb for step 26 (owner, 2026-10-15, D-1 = A). | no command of its own; `portfolio/common/construct/adopt.py` is it: `bin/remote.sh gorilla collect [P] [--dry-run]`, which also archives | gorilla store, ledger, registry, reports, harvest (not `_aparte`) -> the same here, `_gorilla` |
 | `extra.py` | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | imported | raw, crosstf, reports → folders to zip |
 | `late.py` | What steps 13 to 20 leave outside the report folders: the rest of each export, and the variant batch. | imported | raw, reports, variants → folders to zip |
 | `save.py` | Save a project's gate survivors into the store: the .sqx once, then one file per set of tests. | imported | reports, harvest, autopilot → store |
