@@ -148,6 +148,12 @@ def main() -> None:
     value2, commission2 = closecurve.measured(swapped)
     if not np.isclose(value2, VALUE) or not np.isclose(commission2["value"], PER_LOT):
         failures.append(f"el swap arrastra el ajuste: {value2} {commission2}")
+    swapped.loc[:5, "Profit/Loss"] -= (
+        600.0  # XAUUSD M15: swaps big enough to bias every residual past 0.5
+    )
+    value3, commission3 = closecurve.measured(swapped)
+    if not np.isclose(value3, VALUE) or not np.isclose(commission3["value"], PER_LOT):
+        failures.append(f"swaps grandes vacían el recorte: {value3} {commission3}")
     profit, low = closecurve.panel(TRADES, BARS, value, commission)
     if not np.allclose(profit, PROFIT) or not np.allclose(low.fillna(LOW), LOW):
         failures.append(f"panel:\n{profit}\n{low}")

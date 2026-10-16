@@ -53,11 +53,13 @@ def measured(trades: pd.DataFrame) -> tuple[float, dict]:
     per_lot = np.asarray(same["Profit/Loss"] / same["Size"], dtype=np.float64)
     design, keep = np.c_[move, np.ones(len(move))], np.ones(len(move), dtype=bool)
     value = minus_cost = 0.0
-    for _ in range(
-        3
-    ):  # trim the swap-bearing outliers, which drag a plain fit off the card
+    # Trim the swap-bearing outliers, which drag a plain fit off the card. The bound starts at
+    # the median residual: 🔬 a fixed 0.5 kept none of XAUUSD M15's 44 trades after a first
+    # fit biased by its swaps (median residual 12 $/lot), and the empty fit read 0.
+    for _ in range(5):
         value, minus_cost = np.linalg.lstsq(design[keep], per_lot[keep], rcond=None)[0]
-        keep = np.abs(per_lot - design @ [value, minus_cost]) <= 0.5
+        off = np.abs(per_lot - design @ [value, minus_cost])
+        keep = off <= max(0.5, float(np.median(off)))
     return float(value), {"method": "SizeBased", "value": float(-minus_cost)}
 
 
