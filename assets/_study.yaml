@@ -1,6 +1,7 @@
 # Filtros de aceptación del Build (paso 6): QUÉ estrategia entra en el databank mientras se genera.
 #
-# ⚠️ PROPUESTA DE AGENTE, 2026-10-04 — PROVISIONAL hasta que el dueño la apruebe. Recalibrada en
+# ⚠️ v0 PROVISIONAL (dueño, 2026-10-15, C4 A: se firman como v0 y se recalibran con la corrida de
+# monos del encargo 53). Propuesta de agente, 2026-10-04. Recalibrada en
 # `docs/AgentPDFs/criterios-implementados-2026-10-12.md` §4 sobre 203 poblaciones bien construidas
 # (Simple Strategy, 1..2 condiciones por lado, una paleta por familia) y un bucle de siete rondas de
 # builds con filtros dentro (`AlgoData/scratch/calib2/adaptive/RECIPE.md`).

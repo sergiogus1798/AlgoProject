@@ -1,11 +1,5 @@
 # What the autopilot keeps at each judging step. Read by pipeline/autopilot/judge.py.
 #
-# dev — while the workflow itself is being built (owner, 2026-10-01: "no me interesan los
-#   filtros, me interesa que la aplicación y el workflow funcionen bien"). At the steps in `at`,
-#   keep `sample` strategies drawn at random among those that pass the step's rules — all of
-#   them while a step has none. `seed: null` draws a fresh seed each run; the run records it.
-#   `on: false` once the criteria below are the real ones.
-#
 # steps — one entry per judging step:
 #   cut    the databank the next SQX task reads: where the verdict is applied. A step with
 #          rules and no `cut` stops the run; `cut: null` judges and writes but deletes nothing.
@@ -50,6 +44,8 @@
 # `frozen: {on, by, sha}` here, first: from then on the window refuses every write. Lifting it
 # is deleting that line by hand.
 steps:
+  # Dueño, 2026-10-15 (encargo 72): C2 A el limbo del paso 8 sigue por la cadena; C3 A `edge_mean_oos`
+  # no se endurece; C6 A la regla de salida de la estrategia simple queda como hoy (~50 %).
   # PROVISIONAL (Council 2026-10-04): do not freeze before a null population has run the chain. Step 21 annotates only: no rule on purpose.
   # Paso 8 — la puerta por niveles (encargo 44, conmutada el 2026-10-07): 16 reglas (R5 son dos
   # líneas de un lado), en el orden de los niveles de studies/screening/gate/levels.py. La
@@ -119,7 +115,8 @@ steps:
     # Paso 10 — «¿la lógica viaja?» (encargo 46): P1-P9 de la propuesta del dueño del 2026-10-06
     # (criterios-implementados-2026-10-12.md, §7.2 y §7.3), lo que mide
     # studies/transfer/crossmarket/travel. PROVISIONAL y SIN CALIBRAR: las líneas son las de la
-    # propuesta; falta pasar la población nula y la de ventaja plantada. P7 divide entre e_principal,
+    # propuesta; se calibran dentro de la corrida del encargo 53 (dueño, 2026-10-15, C11 A: sus monos
+    # son la población nula del paso 10 y las ventajas plantadas del 53, la plantada). P7 divide entre e_principal,
     # la ventaja del principal en su oos1, que crossmarket calcula él mismo desde el 2026-10-09
     # (antes sin dato: nadie pasaba el paso 10). Una condición con dos hechos (frecuencia, mercados en
     # contra, degradación) es una regla compuesta: `all` = la peor parte, `any` = la mejor.
@@ -172,9 +169,8 @@ steps:
               - {fact: crossmarket.verdict_csv.z_beta, pass: "> -2.33"}
               - {fact: crossmarket.verdict_csv.e_end, pass: "> 0"}
   "11.5":
-    # Criba de fase 1 de crossTF (encargo 47): T0, T2a y T3 con lo que hay en oos1. SIN regla que
-    # corte hasta el «corta» del dueño (la regla lista para pegar está en docs/encargos/47-…,
-    # «Paquete del corte»): el paso registra sus hechos `crossTF.tf.*` y no quita a nadie.
+    # Criba de fase 1 de crossTF (encargo 51): T0, T2a y T3 con lo que hay en oos1. SIN regla que
+    # corte hasta el «corta» del dueño (la regla lista para pegar: docs/encargos/51-pasos-10-a-12-transferencia.md): el paso registra sus hechos `crossTF.tf.*` y no quita a nadie.
     # Cuando corte, lo hará en CrossTF_Input, lo que el 11.7 lee: sale la madre que falle y sus
     # hermanas (`siblings: follow`); las hermanas de las que siguen se quedan para el build.
     cut: CrossTF_Input
@@ -196,8 +192,9 @@ steps:
     rules: []
   "16":
     cut: SPP OOS
-    segment: oos1
-    # Council: FAIL-only on a peak solution / grid mean - 1 sd < 0; neither is exposed as a fact yet, so no rule.
+    segment: build
+    # Owner, 2026-10-14 (P16-1/2/3): no cut until its false positives are measured; every fact is the
+    # build's; the 30-trade floor is studies/breakage/spp/config.yaml grid.min_trades.
     rules: []
   "16.5":
     # Fábrica de variantes y nube (encargo 48): un lote y un mapa que no cortan nada. Sin regla.
@@ -283,12 +280,9 @@ steps:
       - {name: "Lectura única de oos2 · el exceso neto sobre el mono con horas no es negativo",
          fact: oos2Reading.z, pass: "> 0", missing: limbo}
   "20":
-    # Paso 20 — lectura conjunta ciega (dueño, 2026-10-11): corta lo que el estudio descarta.
-    # `blindJoint.verdict_csv.drop` vale 1 cuando su verdict.csv dice DESCARTAR (lectura `fail`);
-    # REVISAR (`watch`) y MANTENER no cortan: la superviviente sigue, marcada por el estudio.
-    # Corta «SPP OOS», el mismo databank que el 16: el 21 sigue leyendo de ahí.
+    # Paso 20 — lectura conjunta ciega: sólo diagnostica (dueño, 2026-10-15, C8 A: manda el encargo 65
+    # D4/D12; se borra `sin_fallo`). No corta: el único corte de la cola es la lectura única de oos2
+    # (19.5). El estudio sigue escribiendo su veredicto y sus hechos (`blindJoint.verdict_csv.*`).
     cut: SPP OOS
     segment: oos2
-    rules:
-      - {name: "Lectura conjunta · el estudio no la descarta (REVISAR sigue)",
-         fact: blindJoint.verdict_csv.drop, pass: "< 1", missing: limbo}
+    rules: []
