@@ -23,6 +23,12 @@ from typing import Any
 
 from core.paths import DATA, MIRRORS
 
+# One ssh connection for every rsync of a collect: one per file tripped gorilla's limit on new
+# connections («Connection reset by peer», rsync 255) half-way through a project (📓 2026-10-16).
+os.environ.setdefault(
+    "RSYNC_RSH",
+    "ssh -o ControlMaster=auto -o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=60",
+)
 SUFFIX = "_gorilla"
 LEDGER = "ledger"
 
