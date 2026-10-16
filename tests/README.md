@@ -139,6 +139,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_gate_pairing.py` | Known answers for the gate's pairing: by identity, never by file name. | `python3 -m pytest tests/test_gate_pairing.py` |
 | `test_gate_r3.py` | R3 of the gate (level 1a): a trader with no timing has no excess under the drift term that fits how it trades, a window under a quarter is refused, and the skewness-kurtosis t reduces to its closed form. | `python3 tests/test_gate_r3.py` |
 | `test_gate_resample.py` | R7 and R6 of the gate (levels 3a and 3b): the homogeneity p reads identical quarters as homogeneous and one profitable quarter as not, the drawdown p of a resampled build is centred and of clustered losses is extreme, and a seed — given or drawn — replays the result. | `python3 tests/test_gate_resample.py` |
+| `test_gate_rounding.py` | Step 8 writes a missing `price_rounding` from the build's trades (tie -> tick) and leaves a present one alone. | — |
 | `test_gate_rules.py` | The 10 rules that judge at step 8 (encargo 44 §1.2, cut down by encargo 65 §5.2), each against a hand truth table read through the judge's own `pipeline.autopilot.criteria`, and the contract that every fact a rule names is declared by a level of the gate. | `python3 tests/test_gate_rules.py` |
 | `test_gorilla_collect.py` | collect: a planted store stands for gorilla; rsync runs between two local folders, no ssh. | — |
 | `test_guard.py` | `.claude/hooks/guard.py` blocks what breaks rules 2, 4, 7 and 12 and nothing else. | — |

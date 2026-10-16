@@ -8,12 +8,12 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
-from core import assetdata
+from core import assetdata, assetwrite
 from core.barstore import read as read_bars
 from core.paths import DATA, feed_quality_dir
 from core.study import config as study_config
 from core.symbols import current
-from engines.market import reprice
+from engines.market import reprice, rounding
 from ledger import thresholds
 
 CONFIG = Path(__file__).with_name("config.yaml")
@@ -148,6 +148,44 @@ def check_oos1(trades: pd.DataFrame, windows: tuple[str, str], where: str) -> No
         )
 
 
+ROUNDING_SAMPLE = (
+    300  # strategies the first-time rounding measurement reprices, not all of them
+)
+
+
+def ensure_rounding(feed: str, trades: pd.DataFrame, frame: str) -> None:
+    """Write the card's `price_rounding` when it has none, measured on the build's own trades.
+
+    The repricer refuses a card without it (owner R1 = A, encargo 74): step 8 measures it once
+    per asset instead of dying. A tie (both roundings off by about the same) writes `tick`.
+
+    Args:
+        feed: SQX feed name.
+        trades: The harvest's trades, with `sample` and `identity`.
+        frame: The run's timeframe.
+    """
+    symbol = assetdata.symbol_for(current(feed))
+    if symbol is None or (assetdata.load(symbol).get("price_rounding") or {}).get(
+        "use"
+    ):
+        return
+    build = trades[trades["sample"] == "IS"]
+    keep = sorted(build["identity"].unique())[:ROUNDING_SAMPLE]
+    got = rounding.measure(
+        symbol,
+        build[build["identity"].isin(keep)].assign(strategy=lambda t: t["identity"]),
+        "build",
+        frame,
+    )
+    use = got["use"] or "tick"
+    why = got["why"] + (
+        " (tie: tick by the rule of knowhow/research/price-rounding-per-asset.md)"
+        if got["use"] is None
+        else ""
+    )
+    assetwrite.set_price_rounding(symbol, use, why)
+
+
 def staged(data: Mapping[str, Any], feed: str, frame: str, out: Path) -> dict[str, Any]:
     """A harvest with everything the levels read beside it (the `data` contract of levels.py).
 
@@ -168,6 +206,7 @@ def staged(data: Mapping[str, Any], feed: str, frame: str, out: Path) -> dict[st
     out.mkdir(parents=True, exist_ok=True)
     asset = market(feed)
     check_oos1(data["trades"], asset["windows"]["OOS"], str(data.get("folder", feed)))
+    ensure_rounding(feed, data["trades"], frame)
     staged_data: dict[str, Any] = {
         **data,
         "bars": read_bars(feed, frame),
