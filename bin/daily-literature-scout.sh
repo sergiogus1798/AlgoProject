@@ -17,9 +17,9 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
+. "$ROOT/bin/lib-agent-alert.sh"
 
-DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+resolve_data
 LOG="$DATA/logs/daily-literature-scout.log"
 LOCK="$DATA/logs/.daily-literature-scout.lock"
 BUDGET=$(python3 -c 'from studies.research.literature import store; print(store.config()["run"]["budget_tokens"])')
@@ -27,21 +27,13 @@ MODEL=$(python3 -c 'from studies.research.literature import store; print(store.c
 TRIAGE=$(python3 -c 'from studies.research.literature import store; print(store.config()["run"]["triage_model"])')
 LIT="python3 -m studies.research.literature"
 
-CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
-if [ -z "$CLAUDE" ]; then
-  CLAUDE=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude \
-             2>/dev/null | sort -V | tail -1)
-fi
+resolve_claude
 
-if [ "${1:-}" = "--dry-run" ]; then
-  printf 'root   %s\nlog    %s\nclaude %s\nmodel  %s to read, %s to triage\nguard  %s tokens per run\n' \
+dry_run "${1:-}" 'root   %s\nlog    %s\nclaude %s\nmodel  %s to read, %s to triage\nguard  %s tokens per run\n' \
     "$ROOT" "$LOG" "${CLAUDE:-NOT FOUND}" "$MODEL" "$TRIAGE" "$BUDGET"
-  exit 0
-fi
 
 exec >>"$LOG" 2>&1
-exec 9>"$LOCK"
-flock -n 9 || { echo "$(date -Is) another scout run is going; skipped"; exit 0; }
+take_lock "$LOCK" "another scout run is going"
 
 echo "=== $(date -Is) daily literature scout start"
 TODAY=$(date +%F)
@@ -51,7 +43,6 @@ echo "--- search above, run ${RUN:-NONE}"
 # One turn, no tools, no MCP server, no skill, its own short system prompt: the fixed context of
 # a call is about 10k tokens instead of 41k re-read at every turn (measured 2026-10-02).
 # `--max-budget-usd` is the CLI's only runaway guard; nothing here is paid by the token.
-. "$ROOT/bin/lib-agent-alert.sh"
 call() {  # call <model> <result file>: the prompt on stdin, the call's JSON into the file
   local model="$1"; shift
   timeout 15m "$CLAUDE" -p --model "$model" --output-format json --max-budget-usd 1 \

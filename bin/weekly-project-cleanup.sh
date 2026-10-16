@@ -17,9 +17,9 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
+. "$ROOT/bin/lib-agent-alert.sh"
 
-DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+resolve_data
 mapfile -t INSTALLS < <(python3 -c '
 from sqx.projects.retire import installs
 for p in installs().values(): print(p)')
@@ -28,21 +28,13 @@ for d in "${INSTALLS[@]}"; do ADD_DIRS+=(--add-dir "$d"); done
 LOG="$DATA/logs/weekly-project-cleanup.log"
 LOCK="$DATA/logs/.weekly-project-cleanup.lock"
 
-CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
-if [ -z "$CLAUDE" ]; then
-  CLAUDE=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude \
-             2>/dev/null | sort -V | tail -1)
-fi
+resolve_claude
 
-if [ "${1:-}" = "--dry-run" ]; then
-  printf 'root   %s\nlog    %s\nclaude %s\ndirs   %s\n' "$ROOT" "$LOG" "${CLAUDE:-NOT FOUND}" \
+dry_run "${1:-}" 'root   %s\nlog    %s\nclaude %s\ndirs   %s\n' "$ROOT" "$LOG" "${CLAUDE:-NOT FOUND}" \
     "${INSTALLS[*]}"
-  exit 0
-fi
 
 exec >>"$LOG" 2>&1
-exec 9>"$LOCK"
-flock -n 9 || { echo "$(date -Is) another project cleanup is going; skipped"; exit 0; }
+take_lock "$LOCK" "another project cleanup is going"
 
 echo "=== $(date -Is) weekly project cleanup start"
 python3 -m ui.daemon.projects.janitor
@@ -53,7 +45,6 @@ if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
 fi
 
 TODAY=$(date +%F)
-. "$ROOT/bin/lib-agent-alert.sh"
 agent_run weekly-project-cleanup haiku "$DATA/audit/${TODAY}-proyectos.md" timeout 1h "$CLAUDE" -p --output-format json --agent projectJanitor --model haiku \
   --permission-mode acceptEdits "${ADD_DIRS[@]}" \
   --allowedTools=Bash,Read,Grep,Glob,Write \

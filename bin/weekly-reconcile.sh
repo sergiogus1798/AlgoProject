@@ -23,9 +23,9 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
+. "$ROOT/bin/lib-agent-alert.sh"
 
-DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+resolve_data
 LOG="$DATA/logs/weekly-reconcile.log"
 LOCK="$DATA/logs/.weekly-reconcile.lock"
 WEEK="$(date +%G-W%V)"
@@ -35,8 +35,7 @@ case "${1:-}" in
 esac
 
 exec >>"$LOG" 2>&1
-exec 9>"$LOCK"
-flock -n 9 || { echo "$(date -Is) another reconciliation is running; skipped"; exit 0; }
+take_lock "$LOCK" "another reconciliation is running"
 echo "=== $(date -Is) weekly reconcile start, week $WEEK"
 
 # The data update of the same night must have finished: the backtest reads the week's bars.

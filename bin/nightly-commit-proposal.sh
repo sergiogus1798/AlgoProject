@@ -24,28 +24,20 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
+. "$ROOT/bin/lib-agent-alert.sh"
 
-DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+resolve_data
 LOG="$DATA/logs/nightly-commit-proposal.log"
 LOCK="$DATA/logs/.nightly-commit-proposal.lock"
 TODAY=$(date +%F)
 OUT="$DATA/audit/$TODAY-commit"
 
-CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
-if [ -z "$CLAUDE" ]; then
-  CLAUDE=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude \
-             2>/dev/null | sort -V | tail -1)
-fi
+resolve_claude
 
-if [ "${1:-}" = "--dry-run" ]; then
-  printf 'root   %s\nlog    %s\nout    %s.{md,json}\nclaude %s\n' "$ROOT" "$LOG" "$OUT" "${CLAUDE:-NOT FOUND}"
-  exit 0
-fi
+dry_run "${1:-}" 'root   %s\nlog    %s\nout    %s.{md,json}\nclaude %s\n' "$ROOT" "$LOG" "$OUT" "${CLAUDE:-NOT FOUND}"
 
 exec >>"$LOG" 2>&1
-exec 9>"$LOCK"
-flock -n 9 || { echo "$(date -Is) another proposal is running; skipped"; exit 0; }
+take_lock "$LOCK" "another proposal is running"
 
 echo "=== $(date -Is) commit proposal start"
 for l in .nightly-fix.lock .weekly-knowhow-review.lock .weekly-docs-health.lock; do
@@ -96,7 +88,6 @@ Write two files with the Write tool and nothing else, no other file in the repo:
     \"paradas\": [{\"path\": ..., \"why\": ...}]}. Valid JSON, paths exactly as in facts.tsv.
 Finish with one line in Spanish: how many groups, files proposed, files EN CURSO, files PARADAS."
 
-. "$ROOT/bin/lib-agent-alert.sh"
 agent_run nightly-commit-proposal haiku "$OUT.json" timeout 30m "$CLAUDE" -p --output-format json --model haiku \
   --permission-mode acceptEdits --add-dir "$DATA" --add-dir "$IN" \
   --allowedTools Read Grep Glob Write \

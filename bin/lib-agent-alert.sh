@@ -62,3 +62,27 @@ print(str(d.get("result") or "").strip())
   [ -n "$reason" ] && agent_alert "$job" "$reason"
   return "$rc"
 }
+
+# --- boilerplate shared by the cron scripts (encargo 78, part D). Call them after `cd "$ROOT"`.
+resolve_data() {  # sets DATA from core.paths, or prints why and exits 1
+  DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
+    printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+}
+
+resolve_claude() {  # sets CLAUDE: $CLAUDE_BIN, else PATH, else the newest VS Code extension binary
+  CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
+  if [ -z "$CLAUDE" ]; then
+    CLAUDE=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude \
+               2>/dev/null | sort -V | tail -1)
+  fi
+}
+
+dry_run() {  # dry_run "${1:-}" <printf format> [args...] — on --dry-run print and exit 0
+  [ "$1" = "--dry-run" ] || return 0
+  shift; printf "$@"; exit 0
+}
+
+take_lock() {  # take_lock <lockfile> <what is already running> — exit 0 when another run holds it
+  exec 9>"$1"
+  flock -n 9 || { echo "$(date -Is) $2; skipped"; exit 0; }
+}

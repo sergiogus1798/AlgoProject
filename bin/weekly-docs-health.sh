@@ -25,27 +25,19 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
+. "$ROOT/bin/lib-agent-alert.sh"
 
-DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+resolve_data
 LOG="$DATA/logs/weekly-docs-health.log"
 LOCK="$DATA/logs/.weekly-docs-health.lock"
 KNOWHOW_LOCK="$DATA/logs/.weekly-knowhow-review.lock"
 
-CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
-if [ -z "$CLAUDE" ]; then
-  CLAUDE=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude \
-             2>/dev/null | sort -V | tail -1)
-fi
+resolve_claude
 
-if [ "${1:-}" = "--dry-run" ]; then
-  printf 'root   %s\nlog    %s\nclaude %s\n' "$ROOT" "$LOG" "${CLAUDE:-NOT FOUND}"
-  exit 0
-fi
+dry_run "${1:-}" 'root   %s\nlog    %s\nclaude %s\n' "$ROOT" "$LOG" "${CLAUDE:-NOT FOUND}"
 
 exec >>"$LOG" 2>&1
-exec 9>"$LOCK"
-flock -n 9 || { echo "$(date -Is) another weekly docs health run is going; skipped"; exit 0; }
+take_lock "$LOCK" "another weekly docs health run is going"
 
 echo "=== $(date -Is) weekly docs health start"
 exec 8>"$KNOWHOW_LOCK"
@@ -57,7 +49,6 @@ if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
   echo "--- no claude binary found; skipped"; exit 1
 fi
 
-. "$ROOT/bin/lib-agent-alert.sh"
 agent_run weekly-docs-health sonnet "" timeout 2h "$CLAUDE" -p --output-format json --agent documenter --model sonnet \
   --permission-mode acceptEdits --add-dir "$DATA" \
   --allowedTools=Bash,Read,Grep,Glob,Write,Edit \

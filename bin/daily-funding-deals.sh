@@ -14,36 +14,27 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
+. "$ROOT/bin/lib-agent-alert.sh"
 
-DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+resolve_data
 LOG="$DATA/logs/daily-funding-deals.log"
 LOCK="$DATA/logs/.daily-funding-deals.lock"
 # cron has no session environment: notify-send needs the owner's session bus.
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
 
-CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
-if [ -z "$CLAUDE" ]; then
-  CLAUDE=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude \
-             2>/dev/null | sort -V | tail -1)
-fi
+resolve_claude
 
-if [ "${1:-}" = "--dry-run" ]; then
-  printf 'root   %s\nlog    %s\nclaude %s\nbus    %s\n' "$ROOT" "$LOG" "${CLAUDE:-NOT FOUND}" \
+dry_run "${1:-}" 'root   %s\nlog    %s\nclaude %s\nbus    %s\n' "$ROOT" "$LOG" "${CLAUDE:-NOT FOUND}" \
     "$DBUS_SESSION_BUS_ADDRESS"
-  exit 0
-fi
 
 exec >>"$LOG" 2>&1
-exec 9>"$LOCK"
-flock -n 9 || { echo "$(date -Is) another deals run is going; skipped"; exit 0; }
+take_lock "$LOCK" "another deals run is going"
 
 echo "=== $(date -Is) daily funding deals start"
 python3 -m portfolio.funded.deals.scan
 echo "--- scan above"
 
 if [ -n "$CLAUDE" ] && [ -x "$CLAUDE" ]; then
-  . "$ROOT/bin/lib-agent-alert.sh"
   agent_run daily-funding-deals sonnet "" timeout 30m "$CLAUDE" -p --output-format json --agent dealHunter --model sonnet --add-dir "$DATA" \
     --allowedTools=Bash,Read,Grep,Glob,WebFetch,WebSearch \
     "Daily prop-firm deal hunt, unattended from cron: nobody can answer, so never ask. Follow \

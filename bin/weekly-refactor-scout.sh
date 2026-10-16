@@ -13,9 +13,9 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
+. "$ROOT/bin/lib-agent-alert.sh"
 
-DATA=$(python3 -c 'from core.paths import DATA; print(DATA)' 2>&1) || {
-  printf 'cannot resolve the data root:\n  %s\n' "$DATA"; exit 1; }
+resolve_data
 LOG="$DATA/logs/weekly-refactor-scout.log"
 LOCK="$DATA/logs/.weekly-refactor-scout.lock"
 OUT="$DATA/audit/refactorScout"
@@ -23,20 +23,12 @@ TODAY=$(date +%F)
 MECH="$OUT/$TODAY-mechanical.md"
 PKGS="core ui studies sqx pipeline portfolio mt5 engines ledger perf tools"
 
-CLAUDE="${CLAUDE_BIN:-$(command -v claude || true)}"
-if [ -z "$CLAUDE" ]; then
-  CLAUDE=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude \
-             2>/dev/null | sort -V | tail -1)
-fi
+resolve_claude
 
-if [ "${1:-}" = "--dry-run" ]; then
-  printf 'root   %s\nlog    %s\nout    %s\nclaude %s\n' "$ROOT" "$LOG" "$OUT" "${CLAUDE:-NOT FOUND}"
-  exit 0
-fi
+dry_run "${1:-}" 'root   %s\nlog    %s\nout    %s\nclaude %s\n' "$ROOT" "$LOG" "$OUT" "${CLAUDE:-NOT FOUND}"
 
 exec >>"$LOG" 2>&1
-exec 9>"$LOCK"
-flock -n 9 || { echo "$(date -Is) another refactor-scout run is going; skipped"; exit 0; }
+take_lock "$LOCK" "another refactor-scout run is going"
 mkdir -p "$OUT"
 
 echo "=== $(date -Is) weekly refactor scout start"
@@ -65,7 +57,6 @@ rm -f "$OUT/.vulture.txt"
 echo "--- mechanical above ($MECH)"
 
 if [ -n "$CLAUDE" ] && [ -x "$CLAUDE" ]; then
-  . "$ROOT/bin/lib-agent-alert.sh"
   agent_run weekly-refactor-scout sonnet "$OUT/$TODAY.md" timeout 3h "$CLAUDE" -p --output-format json \
     --agent refactorScout --model sonnet --add-dir "$DATA" \
     --allowedTools=Agent,Bash,Read,Grep,Glob,Write \
