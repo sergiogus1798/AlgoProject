@@ -10,17 +10,7 @@ statistics, which is the bar `core/README.md` sets for anything statistical livi
 | `__init__.py` | The maths of a parameter grid: how many observations it holds, how it moved, how flat it is. | — |
 | `dedupe.py` | How many independent observations a parameter grid really holds, and how to resample it; plus the one exact test for two strategies sharing one trade list under different names. | grid, trades or curves → counts, intervals |
 | `plateau.py` | How much of a grid works, and whether its best point beats what pure search would give. | grid → probabilities, thresholds |
-| `shift.py` | How far a surface moved between two windows, in units and in rank. | two windows → displacement |
 | `trials.py` | How many independent things were really tried, whatever produced them. | daily or per-period streams → n_eff |
-
-**`rank_of`, `plateau_fraction` and `shrunk` describe one chosen point against its grid**, which
-the other three do not: they describe the grid. Read the first two together — a rank near 1 is only
-alarming when almost nothing comes close — and carry `shrunk`, never the chosen point's own score,
-into anything downstream. The chosen point was selected; its neighbours were not.
-
-⚠️ `plateau_fraction` floors at `reference - delta * |reference|`, not at `(1 - delta) * reference`:
-on a metric that goes negative the second form puts the floor **above** the reference and the
-fraction stops meaning anything.
 
 ## The two mistakes these exist to prevent
 

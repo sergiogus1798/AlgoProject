@@ -132,19 +132,6 @@ def databank_dir(project: str, databank: str, install: Path = MASTER) -> Path:
     return project_dir(project, install) / "databanks" / databank
 
 
-def view_file(name: str, install: Path = MASTER) -> Path:
-    """Path of a databank view definition.
-
-    Args:
-        name: View name without the .vw extension.
-        install: Which install the view belongs to.
-
-    Returns:
-        Path to <install>/user/settings/views/databanks/<name>.vw.
-    """
-    return install / VIEWS_REL / f"{name}.vw"
-
-
 def export_dir(project: str, databank: str, day: str, batch: str = "") -> Path:
     """Where one export of one databank lands.
 

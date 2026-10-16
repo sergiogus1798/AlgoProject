@@ -37,9 +37,7 @@ def above_half_max(values: np.ndarray) -> float:
         OOS numbers comparable when the whole surface dropped: it asks about shape, not
         level.
     """
-    best = (
-        values.max()
-    )  # |best|, as `plateau_fraction`: on a negative best `best / 2` sits above it
+    best = values.max()  # |best|: on a negative best `best / 2` sits above it
     return float((values > best - abs(best) / 2).mean())
 
 
@@ -154,47 +152,3 @@ def effective_n(returns: np.ndarray) -> float:
     rho = np.array([float(d[k:] @ d[:-k]) / var for k in range(1, lags + 1)])
     weights = 1 - np.arange(1, lags + 1) / (lags + 1)
     return float(min(n, n / max(1 + 2 * float(weights @ rho), 1 / n)))
-
-
-def rank_of(values: np.ndarray, reference: float) -> float:
-    """Where one chosen point sits among every point of its own grid.
-
-    Args:
-        values: One value per distinct tuple, the reference included or not.
-        reference: The chosen point's value, in the same metric.
-
-    Returns:
-        The fraction of the grid the reference beats, so 1.0 means nothing did better.
-        Read it with `plateau_fraction`: a rank near 1 is only alarming when almost
-        nothing else comes close, which is the shape of a point picked off a noise peak.
-    """
-    return float((values <= reference).mean())
-
-
-def plateau_fraction(values: np.ndarray, reference: float, delta: float = 0.2) -> float:
-    """How much of the grid performs within a given shortfall of the chosen point.
-
-    Args:
-        values: One value per distinct tuple.
-        reference: The chosen point's value.
-        delta: Relative shortfall still counted as company, 0.2 for "within 20%".
-
-    Returns:
-        A probability. The floor is `reference - delta * |reference|` rather than
-        `(1 - delta) * reference`: on a metric that goes negative the second form raises
-        the bar above the reference itself and the fraction stops meaning anything.
-    """
-    return float((values >= reference - delta * abs(reference)).mean())
-
-
-def shrunk(values: np.ndarray) -> float:
-    """What a point drawn from this neighbourhood is worth on average.
-
-    Args:
-        values: One value per distinct tuple of the neighbourhood.
-
-    Returns:
-        The median. It is the number to carry into any downstream expectation instead of
-        the chosen point's own: the chosen point was selected, its neighbours were not.
-    """
-    return float(np.median(values))

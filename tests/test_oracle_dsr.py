@@ -192,20 +192,6 @@ def t_plateau() -> None:
         close(pl.plateau_area(np.array([0.5, 1.5, 2.0, 0.9]), 1.0), 0.5),
         "breakeven 1",
     )
-    ok(
-        "plateau_fraction",
-        close(pl.plateau_fraction(v, 4.0), 0.4),
-        f"{pl.plateau_fraction(v, 4.0)}",
-    )
-    neg = np.array([-20, -11, -10, -5, 0.0])
-    ok(
-        "plateau_fraction.neg",
-        close(pl.plateau_fraction(neg, -10.0), 0.8),
-        f"{pl.plateau_fraction(neg, -10.0)}",
-    )
-    ok("rank_of", close(pl.rank_of(v, 3.5), 0.6), f"{pl.rank_of(v, 3.5)}")
-    ok("rank_of.top", close(pl.rank_of(v, 11.0), 1.0), "beats all")
-    ok("shrunk", close(pl.shrunk(v), 3.0), f"{pl.shrunk(v)}")
     closed = np.array(
         ["2024-01-01", "2024-01-03", "2024-01-06"], dtype="datetime64[ns]"
     )

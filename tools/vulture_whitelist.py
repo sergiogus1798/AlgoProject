@@ -141,10 +141,8 @@ _.eventFilter  # ui/desktop/workspace/gallery.py
 _.mouseReleaseEvent  # ui/desktop/workspace/railrow.py
 
 # Documented public accessor or module constant that a README / RULES.md / script reads by name
-set_expected_sign  # core/assetwrite/markets.py
 broker_pct  # core/commission.py
 MIRRORS  # core/paths.py
-view_file  # core/paths.py
 PRESERVES  # engines/resample/draws.py
 PAYS  # studies/research/marketProfile/favourable.py
 bucket  # ui/daemon/data/catalogue.py

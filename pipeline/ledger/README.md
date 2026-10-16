@@ -7,7 +7,6 @@ serves `stages.<name>.progress` straight to its progress bar.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `progress.py` | How far a running stage has got, written into the ledger while it runs, never after. | imported | percentage and status → ledger |
 | `state.py` | The C5 ledger: one state.json per mother strategy, written atomically while stages run. | imported | work directory ↔ `state.json` |
 
 ## The contract

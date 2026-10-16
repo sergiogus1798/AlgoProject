@@ -20,7 +20,6 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
 | `band.py` | The daily spread as a curve of price: its mean and its quantile band, for the MC Retest's spread range. | imported | days → curves |
 | `bands.py` | The spread band of each asset: its daily mean spread as a curve of price, with a 2.5–97.5 % band for the MC Retest. | `python3 -m studies.data.spread.bands [--symbol S]` | ticks → `spread/<tick feed>/band.{json,html,md}`, `band_days.parquet`, `band_summary.json` |
 | `funded.py` | The funded-firms method for an asset's spread: the widest firm's % of price, times the segment's price. | imported | ticks_hist + bars → spreads, slippage |
-| `fundedswap.py` | The worst swap of the funded accounts, side by side, read live from each firm's MT5 server. | imported | asset → {long, short} |
 | `inputs.py` | What the spread study reads: its knobs, a tick feed's minutes, Dukascopy's daily volatility. | imported | files → frames |
 | `measure.py` | The spread as measured: per minute, per day beside Dukascopy's volatility, per year, per hour. | imported | minutes → tables |
 | `model.py` | The ways the daily relative spread can be reconstructed where Darwinex has no ticks. | imported | days → params → days |

@@ -4,12 +4,12 @@
 
 | parte | qué | estado |
 |---|---|---|
-| A | Borrar lo muerto y lo que solo llaman los tests | pendiente |
+| A | Borrar lo muerto y lo que solo llaman los tests | hecho 2026-10-16 salvo: `sqx/variants/build/stoploss.py` (la ficha `knowhow/sqx-format/grafting-a-stop-loss.md` y OPEN.md #-risk la dan por viva, y lo importan `tests/test_stoploss.py`/`test_strategymeta.py`: decisión A del dueño), `core/significance.py min_track_record` (fichas `mintrl-explosion-is-correct` y `psr-dsr-two-conventions-jsharpe` + `test_inference_vs_jsharpe`: decisión A), `core/commission.py broker_pct` (`assets/RULES.md:318` lo declara el accesor del paso 26: decisión A), `core/worker.py wait_ready` (`knowhow/sqx-drive/driving-a-role.md` lo da por herramienta y `core/worker.py` lo carga la campaña viva: decisión A); `portfolio/` congelada |
 | B | Un escritor atómico, `core/fsio.atomic_write` | pendiente |
 | C | Un `core/proc.run` con timeout; un solo cliente de worker SQX | pendiente |
-| D | `bin/lib-agent-alert.sh` recoge lo repetido de los scripts | pendiente |
+| D | `bin/lib-agent-alert.sh` recoge lo repetido de los scripts | hecho 2026-10-16: `resolve_data`, `resolve_claude`, `dry_run`, `take_lock` en la lib; la usan 10 scripts (nightly-docs, nightly-commit-proposal, daily-funding-deals, daily-literature-scout, weekly-docs-health, weekly-funding-refresh, weekly-knowhow-review, weekly-project-cleanup, weekly-reconcile, weekly-refactor-scout). Aplazado: `nightly-audit.sh` y `nightly-fix.sh` (cambios sin commitear de otra sesión); `weekly-data-update.sh`, `monthly-oos2-roll.sh`, `weekly-claude-cleanup.sh` y `sqx-log-prune.sh` (resuelven DATA/lock con otra forma, no es copiar tal cual); `workflow.sh`, `remote.sh`, `sqx-worker.sh`, `mirror-data.sh` (pueden estar en uso) |
 | E | Tests: marcas, `conftest.py`, `checks.py --fast`, hook del mapa | hecho 2026-10-16 salvo: helpers duplicados de `conftest.py` (ninguno es mover tal cual: los cuerpos difieren), marca `slow` sin tests marcados, `pytest` en un solo proceso no corre (los `*_planted` exigen un proceso por fichero: usar `tools/audit_tests.py`), y lo de las barras (docstrings, `sync_bars`, README de `core`, ratchet `pyright.perf`) que es de otra sesión |
-| F | Contrato de estudios: `verdict.csv` y `config_hash` donde faltan | pendiente |
+| F | Contrato de estudios: `verdict.csv` y `config_hash` donde faltan | hecho 2026-10-16 salvo lo diferido (abajo) |
 | G | Rutas muertas en la documentación; Flask; `translate` | hecho 2026-10-16 salvo `mt5/README.md`, `ui/daemon/README.md` (`studyapi.py`, `saved.yaml`) y `bin/README.md` (`mt5linux.sh`, es un script externo de MetaQuotes), fuera de alcance de esta sesión |
 
 ## Tu oficio
@@ -98,10 +98,17 @@ Las 18 rutas citadas que no existen (`ui/desktop/README.md` ×8, `ui/daemon/READ
 del entorno (no está en `requirements.txt`; se desinstala). La fila de `translate` en
 `docs/SKILLS.md:26` (se regenera con `tools/skillmap.py`).
 
+### Parte F — qué se hizo y qué se difiere
+
+- Hecho: `wfc` y `cscv` escriben `verdict.csv` (una fila por lote de variantes, `verdict` = su `estado`, igual que `marketSurfaces` y `wfm`; no corta nada).
+- `config_hash` ya estaba: medido sobre los JSON de `AlgoData/reports`, todos los resultados de `gate`, `wfm`, `edgeCost`, `entryQuality`, `decay`, `isOos` y `monkey` lo llevan (lo firma `core.study.result.envelope`). Solo `board` no lo emite.
+- Diferido, decisión del dueño: `isOos` y `monkey` no tienen veredicto por estrategia (su código dice que no juzgan: `isOos` marca blando por Benjamini-Hochberg, el veredicto de `monkey` es de `monkeyExcess`); `board` es un panel de celdas, no de estrategias (ya en la lista de abajo).
+
 ## Decisiones del dueño — pregúntalas (regla 11)
 
 - A: código que solo llaman los tests pero que una ficha da por herramienta viva.
 - F: `board`, ¿estudio o panel?
+- F: `isOos` y `monkey`, ¿qué es pasar o fallar por estrategia (¿IS/OOS por Benjamini-Hochberg? ¿p del mono < alfa?) para que `/curate` pueda aplicarlos?
 
 ## Lo que no tocas
 

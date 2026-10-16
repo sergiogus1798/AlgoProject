@@ -193,7 +193,7 @@ def test_a_trade_before_the_first_bar_has_no_excursion() -> None:
 
 
 def test_half_of_a_negative_best_is_below_it() -> None:
-    """With every value negative the half-max line is best - |best| / 2, as plateau_fraction's."""
+    """With every value negative the half-max line is best - |best| / 2."""
     assert plateau.above_half_max(np.array([-1.0, -1.2, -10.0])) == pytest.approx(2 / 3)
 
 

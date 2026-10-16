@@ -5,7 +5,7 @@ tag: 🔬  date: 2026-10-01  see: costs/swap-types, costs/commission-per-broker,
 ---
 # Funded accounts: commission confirmed from real deals; swap = worst of FTMO and Hantec, live
 - Commission from the accounts' own deals: forex 2.50 $/lot/side at both (5 $ round trip); indices 0 at both; gold FTMO 3 $/lot/side at ~4,150 (≈0.0014 % round trip), Hantec 2.50 $/lot/side.
-- Swap (owner, 2026-10-01): each side the worse of FTMO and Hantec — `studies.data.spread.fundedswap.worst()` (no command calls it since the Darwinex onboard path was deleted 2026-10-14; kept until the owner decides). It is today's figure: rates and, on crude, the futures roll move it.
+- Swap (owner, 2026-10-01): each side the worse of FTMO and Hantec — read live from each firm's MT5 server (`mt5.live`); `studies.data.spread.fundedswap` was deleted, nothing called it (encargo 78 A). It is today's figure: rates and, on crude, the futures roll move it.
 - Compare per notional, not per lot: Hantec's index lots are bigger (US30.h −365 $/night vs US30.cash −11.7 $).
 - SQX `points` swap = `size × pointValue × tickStep × swap`: MT5 points, not pips.
 - Crude in backwardation pays the long, charges the short hard: UKOIL FTMO +6.1/−27.5 $/lot/night, Hantec +15/−72 (≈ +21 % / −262 % annual). FTMO's oil spread tripled 2025-01 → 2026-09 (UKOIL 21 → 72 points of 0.001), 0.027 % → 0.070 % of price: not proportional to price, so not modelled back.
