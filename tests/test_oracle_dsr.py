@@ -13,6 +13,7 @@ ROOT = (
 )
 sys.path.insert(0, str(ROOT))
 
+from core import metrics  # noqa: E402
 from core import significance as sg  # noqa: E402
 from core.surface import plateau as pl  # noqa: E402
 
@@ -210,11 +211,11 @@ def t_plateau() -> None:
     )
     d = np.array([1, 0, 3, 0, 0, 2.0])
     e = d.mean() / d.std(ddof=1) * np.sqrt(252)
-    got = sg.annual_sharpe(np.array([1.0, 3.0, 2.0]), closed)
+    got = metrics.sharpe(metrics.weekday_pnl(np.array([1.0, 3.0, 2.0]), closed), 252)
     ok("annual_sharpe", close(got, e), f"{got} vs {e}")
     ok(
         "annual_sharpe.nan",
-        np.isnan(sg.annual_sharpe(np.array([1.0]), closed[:1])),
+        np.isnan(metrics.sharpe(metrics.weekday_pnl(np.array([1.0]), closed[:1]), 252)),
         "one day -> NaN",
     )
 

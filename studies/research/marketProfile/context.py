@@ -5,6 +5,7 @@ from typing import TypedDict
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from engines.regimes import regime
 from studies.research.marketProfile import inputs
 
@@ -48,7 +49,7 @@ def block(bars: pd.DataFrame, asset: dict) -> Block:
         the mean daily Kaufman efficiency.
     """
     r = np.diff(np.log(bars["Close"].to_numpy()))
-    years = (bars.index[-1] - bars.index[0]).days / 365.25
+    years = metrics.years(bars.index[0], bars.index[-1])
     a = np.abs(r) - np.abs(r).mean()
     acf = [a[k:] @ a[:-k] / (a @ a) for k in range(1, 21)]
     atr = regime.atr(bars, {"atr_period": ATR_PERIOD})["vol"].mean()

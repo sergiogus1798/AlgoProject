@@ -11,6 +11,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core import metrics
 from studies.screening.analysis import decay, floating, tradelevel
 from studies.screening.gate import inputs
 
@@ -43,7 +44,7 @@ def test_lo_t_is_the_daily_t_and_has_no_ceiling() -> None:
         if mean < 0.1:
             assert abs(row["t"] / plain - 1) < 0.005
     assert (
-        row["t"] > 15 > np.sqrt(2 * days / decay.YEAR)
+        row["t"] > 15 > np.sqrt(2 * days / metrics.TRADING_DAYS)
     )  # Sharpe ~8: the old cap was 3.16
 
 
@@ -144,7 +145,7 @@ def test_in_sample_ends_the_day_before_a_split_the_curve_lacks() -> None:
     split = "2017-12-30"
     got = decay.diagnose(daily.cumsum(), split, "2018-06-29")
     kept = daily.iloc[1:][daily.index[1:] < split]  # the curve's diff has no first day
-    assert abs(got["sharpe_is"] - decay.sharpe(kept)) < 1e-12
+    assert abs(got["sharpe_is"] - metrics.sharpe(kept, metrics.TRADING_DAYS)) < 1e-12
 
 
 def test_retention_and_concentration_are_nan_on_a_losing_denominator() -> None:

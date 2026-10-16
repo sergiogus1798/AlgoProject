@@ -2,12 +2,10 @@
 
 from typing import TypedDict, cast
 
-import numpy as np
 import pandas as pd
 
+from core import metrics
 from studies.closing.exposure.occupancy import Occupancy
-
-YEAR = 365.25
 
 
 class Stats(TypedDict):
@@ -31,9 +29,6 @@ class Dichotomy(TypedDict):
     hours_off: float
 
 
-TRADING_DAYS = 252  # SQX's own convention for its Sharpe
-
-
 def stats(daily: pd.Series, equity: float) -> Stats:
     """What one daily profit-and-loss series is worth.
 
@@ -53,14 +48,14 @@ def stats(daily: pd.Series, equity: float) -> Stats:
     """
     path = equity + daily.cumsum()
     index = cast(pd.DatetimeIndex, daily.index)
-    years = (index[-1] - index[0]).days / YEAR
+    years = metrics.years(index[0], index[-1])
     return {
         "net": float(daily.sum()),
         "return_pct": float(daily.sum() / equity * 100),
         "cagr_pct": float(((path.iloc[-1] / equity) ** (1 / years) - 1) * 100),
-        "maxdd_pct": float(((path.cummax() - path) / path.cummax()).max() * 100),
+        "maxdd_pct": metrics.dd_pct(path.to_numpy(dtype=float), equity),
         "vol": float(daily.std(ddof=1)),
-        "sharpe": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS)),
+        "sharpe": metrics.sharpe(daily, metrics.TRADING_DAYS),
     }
 
 

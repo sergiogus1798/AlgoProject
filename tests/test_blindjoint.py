@@ -11,8 +11,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engines.market import reprice
-from ledger import gate
 from engines.nulls import footprint as benchmark
+from ledger import gate
 from studies.closing.blindJoint import inputs, many, measure, one, readings, report
 from studies.closing.blindJoint.pieces import PIECES
 
@@ -153,7 +153,7 @@ def traders(seed: int, edge: float) -> dict:
             .sum()
             .reindex(days, fill_value=0.0)
         )
-        random[m], mc[m] = benchmark.footprint(trades, bars, COSTS, CFG["benchmark"])
+        random[m], mc[m] = benchmark.footprint(trades, bars, COSTS, CFG["benchmark"], m)
     panel, random = pd.DataFrame(panel), pd.DataFrame(random)
     return {
         "panel": panel,

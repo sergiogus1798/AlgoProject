@@ -25,11 +25,12 @@ live deeper add the root to `sys.path` in their first lines.
 | `fleetpaths.py` | Where the live MT5 fleet's files are, and each account's plan from machine.yaml. | → `Path`, dict |
 | `identities.py` | `sqxfile.identity` of many files across processes, the hashes kept in this process's cache. | files → identities |
 | `manifest.py` | Every export writes one of these. Without it an export cannot be reproduced or trusted. | facts → JSON |
+| `metrics.py` | The one definition of Sharpe, drawdown, profit factor and years that every step, the window and MT5 share. | returns, P&L, curves → Sharpe, drawdown, PF, years |
 | `optprofile.py` | Read the Sys. Param Permutation profile SQX stores inside a .sqx, without SQX running. | `.sqx` → dicts |
 | `paths.py` | Every path and port in the project. The only module allowed to know where things live. | names, roles → `Path` |
 | `phases.py` | Wall clock of a named sub-phase, appended to the CSV `ALGO_PHASES` names; nothing without it. | a block → one CSV row |
 | `researchpaths.py` | Where the research director's pieces live under the data root. | names → `Path` |
-| `significance.py` | Could this edge be zero? The Sharpe-based tests three studies now share, and the one Sharpe total. | returns → probabilities |
+| `significance.py` | Could this edge be zero? The Sharpe-based tests three studies now share. | returns → probabilities |
 | `sqxfile.py` | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | `.sqx` → values |
 | `sqxretest.py` | Read a Monte Carlo Retest result out of a .sqx: its simulation P/L vectors and its level table. | `.sqx` → P/L, levels, provenance |
 | `sqxstats.py` | Read a .sqx result without SQX: its stored metrics and its daily equity curve. | `.sqx` → metrics, series |
@@ -53,7 +54,7 @@ Three rules specific to this folder:
 
 - **No absolute path may appear anywhere but `paths.py`.** `tools/checks.py` enforces it.
 - These modules read and drive SQX, they do not analyse. Maths belongs in a phase folder —
-  **with one carve-out, `significance.py`**, taken deliberately on 2026-09-18. `studies/CLAUDE.md`
+  **with two carve-outs, `significance.py`** (2026-09-18) **and `metrics.py`** (2026-10-16, encargo 75: thirteen copies of Sharpe, drawdown and PF had drifted apart in the flat and no-loss cases; it sits in `core/` because `significance.py` and `sqx/variants/united.py` call it and neither may import `engines/`). `studies/CLAUDE.md`
   says a helper two studies need is copied and promoted here when a third one wants it, and PSR is
   now wanted by three. It was written twice already, and the `1 - skew·SR + (kurt-1)/4·SR²` factor
   appearing in two files is a correctness risk, not a typing one: a fix to one copy leaves the other

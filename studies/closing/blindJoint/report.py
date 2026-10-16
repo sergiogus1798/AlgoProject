@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """Step 20: the blind joint reading of 17, 18 and 19, with SPA and StepM on oos2, and its ledger row."""
 
-from typing import Any, cast
 import argparse
 import shlex
 import sys
 from datetime import date
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from core.paths import report_dir
 from core.study import draws, output, verdicts
 from core.study.config import fingerprint
-from ledger import record, study as studymod
+from ledger import record
+from ledger import study as studymod
 from studies.closing.blindJoint import inputs, many, one, pieces, readings
-
 
 # Only DESCARTAR cuts: the autopilot's step-20 rule reads `verdict_csv.drop` (criteria.yaml).
 # REVISAR is KEPT, flagged for the owner's eye; any other call keeps: MANTENER.
@@ -70,7 +71,7 @@ def ledger_row(
             "note": f"{'soft: ' if not reading else ''}pasan por lectura {counts}; SPA "
             f"{got['spa']}; benchmark: random trader of the mother's footprint",
         },
-        (got["table"]["sharpe"] / np.sqrt(252)).values,
+        (got["table"]["sharpe"] / np.sqrt(metrics.TRADING_DAYS)).values,
     )
 
 

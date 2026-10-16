@@ -8,7 +8,6 @@ import pandas as pd
 
 from core import assetdata
 from core.barstore import read as read_bars
-from core.paths import DATA
 from core.study import config as study_config
 from engines.market import atr as sqx_atr
 from ledger import thresholds
@@ -44,12 +43,6 @@ def config(overrides: list[str]) -> dict[str, Any]:
         The parsed config.yaml with every `ledger:<key>` replaced by the ledger's value.
     """
     return study_config.apply(thresholds.fill(study_config.load(CONFIG, [])), overrides)
-
-
-def newest(project: str, databank: str) -> Path:
-    """The most recent harvest of one databank (harvests are dated and immutable)."""
-    folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def load(folder: Path, feed: str, cfg: dict) -> Inputs:

@@ -13,13 +13,13 @@ import pandas as pd
 from scipy.stats import rankdata
 
 import ledger.study as study
-from ledger import trials as ledger_trials
 import portfolio.common.construct.real as real
 import portfolio.common.construct.search.admission as admission
 import portfolio.common.construct.search.choose as choose
 import portfolio.common.construct.search.genetic as genetic
 import portfolio.common.construct.search.trials_real as trials_real
 import portfolio.common.construct.verdict.metrics as metrics
+from ledger import trials as ledger_trials
 
 FAILURES = []
 WHOLE = {
@@ -40,7 +40,7 @@ def test_metrics_by_hand() -> None:
     dates = pd.date_range("2020-12-28", periods=6)
     pnl = np.array([1.0, -2.0, 1.0, 2.0, -1.0, 1.0])  # equity 1, -1, 0, 2, 1, 2
     day = dates.values.astype("datetime64[D]").astype(np.int64)
-    depth, length = metrics.drawdowns(np.cumsum(pnl), day)
+    depth, length = metrics.dd_episodes(np.cumsum(pnl), day)
     check("drawdowns: depths 2 and 1", depth.tolist() == [2.0, 1.0])
     check(
         "drawdowns: 3 and 2 days from the peak to the recovery",

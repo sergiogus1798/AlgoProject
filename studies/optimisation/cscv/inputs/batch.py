@@ -1,12 +1,11 @@
 """A variant batch as the CSCV's cells: weekly excess per variant, net and gross, cached beside the batch."""
 
-from typing import Any, TypedDict, cast
 import time
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from core import assetdata, barstore, fanout
 from core.study.config import fingerprint as digest
@@ -14,6 +13,7 @@ from engines.market import reprice
 from engines.variants import filters, fingerprint
 from engines.variants.panel import SEGMENTS
 from engines.weekly import panel
+from studies.screening.gate.inputs import drift
 
 TRADES = "variant_trades.parquet"  # written by sqx.variants.varianttrades
 WEEKLY = "cscv_weekly.parquet"  # the cache: weeks x (net | gross, variant)
@@ -23,15 +23,9 @@ VARIANTS = (
 MAIN = "Main"
 PIECES = 16  # groups of variants priced side by side, per leg
 # The excess is step 14's: the gate's drift block, never a copy of its values.
-GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 
 # What the pricing workers read, set before the fork.
 _SHARED: dict = {}
-
-
-def drift() -> dict[str, Any]:
-    """The gate's `drift` block: the window and the variant of the drift term."""
-    return yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
 
 
 def window(asset: dict) -> tuple[str, str]:
@@ -39,7 +33,7 @@ def window(asset: dict) -> tuple[str, str]:
     last = asset["segments"][SEGMENTS[-1]]["to"]
     return (
         assetdata.segment_start(asset, SEGMENTS[0]),
-        f"{last}-12-31" if isinstance(last, int) else str(last),
+        assetdata.last_day(last),
     )
 
 

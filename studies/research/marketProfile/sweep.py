@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from studies.research.marketProfile import higher, one, series
 from studies.research.marketProfile.measure.position import walk
 from studies.research.marketProfile.measure.rules import _down, _first
@@ -136,7 +137,7 @@ def run(
         sims[b] = [r[4] for r in evaluate(one.framed(drawn, cal, wide), cal, knobs)]
     stats = np.array([r[4] for r in real])
     p = (1 + (sims >= stats).sum(axis=0)) / (sims.shape[0] + 1)
-    years = (bars.index[-1] - bars.index[0]).days / 365.25
+    years = metrics.years(bars.index[0], bars.index[-1])
     rows = []
     for k, (name, param, label, direction, stat, entry, exit_) in enumerate(real):
         paid = one.money(bars, asset, direction, entry, exit_)

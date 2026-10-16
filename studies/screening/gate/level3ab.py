@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from core import fanout
+from core import fanout, metrics
 from core.study import draws
 from studies.screening.analysis import resample, tradelevel
 
@@ -62,7 +62,7 @@ def _one(identity: str) -> dict[str, Any]:
                 )
     if identity in s["build"]:
         pnl, fall = mine["pnl"].to_numpy(float), s["fall"]
-        simulated = resample.drawdowns(
+        simulated = resample.null_drawdowns(
             s["build"][identity],
             pnl.mean(),
             len(pnl),
@@ -70,14 +70,16 @@ def _one(identity: str) -> dict[str, Any]:
             fall["sequences"],
             resample.stream(s["dd_seed"], str(identity)),
         )
-        row["dd_p"] = resample.p_upper(simulated, float(resample.max_drawdown(pnl)))
+        row["dd_p"] = resample.p_upper(
+            simulated, metrics.dd_money(metrics.cumulative(pnl))
+        )
         row["dd_esperado_r"] = np.percentile(simulated, fall["percentile"]) / s["risk"]
         if s["keep"]:
             kept.append(
                 draws.record(
                     "gate.3a",
                     "dd_p",
-                    float(resample.max_drawdown(pnl)),
+                    metrics.dd_money(metrics.cumulative(pnl)),
                     simulated,
                     str(identity),
                     seed=s["dd_seed"],

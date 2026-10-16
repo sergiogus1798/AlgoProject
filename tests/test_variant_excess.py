@@ -126,7 +126,7 @@ def test_a_known_market_gives_the_hand_count() -> None:
     assert got["excess"].round(9).tolist() == [a, -a, 0.0, a]
     assert got["drift"].round(9).tolist() == [s, s, 2 * s, 3 * s]
     per_year = excess.per_year(got, window)
-    assert per_year.round(9).to_dict() == {"x": 0.0, "y": round(a / (366 / 365.25), 9)}
+    assert per_year.round(9).to_dict() == {"x": 0.0, "y": round(a / (365 / 365.25), 9)}
 
 
 @pytest.mark.parametrize("variant", sorted(tradelevel.VARIANTS))

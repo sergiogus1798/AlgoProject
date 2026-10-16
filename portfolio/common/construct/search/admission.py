@@ -3,16 +3,9 @@
 import numpy as np
 import pandas as pd
 
+from core.metrics import sharpe
+
 INCREMENTS = ("finite", "marginal")
-
-
-def _sharpe(path: np.ndarray) -> float:
-    """Daily Sharpe, not annualised; infinite or NaN for a flat path (std 0).
-
-    Such a candidate never enters: `increment` multiplies it by a correlation that is NaN for a
-    flat path, so its increment is NaN and `gain > 0` is False (`finite` stays finite).
-    """
-    return float(path.mean() / path.std(ddof=1))
 
 
 def increment(base: np.ndarray, candidate: np.ndarray, how: str) -> float:
@@ -30,9 +23,9 @@ def increment(base: np.ndarray, candidate: np.ndarray, how: str) -> float:
     """
     book = base.mean(axis=0)
     if how == "finite":
-        return _sharpe(np.vstack([base, candidate]).mean(axis=0)) - _sharpe(book)
-    return _sharpe(candidate) - float(np.corrcoef(candidate, book)[0, 1]) * _sharpe(
-        book
+        return sharpe(np.vstack([base, candidate]).mean(axis=0), 1) - sharpe(book, 1)
+    return sharpe(candidate, 1) - float(np.corrcoef(candidate, book)[0, 1]) * sharpe(
+        book, 1
     )
 
 

@@ -1,6 +1,7 @@
 """Encargo 66 §3.4e: the footprint priced in blocks gives the daily series it gave — the oracle below is the code replaced."""
 
 import itertools
+import zlib
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,8 @@ import pytest
 from test_perf66_resample import peak, same
 
 from engines.market import reprice
-from engines.nulls import footprint, inputs as nulls_inputs, windowed
+from engines.nulls import footprint, windowed
+from engines.nulls import inputs as nulls_inputs
 
 COSTS = {
     "point_value": 1.0,
@@ -53,7 +55,9 @@ def old_footprint(
         mine,
         knobs["rung"],
         knobs["draws"],
-        np.random.default_rng(knobs["seed"]),
+        np.random.default_rng(  # the seed salted by the mother, as footprint() now does
+            np.random.SeedSequence([knobs["seed"], zlib.crc32(b"m")])
+        ),
     )
     drawn["sizes"] = np.broadcast_to(
         mine["size"].mean() if windowed.REDRAWS[knobs["rung"]][1] else mine["size"],
@@ -137,7 +141,7 @@ def test_footprint_in_blocks_is_the_old_one(monkeypatch: pytest.MonkeyPatch) -> 
         was = old_footprint(mother, bars, COSTS, knobs)
         for block in (1, 7 * trades, 64 * trades, windowed.BLOCK):
             monkeypatch.setattr(windowed, "BLOCK", block)
-            now = footprint.footprint(mother, bars, COSTS, knobs)
+            now = footprint.footprint(mother, bars, COSTS, knobs, "m")
             assert same(was[0].to_numpy(), now[0].to_numpy()), (
                 trades,
                 kind,
@@ -160,13 +164,13 @@ def test_footprint_in_blocks_is_the_old_one(monkeypatch: pytest.MonkeyPatch) -> 
     for frame in (same_day, mother.iloc[:0]):
         was, now = (
             old_footprint(frame, bars, COSTS, knobs),
-            footprint.footprint(frame, bars, COSTS, knobs),
+            footprint.footprint(frame, bars, COSTS, knobs, "m"),
         )
         assert same(was[0].to_numpy(), now[0].to_numpy()) and was[1] == now[1]
     monkeypatch.setattr(windowed, "BLOCK", 20_000)
     knobs = {"rung": "free", "draws": 4000, "seed": 3}
     was = peak(lambda: old_footprint(mother, bars, COSTS, knobs))
-    now = peak(lambda: footprint.footprint(mother, bars, COSTS, knobs))
+    now = peak(lambda: footprint.footprint(mother, bars, COSTS, knobs, "m"))
     print(
         f"\n3.4e footprint 4000 draws x 150 trades: peak {was / 1e6:.0f} MB -> {now / 1e6:.0f} MB"
     )

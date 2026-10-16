@@ -20,6 +20,8 @@ from core.assetdata import (
     RESERVED,
     enforced,
     fields,
+    first_day,
+    last_day,
     load,
     schema,
     symbols,
@@ -28,23 +30,6 @@ from core.assetdata import (
 from core.assetmarkets import markets, special_notes
 from core.assetranges import mc_retest
 from core.paths import ASSETS, feed_quality_dir
-
-
-def _day(bound: int | object, end: bool) -> str:
-    """One segment bound as the day it means, for reading.
-
-    Args:
-        bound: A year, meaning that whole year, or an explicit date meaning that day.
-        end: True for the closing bound, so a bare year renders as its 31 December.
-
-    Returns:
-        An ISO date.
-    """
-    return (
-        f"{bound}-12-31"
-        if isinstance(bound, int) and end
-        else (f"{bound}-01-01" if isinstance(bound, int) else str(bound))
-    )
 
 
 def broker_table(brokers: dict) -> list[str]:
@@ -127,7 +112,7 @@ def report(symbol: str) -> str:
             continue
         a, b = window(data, name)
         lines.append(
-            f"- **segmento {name}**: {_day(seg['from'], False)} a {_day(seg['to'], True)} "
+            f"- **segmento {name}**: {first_day(seg['from'])} a {last_day(seg['to'])} "
             f"inclusive (dateFrom {a}, dateTo {b}){mark}"
         )
     for name, r in mc_retest(data).items():

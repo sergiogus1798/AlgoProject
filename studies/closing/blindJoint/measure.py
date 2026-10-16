@@ -1,14 +1,15 @@
 """The numbers of step 20: each mother against her random trader on oos2, the SPA, and the StepM per reading."""
 
 from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from engines.inference.snooping import superior
 from studies.closing.blindJoint import readings
 from studies.closing.blindJoint.pieces import PIECES
 
-YEAR = 252  # SQX's own convention (its SharpeRatio is weekday rows x sqrt(252))
 # A column is flat when its std is under this fraction of the panel's largest |daily P&L|:
 # an excess that is zero up to float noise (1e-17) has no variance to studentize by, and its
 # Sharpe would be an enormous number made of rounding.
@@ -109,7 +110,9 @@ def run(data: dict, cfg: dict) -> dict[str, Any]:
     everyone = named[readings.label(("ninguna", "entrantes"))]
     table = pd.DataFrame(
         {
-            "sharpe": days.mean() / days.std(ddof=1) * np.sqrt(YEAR),
+            "sharpe": days.apply(
+                lambda c: metrics.sharpe(c.dropna(), metrics.TRADING_DAYS)
+            ),
             "excess_day": excess.mean(),
             "random_day": random.mean(),
             "mc_day": data["mc"],

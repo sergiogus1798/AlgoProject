@@ -1,31 +1,25 @@
 """A variant batch's trades on the main market as excess, net and gross, trade by trade and leg by leg."""
 
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
-import yaml
 
-from core import assetdata, barstore
+from core import assetdata, barstore, metrics
 from engines.market import reprice
 from engines.variants import fingerprint, look, panel
 from engines.weekly import panel as weekly
+from studies.screening.gate.inputs import drift
 
 TRADES = "variant_trades.parquet"  # written by sqx.variants.varianttrades
 MAIN = "Main"
 STEP = 17
 # The excess is step 14's: the gate's drift block, never a copy of its values.
-GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 # The drift a trade could have been charged knowing only earlier bars. Variants `b` and `d`
 # take the drift of the trade's own calendar year, which earlier bars do not hold.
 PRIOR = {"window": "year", "variant": "c"}
 # What a composition is measured on, of `engines.weekly.panel.per_trade`'s columns.
 COLUMNS = ["variant_id", "profit", "net", "gross", "open", "close"]
-
-
-def drift() -> dict[str, Any]:
-    """The gate's `drift` block: the window and the variant of the drift term."""
-    return yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
 
 
 def span(asset: dict, legs: tuple) -> tuple[str, str]:
@@ -41,14 +35,14 @@ def window(asset: dict, legs: tuple) -> tuple[str, str]:
     last = asset["segments"][legs[-1]]["to"]
     return (
         assetdata.segment_start(asset, legs[0]),
-        f"{last}-12-31" if isinstance(last, int) else str(last),
+        assetdata.last_day(last),
     )
 
 
 def years(asset: dict, legs: tuple) -> float:
-    """Length of consecutive legs in years of 365.25 days, as `excess.per_year` counts them."""
+    """Length of the legs together in years (`core.metrics.years`), as `excess.per_year` counts them."""
     first, last = (pd.Timestamp(day) for day in window(asset, legs))
-    return ((last - first).days + 1) / 365.25
+    return metrics.years(first, last)
 
 
 def trades(work: Path, leg: str) -> pd.DataFrame:

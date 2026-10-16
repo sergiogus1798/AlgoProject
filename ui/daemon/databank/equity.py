@@ -5,6 +5,7 @@ from typing import TypedDict, cast
 
 import pandas as pd
 
+from core.metrics import dd_money
 from core.paths import harvest_dir
 from ui.daemon.loader import find
 from ui.daemon.loader.state import newest
@@ -48,15 +49,6 @@ def summed(frame: pd.DataFrame, column: str, ids: set[str] | None) -> pd.DataFra
     )
 
 
-def drawdown(curve: list[float]) -> float:
-    """The worst fall from a peak of a cumulative curve, in money, as a negative number."""
-    peak, worst = 0.0, 0.0
-    for v in curve:
-        peak = max(peak, v)
-        worst = min(worst, v - peak)
-    return worst
-
-
 def equity(project: str, databank: str, ids: list[str] | None = None) -> Equity:
     """GET /api/databank/equity: the databank's aggregate curves.
 
@@ -91,7 +83,7 @@ def equity(project: str, databank: str, ids: list[str] | None = None) -> Equity:
         "Neto SQX IS": net["IS"],
         "Neto SQX OOS": net["OOS"],
         "Neto SQX": sqx[-1],
-        "DD máximo SQX": drawdown(sqx),
+        "DD máximo SQX": -dd_money([0.0, *sqx]),
     }
     return {
         "days": [d.strftime("%Y-%m-%d") for d in pnl["day"]],

@@ -1,18 +1,16 @@
 """The asset a WFM export traded: its bars, its three segments, the two cost cards and the drift term."""
 
-from pathlib import Path
 from typing import Any, TypedDict
 
 import pandas as pd
-import yaml
 
 from core import assetdata, barstore
 from engines.market import reprice
+from studies.screening.gate import inputs as gate_inputs
 
 SEGMENTS = ("build", "oos1", "oos2")
 CLEAN = "oos2"  # the only segment nobody used to choose anything
 # The excess is step 14's: the gate's drift block, never a copy of its values.
-GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 
 
 class Asset(TypedDict):
@@ -49,7 +47,7 @@ def of(feed: str, timeframe: str, charged: str) -> Asset:
         last = data["segments"][name]["to"]
         windows[name] = (
             assetdata.segment_start(data, name),
-            f"{last}-12-31" if isinstance(last, int) else str(last),
+            assetdata.last_day(last),
         )
     return {
         "name": name,
@@ -59,5 +57,5 @@ def of(feed: str, timeframe: str, charged: str) -> Asset:
         "span": (windows[SEGMENTS[0]][0], windows[CLEAN][1]),
         "charged": reprice.costs(feed, charged),
         "real": reprice.costs(feed, CLEAN),
-        "drift": yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"],
+        "drift": gate_inputs.drift(),
     }

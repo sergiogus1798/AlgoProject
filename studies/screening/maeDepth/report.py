@@ -10,10 +10,12 @@ from datetime import date
 import pandas as pd
 
 from core.manifest import write as write_manifest
-from core.paths import report_dir
-from core.study import output, result as envelope
+from core.paths import latest_harvest, report_dir
+from core.study import output
+from core.study import result as envelope
 from core.study.config import fingerprint
-from ledger import record, study as studymod
+from ledger import record
+from ledger import study as studymod
 from studies.screening.maeDepth import inputs, many, measures, one
 
 
@@ -101,7 +103,7 @@ def main() -> None:
 
     began = time.time()
     cfg = inputs.config(a.set)
-    folder = inputs.newest(a.project, a.databank)
+    folder = latest_harvest(a.project, a.databank)
     envelope.progress(5, "leyendo la cosecha")
     data = inputs.load(folder, a.feed, cfg)
     envelope.progress(30, "midiendo MAE y duración")

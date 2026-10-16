@@ -10,7 +10,7 @@ YEAR_ROWS = 252  # trading rows in the rolling reading's year
 TOP_DRAWDOWNS = 5  # Faith's R-cubed averages the five largest
 
 
-def drawdowns(equity: np.ndarray, day: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def dd_episodes(equity: np.ndarray, day: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Every drawdown episode of one cumulative P&L path, peak to recovery.
 
     Args:
@@ -68,7 +68,7 @@ def table(
     n_years = max(1, round(years))
     r_cubed, gain_to_pain = np.empty(len(paths)), np.empty(len(paths))
     for i, eq in enumerate(equity):
-        depth, length = drawdowns(eq, day)
+        depth, length = dd_episodes(eq, day)
         order = np.argsort(-depth)
         top = order[:TOP_DRAWDOWNS]
         r_cubed[i] = rar[i] / (depth[top].mean() * length[top].mean() / 365.0)

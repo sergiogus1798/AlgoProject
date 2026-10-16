@@ -11,9 +11,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from core import fanout, sqxstats
-from sqx.variants import legs as legmod
 from typing import cast
+
+from core import fanout, metrics, sqxstats
+from sqx.variants import legs as legmod
 
 FULL = sqxstats.FULL
 KEY = ["variant_id", "market"]
@@ -164,17 +165,16 @@ def from_curves(daily: pd.DataFrame) -> pd.DataFrame:
         end each segment above water and still have crossed a deeper trough than any
         segment saw, which is exactly the kind of thing this study exists to catch.
     """
-    cum = daily.cumsum()
-    drawdown = (
-        cum.cummax().clip(lower=0) - cum
-    ).max()  # the peak starts at 0, the balance before the first day
-    sd = cast("pd.Series", daily.std(ddof=1))
-    sharpe = (daily.mean() / sd.replace(0, np.nan)) * np.sqrt(252)
+    # A variant absent from a leg has NaN days there: no P&L, so 0 on the curve and no row
+    # in its Sharpe. The peak starts at 0, the balance before the first day.
+    values = daily.fillna(0.0).to_numpy(dtype=float)
     return pd.DataFrame(
         {
             "variant_id": daily.columns,
-            "Drawdown": drawdown.to_numpy(),
-            "SharpeRatio": sharpe.to_numpy(),
+            "Drawdown": metrics.dd_money(metrics.cumulative(values, axis=0), axis=0),
+            "SharpeRatio": [
+                metrics.sharpe(daily[c].dropna(), metrics.TRADING_DAYS) for c in daily
+            ],
         }
     )
 

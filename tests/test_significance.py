@@ -9,11 +9,10 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.significance import annual_sharpe, footprint, min_track_record, moments, psr
+from core.significance import footprint, min_track_record, moments, psr
 
 SEED = 7
 
@@ -82,24 +81,6 @@ def test_min_track_record_unreachable_when_sharpe_does_not_clear_benchmark() -> 
         )
     assert min_track_record(-r)["needed"] is None  # a losing series against zero
     assert min_track_record(r, benchmark=sharpe - 0.01)["needed"] > r.size
-
-
-def test_annual_sharpe_counts_trading_days_only() -> None:
-    """Known answer: P&L on two Mondays and a Saturday close that lands on the third Monday;
-    every other trading day is a zero. The calendar-day version this replaced also counted
-    the weekend days as zeros and read a smaller ratio."""
-    closed = pd.to_datetime(
-        ["2024-01-01 10:00", "2024-01-08 15:00", "2024-01-13 02:00"]
-    )
-    pnl = np.array([100.0, 40.0, 60.0])
-    daily = np.array([100.0, 0, 0, 0, 0, 40.0, 0, 0, 0, 0, 60.0])  # Mon 1st .. Mon 15th
-    want = daily.mean() / daily.std(ddof=1) * np.sqrt(252)
-    assert abs(annual_sharpe(pnl, closed) - want) < 1e-9
-    calendar = np.array([100.0, 0, 0, 0, 0, 0, 0, 40.0, 0, 0, 0, 0, 60.0])
-    assert annual_sharpe(pnl, closed) > calendar.mean() / calendar.std(
-        ddof=1
-    ) * np.sqrt(252)
-    assert np.isnan(annual_sharpe(np.array([5.0]), pd.to_datetime(["2024-01-02"])))
 
 
 def test_footprint_zero_noise_reproduces_the_no_noise_value() -> None:
@@ -181,7 +162,6 @@ if __name__ == "__main__":
     test_min_track_record_benchmark_zero_matches_old_formula()
     test_min_track_record_needs_more_against_a_realistic_benchmark()
     test_min_track_record_unreachable_when_sharpe_does_not_clear_benchmark()
-    test_annual_sharpe_counts_trading_days_only()
     test_footprint_zero_noise_reproduces_the_no_noise_value()
     test_footprint_zero_drift_and_cost_gives_zero()
     test_footprint_realistic_gold_numbers_are_small_and_below_buy_and_hold()

@@ -5,9 +5,8 @@ from typing import Any, TypedDict, cast
 import numpy as np
 import pandas as pd
 
-from core import fanout, tradestore
+from core import fanout, metrics, tradestore
 from core.study import draws
-from core.significance import annual_sharpe
 from engines.nulls import simulate, verdict
 from studies.transfer.crossTF import siblings
 
@@ -16,7 +15,7 @@ from studies.transfer.crossTF import siblings
 # config knob, not a cell fact). Kept out of this study's warnings;
 # `engines.nulls.verdict.distrust` still raises it for whoever else reads the same engine.
 DROP_WARNINGS = ("P SATURADO",)
-# The owner's one Sharpe (daily P&L on trading days, x sqrt(252)), measured beside the null's
+# The owner's one Sharpe (`core.metrics`: daily P&L on trading days, annualised), measured beside the null's
 # statistics so the window can draw it; never a key of `engines.nulls.stats`.
 TOTAL = "sharpe_total"
 
@@ -83,7 +82,7 @@ def numbers(
         saturate at 1/(draws+1)), `seen_all`, `p_all` and `warnings`. `p` and the three null
         numbers are NaN when the cell has too few trades for one, which is a fact about the
         cell and not a missing input.
-        `seen_all` also carries `sharpe_total` (`core.significance.annual_sharpe` of the
+        `seen_all` also carries `sharpe_total` (`core.metrics.sharpe` of `weekday_pnl` of the
         cell's own trades, by close date), which is read and never judged: the null draws
         carry no calendar, so it has no p.
 
@@ -110,9 +109,12 @@ def numbers(
     kept = simulate.fixed(rows, frame, nullcfg)
     seen_all = {
         **simulate.real(kept, names),
-        TOTAL: annual_sharpe(
-            rows["Profit/Loss"].to_numpy(dtype=float),
-            cast(np.ndarray, rows["Close time"]),
+        TOTAL: metrics.sharpe(
+            metrics.weekday_pnl(
+                rows["Profit/Loss"].to_numpy(dtype=float),
+                cast(np.ndarray, rows["Close time"]),
+            ),
+            metrics.TRADING_DAYS,
         ),
     }
     if len(rows) < min_trades:

@@ -19,11 +19,12 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+from core import paths  # noqa: E402
 from core.paths import DATA, ROOT  # noqa: E402
 from ui.daemon import jobsapi  # noqa: E402
 from ui.daemon.results import api as results  # noqa: E402
 from ui.daemon.runner import api as runner  # noqa: E402
-from ui.daemon.tearsheet import api as tearsheet, harvest  # noqa: E402
+from ui.daemon.tearsheet import api as tearsheet  # noqa: E402
 from ui.desktop import client  # noqa: E402
 from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.studypage.views import StrategyPage  # noqa: E402
@@ -179,9 +180,9 @@ def synthetic(root: Path, samples: tuple[str, ...], exits: tuple[str, ...]) -> N
 
 def test_refusals(http: TestClient) -> None:
     """A sample outside IS/OOS is refused; no cosecha names its command; one exit type is said."""
-    real = harvest.DATA
+    real = paths.DATA
     with tempfile.TemporaryDirectory(prefix="ui-tearsheet-") as tmp:
-        harvest.DATA = Path(tmp)
+        paths.DATA = Path(tmp)
         where = {"project": "Test_P", "databank": "Bank", "identity": "x"}
         assert (
             "studies.screening.gate.harvest" in ask(http, "tearsheet", **where)["error"]
@@ -195,7 +196,7 @@ def test_refusals(http: TestClient) -> None:
             "un solo tipo: «Stop loss»"
             in block(got, "IS", "Resultado por tipo de salida")["note"]
         )
-    harvest.DATA = real
+    paths.DATA = real
     gone = ask(
         http, "tearsheet", identity="nada"
     )  # cut or never retested: said, in grey

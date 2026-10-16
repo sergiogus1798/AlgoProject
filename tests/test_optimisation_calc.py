@@ -28,6 +28,26 @@ def test_wfm_cell_sharpe_rolls_a_weekend_close_to_monday() -> None:
     assert abs(got - 10.35) < 0.01, got
 
 
+def test_wfm_no_loss_cell_ranks_best_and_serialises_as_none() -> None:
+    """A cell without a loss has PF inf: it ranks above every other cell, and JSON gets None."""
+    from core.study import blocks
+
+    close = pd.to_datetime(["2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"])
+    trades = pd.DataFrame(
+        {
+            "strategy": "s",
+            "sample": "OOS",
+            "result": ["a", "a", "b", "b"],
+            "Close time": close,
+            "Profit/Loss": [10.0, 5.0, 10.0, -5.0],
+        }
+    )
+    cells = equity.per_cell(trades, "s")
+    assert sorted(cells["profit_factor"]) == [2.0, np.inf]
+    pf = equity.aggregate(cells).set_index("métrica").loc["PF"]
+    assert pf["peor"] == pf["mediana"] == 2.0 and blocks.plain(pf["mejor"]) is None
+
+
 if __name__ == "__main__":
     test_wfm_cell_sharpe_rolls_a_weekend_close_to_monday()
     print("ok")

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core.paths import DATA
+from core.paths import latest_harvest
 from ui.daemon.tearsheet import borrow
 
 SAMPLES = ("IS", "OOS")  # the one-way door: a harvest holds these two and nothing else
@@ -36,8 +36,10 @@ def newest(project: str, databank: str) -> Path | None:
     Returns:
         `harvest/<P>/<D>/<day>/`, or None when nobody harvested it.
     """
-    found = sorted((DATA / "harvest" / project / databank).glob("*/metrics.parquet"))
-    return found[-1].parent if found else None
+    try:
+        return latest_harvest(project, databank, "metrics.parquet")
+    except FileNotFoundError:
+        return None
 
 
 def missing(project: str, databank: str) -> str:

@@ -12,6 +12,7 @@ ROOT = (
 )
 sys.path.insert(0, str(ROOT))
 
+from core import metrics  # noqa: E402
 from engines.nulls import model, stats, verdict  # noqa: E402
 
 BAD: list[str] = []
@@ -173,7 +174,7 @@ def t_uniform() -> None:
 
 def t_stats() -> None:
     """profit_factor, drawdown, measure on hand cases."""
-    pf = stats.profit_factor(
+    pf = metrics.profit_factor(
         np.array([[1, -2, 3, -1.0], [1, 2, 3, 4.0], [-1, -2, -3, -4.0]])
     )
     ok("pf.value", np.isclose(pf[0], 4 / 3), f"{pf[0]}")
@@ -185,7 +186,7 @@ def t_stats() -> None:
         [1, 2, 3, 4.0, 1, 1],
         [5, -1, -1, 4.0, -3, 1],
     ]
-    dd = stats.drawdown(np.array(rows))
+    dd = metrics.dd_money(metrics.cumulative(np.array(rows)))
     ok("dd.first_loss", np.isclose(dd[0], 3), f"{dd[0]} (equity 0 -> -3)")
     ok(
         "dd.peak_trough",
@@ -198,11 +199,15 @@ def t_stats() -> None:
     x = np.random.default_rng(7).normal(0.2, 1.0, (6, 50))
     m = stats.measure(x, ["net", "sharpe", "pf", "retdd", "dd"])
     ok("measure.net", np.allclose(m["net"], x.sum(1)), "net = sum")
-    ok("measure.pf", np.allclose(m["pf"], stats.profit_factor(x)), "pf")
-    ok("measure.dd", np.allclose(m["dd"], stats.drawdown(x)), "dd")
+    ok("measure.pf", np.allclose(m["pf"], metrics.profit_factor(x)), "pf")
+    ok(
+        "measure.dd",
+        np.allclose(m["dd"], metrics.dd_money(metrics.cumulative(x))),
+        "dd",
+    )
     ok(
         "measure.retdd",
-        np.allclose(m["retdd"], x.sum(1) / stats.drawdown(x)),
+        np.allclose(m["retdd"], x.sum(1) / metrics.dd_money(metrics.cumulative(x))),
         "retdd = net/dd",
     )
     s1, s0 = x.mean(1) / x.std(1, ddof=1), x.mean(1) / x.std(1)

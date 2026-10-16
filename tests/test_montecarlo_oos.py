@@ -108,14 +108,14 @@ def test_mcretest_originals_keep_oos_only() -> None:
             "sample": ["IS", "IS", "OOS"],
         }
     )
-    real_newest = originals.newest_harvest
+    real_newest = originals.latest_harvest
     with tempfile.TemporaryDirectory() as tmp:
         mixed.to_parquet(Path(tmp) / "trades.parquet")
-        originals.newest_harvest = lambda project, databank: Path(tmp)
+        originals.latest_harvest = lambda project, databank: Path(tmp)
         try:
             got = originals.read("P", "Results", {"S1": "h1", "S2": "h2"}, 1.0)
         finally:
-            originals.newest_harvest = real_newest
+            originals.latest_harvest = real_newest
     assert set(got["strategy"]) == {"S2"}, "S1's only row is IS and must not come back"
     assert len(got) == 1, "S2's IS row must be dropped, its one OOS row kept"
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Known-answer test: the SPP `combinado` Sharpe is on weekdays, as SQX's and `annual_sharpe` are."""
+"""Known-answer test: the SPP `combinado` Sharpe is on weekdays, as SQX's and `core.metrics` are."""
 
 import sys
 from pathlib import Path
@@ -9,7 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core import significance
+from core import metrics
 from studies.breakage.spp.model import combine
 
 
@@ -23,7 +23,10 @@ def test_sharpe_is_on_weekdays() -> None:
     expected = pnl.mean() / pnl.std(ddof=1) * np.sqrt(252)
     assert abs(got["SharpeRatio"] - expected) < 1e-9, (got, expected)
     assert (
-        abs(got["SharpeRatio"] - significance.annual_sharpe(pnl, days.to_numpy()))
+        abs(
+            got["SharpeRatio"]
+            - metrics.sharpe(metrics.weekday_pnl(pnl, days.to_numpy()), 252)
+        )
         < 1e-9
     )
 

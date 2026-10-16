@@ -12,7 +12,7 @@ from datetime import date
 import pandas as pd
 
 from core.manifest import write as write_manifest
-from core.paths import report_dir
+from core.paths import latest_harvest, report_dir
 from core.study import output
 from core.study.render import markdown
 from ledger import steprows
@@ -36,7 +36,7 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
-    folder = inputs.newest(a.project, a.databank)
+    folder = latest_harvest(a.project, a.databank)
     asset = costs.asset_for(a.feed)
     timeframe = inputs.timeframe(folder)
     priced = costs.per_trade(inputs.trades(folder), a.feed, timeframe)

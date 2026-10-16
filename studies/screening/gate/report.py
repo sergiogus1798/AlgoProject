@@ -6,7 +6,7 @@ import shutil
 from datetime import date
 
 from core.manifest import write as write_manifest
-from core.paths import report_dir
+from core.paths import latest_harvest, report_dir
 from core.study import draws, output
 from ledger import steprows, tried
 from pipeline.autopilot import criteria, judge
@@ -47,7 +47,7 @@ def main() -> None:
         [] if a.seed is None else [f"{knob}.seed={a.seed}" for knob in SEEDS]
     )
     cfg = inputs.config(sets)
-    folder = inputs.newest(a.project, a.databank)
+    folder = latest_harvest(a.project, a.databank)
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "gate"
     harvest = inputs.load(folder)
     data = inputs.staged(

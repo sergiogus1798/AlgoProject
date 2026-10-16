@@ -7,10 +7,11 @@ from typing import Any, TypedDict, cast
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
+import yaml
 
-from core import assetdata, assetwrite
+from core import assetdata, assetwrite, metrics
 from core.barstore import read as read_bars
-from core.paths import DATA, feed_quality_dir
+from core.paths import feed_quality_dir
 from core.study import config as study_config
 from core.symbols import current
 from engines.market import reprice, rounding
@@ -39,6 +40,12 @@ class Harvest(TypedDict):
     split: str
     end: str
     folder: str
+
+
+def drift() -> dict[str, Any]:
+    """The gate's `drift` block as written (window and variant of the drift term): every study
+    that charges a blind trade its market's drift reads this one."""
+    return yaml.safe_load(CONFIG.read_text(encoding="utf-8"))["drift"]
 
 
 def config(overrides: list[str]) -> dict[str, Any]:
@@ -113,7 +120,7 @@ def market(feed: str) -> Market:
             for s, k in segment.items()
         },
         "years": {
-            s: (pd.Timestamp(b, unit="ms") - pd.Timestamp(a, unit="ms")).days / 365.25
+            s: metrics.years(pd.Timestamp(a, unit="ms"), pd.Timestamp(b, unit="ms"))
             for s, (a, b) in edges.items()
         },
     }
@@ -169,7 +176,7 @@ def ensure_rounding(feed: str, trades: pd.DataFrame, frame: str) -> None:
         "use"
     ):
         return
-    build = trades[trades["sample"] == "IS"]
+    build = pd.DataFrame(trades[trades["sample"] == "IS"])
     keep = sorted(build["identity"].unique())[:ROUNDING_SAMPLE]
     got = rounding.measure(
         symbol,
@@ -240,21 +247,6 @@ def build_pnl(data: dict, alive: pd.Index) -> pd.DataFrame:
     return pd.DataFrame(
         {"identity": raw["identity"].to_numpy(), "pnl": priced["pnl"].to_numpy()}
     )
-
-
-def newest(project: str, databank: str) -> Path:
-    """The most recent harvest of one databank.
-
-    Args:
-        project: Project name.
-        databank: Databank name as SQX shows it.
-
-    Returns:
-        Its folder. Harvests are dated and immutable, so the newest is the current one;
-        `_aparte` (what `harvest.set_aside` moved away) is not a harvest and sorts after every date.
-    """
-    folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def wide(path: Path) -> dict[str, pd.DataFrame]:

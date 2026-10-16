@@ -5,6 +5,7 @@ from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from engines.market import reprice
 from engines.variants import excess
 
@@ -25,13 +26,13 @@ def monday(time: np.ndarray | pd.Series | np.datetime64) -> np.ndarray:
 
 
 def years(window: tuple[str, str]) -> float:
-    """Length of a window in years of 365.25 days, as `engines.variants.excess.per_year` counts.
+    """Length of a window in years (`core.metrics.years`), as `engines.variants.excess.per_year` counts.
 
     Args:
         window: (first day, last day) as full dates, both inside it.
     """
     first, last = (pd.Timestamp(day) for day in window)
-    return ((last - first).days + 1) / 365.25
+    return metrics.years(first, last)
 
 
 def per_trade(
@@ -116,7 +117,7 @@ def per_year(panel: pd.DataFrame, window: tuple[str, str]) -> pd.Series:
         window: The window weekly() was given.
 
     Returns:
-        Indexed by unit, account currency per year of 365.25 days.
+        Indexed by unit, account currency per year (`core.metrics.years`).
     """
     return panel.sum() / years(window)
 

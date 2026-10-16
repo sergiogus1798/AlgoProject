@@ -5,6 +5,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from engines.market import reprice
 from studies.screening.analysis import tradelevel
 
@@ -72,12 +73,12 @@ def per_year(excess: pd.DataFrame, window: tuple[str, str]) -> pd.Series:
         window: (first day, last day) of the window as full dates, both inside it.
 
     Returns:
-        Indexed by `variant_id`, account currency per year of 365.25 days. A variant without
+        Indexed by `variant_id`, account currency per year (`core.metrics.years`). A variant without
         a trade in the window has no row.
     """
     first, last = (pd.Timestamp(day) for day in window)
     total = cast(pd.Series, excess.groupby("variant_id")["excess"].sum())
-    return total / (((last - first).days + 1) / 365.25)
+    return total / metrics.years(first, last)
 
 
 def daily(

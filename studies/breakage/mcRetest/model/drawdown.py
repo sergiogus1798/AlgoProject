@@ -77,8 +77,8 @@ def reduce(how: np.ufunc, values: np.ndarray, offsets: np.ndarray) -> np.ndarray
     return out
 
 
-def max_drawdown(p: dict) -> np.ndarray:
-    """Deepest peak-to-valley fall of each simulation.
+def deepest(p: dict) -> np.ndarray:
+    """Deepest peak-to-valley fall of each simulation (`core.metrics.dd_money` from 0).
 
     Args:
         p: What recon.parts() returned.
@@ -89,8 +89,8 @@ def max_drawdown(p: dict) -> np.ndarray:
     return _reduce(p["dd"], p, np.maximum)
 
 
-def drawdown_pct(p: dict) -> np.ndarray:
-    """The same fall as a share of the account it happened to.
+def deepest_pct(p: dict) -> np.ndarray:
+    """The same fall as a share of the account it happened to (`core.metrics.dd_pct`).
 
     Args:
         p: What recon.parts() returned.
@@ -135,7 +135,7 @@ def return_dd_ratio(p: dict) -> np.ndarray:
     Returns:
         A ratio per simulation.
     """
-    dd = max_drawdown(p)
+    dd = deepest(p)
     return np.divide(p["total"], dd, out=np.full_like(p["total"], np.inf), where=dd > 0)
 
 
@@ -150,5 +150,5 @@ def recovery_factor(p: dict) -> np.ndarray:
         absolute fall, this one by the capital-relative fall, and on the calibration
         strategy they are 3.86 and 4.40.
     """
-    dd = drawdown_pct(p) / 100.0 * p["capital"]
+    dd = deepest_pct(p) / 100.0 * p["capital"]
     return np.divide(p["total"], dd, out=np.full_like(p["total"], np.inf), where=dd > 0)

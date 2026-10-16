@@ -13,9 +13,10 @@ from scipy import stats as sps
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.surface import dedupe, plateau
 from arch.bootstrap import optimal_block_length
 
+from core import metrics
+from core.surface import dedupe, plateau
 from engines.inference import excess, fdr
 from engines.inference.snooping import superior
 from engines.market import calibrate
@@ -92,7 +93,7 @@ def _ladder(pnl: tuple) -> np.ndarray:
 def test_drawdown_from_start(pnl: tuple, dd: float) -> None:
     """Drawdown counts the fall from the starting balance, in every implementation."""
     arr = np.array([pnl])
-    assert stats.drawdown(arr)[0] == pytest.approx(dd, abs=1e-12)
+    assert metrics.dd_money(metrics.cumulative(arr))[0] == pytest.approx(dd, abs=1e-12)
     out = _ladder(pnl)
     assert out[4] == pytest.approx(dd, abs=1e-12)
     ref = stats.measure(arr, list(kernel.NAMES))

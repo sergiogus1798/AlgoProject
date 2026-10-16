@@ -4,9 +4,9 @@ from typing import cast
 
 import pandas as pd
 
+from core import metrics
 from engines.market import reprice
 from engines.variants import excess
-from studies.screening.analysis import resample
 
 COLUMNS = ["excess", "profit", "drift", "trades"]
 
@@ -49,7 +49,7 @@ def summed(per: pd.DataFrame) -> pd.DataFrame:
     return cast(pd.DataFrame, out.assign(excess=out["profit"] - out["drift"])[COLUMNS])
 
 
-def drawdowns(legs: list[pd.DataFrame], risk: float) -> pd.Series:
+def dd_r(legs: list[pd.DataFrame], risk: float) -> pd.Series:
     """Each variant's maximum drawdown over several windows together, in R.
 
     Args:
@@ -59,7 +59,7 @@ def drawdowns(legs: list[pd.DataFrame], risk: float) -> pd.Series:
 
     Returns:
         Indexed by `variant_id`: the deepest fall of the closed-trade curve from its running
-        high (`studies.screening.analysis.resample.max_drawdown`, the curve starting at 0),
+        high (`core.metrics.dd_money` of the curve starting at 0),
         trades in close-time order across the windows, over `risk`. A variant with no
         trade has no row.
     """
@@ -68,7 +68,7 @@ def drawdowns(legs: list[pd.DataFrame], risk: float) -> pd.Series:
         cast(
             pd.Series,
             trades.groupby("variant_id")["profit"].agg(
-                lambda pnl: float(resample.max_drawdown(pnl.to_numpy()))
+                lambda pnl: metrics.dd_money(metrics.cumulative(pnl.to_numpy()))
             ),
         )
         / risk

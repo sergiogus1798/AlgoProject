@@ -8,6 +8,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from core import paths  # noqa: E402
 from ui.daemon.tearsheet import borrow, harvest  # noqa: E402
 
 P = "Test_X"
@@ -20,13 +21,14 @@ def cosecha(root: Path, names: list[str]) -> None:
     pd.DataFrame(
         {"identity": [f"h{i}" for i in range(len(names))], "strategy": names}
     ).set_index("identity").to_parquet(day / "metrics.parquet")
+    (day / "trades.parquet").touch()  # a cosecha is the day that holds its trades
 
 
 def main() -> None:
     """Borrowed by name when unique; a sentence when cut or doubled; nothing when no cosecha."""
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        borrow.DATA = harvest.DATA = root
+        borrow.DATA = paths.DATA = root
         borrow.find.roster = lambda project, databank: {
             "w1": "Strategy 1",
             "w2": "Strategy 9",

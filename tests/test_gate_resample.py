@@ -11,6 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core import metrics
 from studies.screening.analysis import resample  # noqa: E402
 from studies.screening.gate import level3ab  # noqa: E402
 
@@ -131,10 +132,13 @@ def test_max_drawdown_spec_toy() -> None:
     """The spec's ten trades: 200 as they are, 340 with 80 less each; a first loss counts."""
     build = np.array([300, -100, 200, -200, 400, -150, 250, -50, 350, 0.0])
     assert (
-        resample.max_drawdown(build) == 200 and resample.max_drawdown(build - 80) == 340
+        metrics.dd_money(metrics.cumulative(build)) == 200
+        and metrics.dd_money(metrics.cumulative(build - 80)) == 340
     )
-    assert resample.max_drawdown(np.array([-50.0, 100.0])) == 50
-    assert list(resample.max_drawdown(np.array([[1.0, 2.0], [-1.0, -2.0]]))) == [0, 3]
+    assert metrics.dd_money(metrics.cumulative(np.array([-50.0, 100.0]))) == 50
+    assert list(
+        metrics.dd_money(metrics.cumulative(np.array([[1.0, 2.0], [-1.0, -2.0]])))
+    ) == [0, 3]
 
 
 def test_drawdown_of_the_build_resampled_is_centred() -> None:
@@ -145,8 +149,8 @@ def test_drawdown_of_the_build_resampled_is_centred() -> None:
         build = rng.standard_t(4, 330) * 0.8 + 0.3
         start = rng.integers(0, 330 - 8 + 1, 25)
         oos = build[(start[:, None] + np.arange(8)).ravel()][:196]
-        null = resample.drawdowns(build, oos.mean(), len(oos), 8, 200, rng)
-        p.append(resample.p_upper(null, resample.max_drawdown(oos)))
+        null = resample.null_drawdowns(build, oos.mean(), len(oos), 8, 200, rng)
+        p.append(resample.p_upper(null, metrics.dd_money(metrics.cumulative(oos))))
     p = np.array(p)
     assert 0.40 < p.mean() < 0.60 and (p <= 0.01).mean() < 0.05, (
         p.mean(),
@@ -163,10 +167,10 @@ def test_drawdown_sees_clustered_losses() -> None:
     packed = np.r_[np.delete(oos, worst)[:90], oos[worst], np.delete(oos, worst)[90:]]
     p = [
         resample.p_upper(
-            resample.drawdowns(
+            resample.null_drawdowns(
                 build, x.mean(), len(x), 8, 2000, np.random.default_rng(6)
             ),
-            resample.max_drawdown(x),
+            metrics.dd_money(metrics.cumulative(x)),
         )
         for x in (oos, packed)
     ]

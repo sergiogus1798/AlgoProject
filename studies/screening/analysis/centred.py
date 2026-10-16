@@ -5,7 +5,9 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-YEAR = 365.25  # days
+from core import metrics
+
+YEAR = metrics.YEAR_DAYS
 
 
 def calendar_exposure(first: pd.Timestamp, last: pd.Timestamp) -> pd.Series:

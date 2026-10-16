@@ -21,6 +21,7 @@
 - `delay-tier1-overstates-stop-strategies` — Can the delay cost of a strategy with a stop be read with exits held fixed (tier 1)?
 - `distribution-series-outside-the-bins` — Why did the spp report crash with "unsupported operand NoneType * float" on a distribution overlay?
 - `drift-term-biased-by-side` — Why is the gate's drift_excess_t biased toward one side (long or short) of an asset, and how much?
+- `dsr-effective-n-barely-moves` — Does correcting the DSR's n for autocorrelation of daily P&L change which SQX strategies pass?
 - `entry-vs-chance` — Do the entries or the exits carry the edge on this corpus, and how to tell?
 - `eta-squared-vs-duplicates` — Should an inert parameter be frozen by the duplicate test or by eta-squared?
 - `far-stop-touches-too-many-trades` — Is there a far per-trade ATR stop that rarely fires on these bar-count-exit strategies?

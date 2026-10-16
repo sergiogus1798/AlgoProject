@@ -18,7 +18,8 @@ def share_null(p: np.ndarray, cut: float = LAMBDA) -> float:
             to true because a real edge almost never produces a large p.
 
     Returns:
-        A fraction in [0, 1]. Assuming every test is null instead — the textbook shortcut —
+        A fraction in [0, 1]; 1 for an empty family («sin pruebas»: no test, so no evidence
+        that any is not null — never the NaN 0/0 would give). Assuming every test is null instead — the textbook shortcut —
         overstates how many passes were luck, by exactly the factor this corrects.
 
     It degenerates to 0 when almost no p-value is large, which is what a family with
@@ -26,6 +27,8 @@ def share_null(p: np.ndarray, cut: float = LAMBDA) -> float:
     the estimator saying "I see no null tests here". A report shows it beside the
     all-null count rather than instead of it, because 0 expected reads as absurd alone.
     """
+    if len(p) == 0:
+        return 1.0
     return float(min((p > cut).sum() / ((1 - cut) * len(p)), 1.0))
 
 

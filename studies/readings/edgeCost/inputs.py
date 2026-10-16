@@ -5,7 +5,6 @@ from typing import Any
 
 import pandas as pd
 
-from core.paths import DATA
 from core.study import config as study_config
 from ledger import thresholds
 
@@ -25,20 +24,6 @@ def config(overrides: list[str]) -> dict[str, Any]:
     """
     cfg = thresholds.fill(study_config.load(CONFIG, []))
     return study_config.apply(cfg, overrides)
-
-
-def newest(project: str, databank: str) -> Path:
-    """The most recent harvest of one databank.
-
-    Args:
-        project: Project name.
-        databank: Databank name as SQX shows it.
-
-    Returns:
-        Its folder. Harvests are dated and immutable, so the newest is the current one.
-    """
-    folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def trades(folder: Path) -> pd.DataFrame:

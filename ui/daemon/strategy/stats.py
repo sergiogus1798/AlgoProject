@@ -4,8 +4,8 @@ from typing import Any, TypedDict, cast
 
 import pandas as pd
 
+from core.metrics import dd_money, finite, profit_factor
 from core.study import blocks
-from ui.daemon.strategy import costcurve
 from ui.daemon.tearsheet import oos2, tradestats
 
 HARVEST = {
@@ -20,12 +20,6 @@ DEFAULT_UNIT = "USD por operación"  # owner, 2026-09-30 (feedback §3.1)
 def _figure(value: Any) -> float | None:
     """A metric of the cosecha as JSON can carry it: float32 widened, NaN as missing."""
     return None if value is None or bool(pd.isna(value)) else float(value)
-
-
-def _pf(pnl: pd.Series) -> float | None:
-    """Gross profit over gross loss; None without a losing trade."""
-    loss = -pnl[pnl < 0].sum()
-    return float(pnl[pnl > 0].sum() / loss) if loss > 0 else None
 
 
 def _histogram(values: pd.Series, unit: str, sample: str) -> dict[str, Any]:
@@ -44,7 +38,7 @@ def _histogram(values: pd.Series, unit: str, sample: str) -> dict[str, Any]:
 
 
 class Figure(TypedDict):
-    """One line of a sample's table: its label, value (None when undefined) and unit."""
+    """One line of a sample's table: its label, value (None when undefined: a profit factor without a loss too) and unit."""
 
     label: str
     value: float | None
@@ -102,7 +96,7 @@ def one(
             "value": float(pnl.sum()),
             "unit": "USD",
         },
-        {"label": "Profit Factor", "value": _pf(pnl), "unit": ""},
+        {"label": "Profit Factor", "value": finite(profit_factor(pnl)), "unit": ""},
         {
             "label": "Win Rate",
             "value": float((pnl > 0).mean() * 100) if len(pnl) else None,
@@ -110,7 +104,7 @@ def one(
         },
         {
             "label": "DD máximo (curva diaria de SQX)",
-            "value": costcurve.drawdown(curve),
+            "value": -dd_money([0.0, *curve]),
             "unit": "USD",
         },
         {"label": "Sharpe (SQX)", "value": _figure(sharpe), "unit": ""},

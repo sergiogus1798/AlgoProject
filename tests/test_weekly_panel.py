@@ -85,7 +85,7 @@ def test_three_trades_by_hand(variant: str) -> None:
     ] = -6.0  # open over the weekend: whole in its closing week
     want.loc["2020-12-28", "v2"] = -1.5
     assert np.allclose(net, want) and np.allclose(gross - net, -want)
-    years = 366 / 365.25
+    years = 365 / 365.25  # core.metrics.years: elapsed days, no +1
     assert np.allclose(panel.per_year(net, WINDOW), np.array([-9.0, -1.5, 0.0]) / years)
     assert np.allclose(panel.per_year(gross, WINDOW), 0.0)
     assert panel.straddle(per["open"], per["close"]) == pytest.approx(1 / 3)

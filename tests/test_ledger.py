@@ -113,7 +113,7 @@ def main() -> None:
     mixed = frame.copy()
     first = mixed.index[0]
     mixed.loc[first, "score_unit"] = "annualised"
-    mixed.loc[first, ["sharpe_mean", "sharpe_std"]] *= np.sqrt(trials.YEAR)
+    mixed.loc[first, ["sharpe_mean", "sharpe_std"]] *= np.sqrt(trials.TRADING_DAYS)
     converted = trials.accumulated(mixed)
     if (
         abs(converted["sigma"] - counted["sigma"]) > 1e-9

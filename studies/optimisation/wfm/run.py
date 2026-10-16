@@ -1,11 +1,12 @@
 """One WFM export's whole reading: each mother's L1, L2, redundancy, corrected area and drift."""
 
-from typing import Any, TypedDict, cast
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from engines.weekly import flip, panel
 from studies.optimisation.wfm.inputs import asset, export
 from studies.optimisation.wfm.measure import drift, excess, gaterule, levels
@@ -39,7 +40,7 @@ def covered(shapes: pd.DataFrame, spans: dict) -> pd.DataFrame:
                 last.clip(upper=pd.Timestamp(b) + pd.Timedelta(days=1))
                 - first.clip(lower=pd.Timestamp(a))
             ).dt.days.clip(lower=0)
-            / 365.25
+            / metrics.YEAR_DAYS
         )
         for name, (a, b) in spans.items()
     }

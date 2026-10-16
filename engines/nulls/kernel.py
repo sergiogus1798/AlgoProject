@@ -3,6 +3,8 @@
 import numpy as np
 from numba import njit
 
+from core.metrics import FLAT
+
 # Column order of what runs() fills; stats.GOOD_HIGH names the same five.
 NAMES = ("net", "sharpe", "pf", "retdd", "dd")
 
@@ -72,12 +74,15 @@ def _write(
     """One run's five statistics into its row of `out`, in NAMES order."""
     n = pnl.size
     mean = net / n
-    var = 0.0
+    var = big = 0.0
     for k in range(n):
         var += (pnl[k] - mean) ** 2
+        big = max(big, abs(pnl[k]))
+    sd = np.sqrt(var / (n - 1)) if n > 1 else 0.0
     row[0] = net
-    row[1] = mean / np.sqrt(var / (n - 1))
-    row[2] = gain / loss if loss > 0.0 else np.inf
+    # core.metrics' edge rules, compiled: NaN Sharpe when flat, PF inf only with a gain
+    row[1] = mean / sd if sd > FLAT * big else np.nan
+    row[2] = gain / loss if loss > 0.0 else (np.inf if gain > 0.0 else np.nan)
     row[3] = net / dd if dd > 0.0 else 0.0
     row[4] = dd
 

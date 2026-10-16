@@ -7,6 +7,7 @@ from typing import Any, TypedDict
 
 import pandas as pd
 
+from core import metrics
 from core.paths import export_dir
 from core.researchpaths import research_memory_dir
 from studies.research.memory.sources import CONFIG
@@ -92,7 +93,7 @@ def built(trades: pd.DataFrame) -> Built:
     """
     mine = pd.DataFrame(trades[trades["Sample type"].astype(str).str.startswith("IS")])
     years = (mine["Close time"].max() - mine["Open time"].min()).total_seconds() / (
-        365.25 * 86400
+        metrics.YEAR_DAYS * 86400
     )
     hours = (mine["Close time"] - mine["Open time"]).dt.total_seconds() / 3600
     by = mine["strategy"].astype(str)

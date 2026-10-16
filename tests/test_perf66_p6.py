@@ -241,7 +241,7 @@ def test_g_originals_reads_only_its_rows_and_the_same_frame(
     )
     (tmp_path / "trades.parquet").parent.mkdir(exist_ok=True)
     frame.to_parquet(tmp_path / "trades.parquet", index=False)
-    monkeypatch.setattr(originals, "newest_harvest", lambda p, d: tmp_path)
+    monkeypatch.setattr(originals, "latest_harvest", lambda p, d: tmp_path)
     ids = {"S1": "i1", "S3": "i3"}
     new = originals.read("P", "Results", ids, 5.0)
     by = {v: k for k, v in ids.items()}

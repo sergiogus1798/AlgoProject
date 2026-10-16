@@ -7,7 +7,7 @@ from typing import Any, TypedDict, cast
 import numpy as np
 import pandas as pd
 
-from core import assetmarkets, fanout, paths
+from core import assetmarkets, fanout, metrics, paths
 from core.study import draws
 from studies.research.memory import sources
 from studies.transfer.crossmarket import load
@@ -151,13 +151,10 @@ def _frequency(
     )
     years = pd.Series(
         {
-            f: cast(
-                pd.Timedelta,
-                pd.Timestamp(cast(dict, markets.own_window(f))["to"])
-                + pd.Timedelta(days=1)
-                - pd.Timestamp(cast(dict, markets.own_window(f))["from"]),
+            f: metrics.years(
+                cast(dict, markets.own_window(f))["from"],
+                cast(dict, markets.own_window(f))["to"],
             )
-            / cast(pd.Timedelta, pd.Timedelta(days=365.25))
             for f in feeds
         }
     )

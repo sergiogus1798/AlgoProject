@@ -5,12 +5,12 @@ from typing import TypedDict
 import numpy as np
 import pandas as pd
 
+from core.metrics import TRADING_DAYS
 from core.significance import moments
 from core.surface import plateau
 from core.surface.plateau import Deflated
 
 SHARPE_UNITS = ("per_period", "annualised")  # the only score units that are a Sharpe
-YEAR = 252  # trading days a year, for converting SQX's annualised Sharpes
 
 
 class _Counted(TypedDict):
@@ -59,7 +59,7 @@ def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> Accumulated:
         the direction that makes a result look better.
 
     Only rows whose `score_unit` is a Sharpe are pooled into sigma, annualised ones converted
-    to the per-period scale by 1/sqrt(252) (`unit` is always "per_period"). A row of any other
+    to the per-period scale by 1/√TRADING_DAYS (`unit` is always "per_period"). A row of any other
     unit (`p_pass`, `ev_bank_usd`) still adds its `n_scored` to N, since those are looks, but
     its scores are not Sharpes and never reach sigma.
     """
@@ -82,7 +82,9 @@ def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> Accumulated:
             "unit": "per_period",
         }
     # annualised rows come to the per-day scale here, once, so no caller has to
-    scale = np.where(scored["score_unit"] == "annualised", 1 / np.sqrt(YEAR), 1.0)
+    scale = np.where(
+        scored["score_unit"] == "annualised", 1 / np.sqrt(TRADING_DAYS), 1.0
+    )
     n = scored["n_scored"].to_numpy(float)
     mean = scored["sharpe_mean"].to_numpy(float) * scale
     sd = scored["sharpe_std"].to_numpy(float) * scale
@@ -136,3 +138,14 @@ def deflated(returns: np.ndarray, sigma: float, n_eff: int) -> Deflated:
     """
     sharpe, skew, kurtosis = moments(returns)
     return plateau.deflated_sharpe(sharpe, sigma, n_eff, len(returns), skew, kurtosis)
+
+
+def deflated_autocorrelated(returns: np.ndarray, sigma: float, n_eff: int) -> Deflated:
+    """`deflated`, its observation count the autocorrelation-effective one (encargo 75 E).
+
+    Not read in production: it is measured beside `deflated` on the store and the step-8
+    harvests, and replaces it only with the owner's yes (`plateau.effective_n`).
+    """
+    sharpe, skew, kurtosis = moments(returns)
+    n_obs = plateau.effective_n(returns)
+    return plateau.deflated_sharpe(sharpe, sigma, n_eff, n_obs, skew, kurtosis)

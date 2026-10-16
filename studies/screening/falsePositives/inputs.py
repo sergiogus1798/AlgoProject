@@ -6,6 +6,7 @@ from typing import Any, TypedDict
 
 import yaml
 
+from core.paths import latest_harvest
 from core.study import config as study_config
 from engines.nulls import inputs as null_inputs
 from ledger import cells
@@ -61,7 +62,7 @@ def load(
         manifest, named in `source`.
     """
     gate_cfg = gate_inputs.config([])
-    folder = harvest or gate_inputs.newest(project, databank)
+    folder = harvest or latest_harvest(project, databank)
     real = gate_inputs.load(folder)
     timeframe = gate_inputs.timeframe(real["metrics"], gate_cfg, [])
     with tempfile.TemporaryDirectory() as tmp:  # `out` is chain.facts8's, one per call

@@ -1,21 +1,20 @@
 """A variant batch's trades on every market as weekly excess, gross and net, one leg at a time."""
 
-from typing import Any, TypedDict, cast
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from core import assetdata, barstore, fanout
 from engines.market import reprice
 from engines.variants import filters, fingerprint
 from engines.weekly import panel
+from studies.screening.gate.inputs import drift
 
 TRADES = "variant_trades.parquet"  # written by sqx.variants.varianttrades
 MAIN = "Main"
 # The excess is step 14's: the gate's drift block, never a copy of its values.
-GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 EMPTY = pd.DataFrame(
     {
         "variant_id": pd.Series(dtype=str),
@@ -29,11 +28,6 @@ EMPTY = pd.DataFrame(
 _JOB: dict = {}  # what a forked worker reads: set by read()
 
 
-def drift() -> dict[str, Any]:
-    """The gate's `drift` block: the window and the variant of the drift term."""
-    return yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
-
-
 def span(asset: dict, leg: str) -> tuple[str, str]:
     """The declared bounds of one leg, as strings a DatetimeIndex slices by."""
     return (str(asset["segments"][leg]["from"]), str(asset["segments"][leg]["to"]))
@@ -44,7 +38,7 @@ def window(asset: dict, leg: str) -> tuple[str, str]:
     last = asset["segments"][leg]["to"]
     return (
         assetdata.segment_start(asset, leg),
-        f"{last}-12-31" if isinstance(last, int) else str(last),
+        assetdata.last_day(last),
     )
 
 

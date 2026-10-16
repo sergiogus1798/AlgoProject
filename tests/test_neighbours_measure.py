@@ -93,7 +93,7 @@ def table() -> pd.DataFrame:
             left_on="variant_id",
             right_index=True,
         )
-    dd = excess.drawdowns(paths, 2.0).rename("dd_r")
+    dd = excess.dd_r(paths, 2.0).rename("dd_r")
     return out.merge(dd, left_on="variant_id", right_index=True)
 
 

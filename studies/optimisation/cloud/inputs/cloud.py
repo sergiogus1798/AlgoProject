@@ -1,22 +1,20 @@
 """The cloud this study reads: each variant's parameters and its excess per year, on build and on oos1."""
 
-from typing import Any, cast
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
-import yaml
 
 from core import assetdata, barstore
-from core.paths import ROOT
 from engines.market import reprice
 from engines.variants import excess, filters, look
+from studies.screening.gate import inputs as gate_inputs
 
 LEGS = (
     "build",
     "oos1",
 )  # the only legs ever asked of the parquet: the map never reads oos2
 # The measure's parameters are the gate's, not a copy: the map's excess is step 14's.
-GATE = ROOT / "studies" / "screening" / "gate" / "config.yaml"
 
 
 def measured(work: Path) -> pd.DataFrame:
@@ -37,7 +35,7 @@ def measured(work: Path) -> pd.DataFrame:
     asset = assetdata.load(symbol)
     feed = asset["sqx_symbol"]
     bars = barstore.read(feed, timeframe)
-    drift = yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
+    drift = gate_inputs.drift()
     back = pd.read_parquet(work / "metrics.parquet", columns=["variant_id"])[
         "variant_id"
     ]

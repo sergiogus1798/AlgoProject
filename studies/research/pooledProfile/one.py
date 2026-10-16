@@ -7,7 +7,9 @@ from typing import TypedDict
 import numpy as np
 import pandas as pd
 
-from studies.research.marketProfile import one as profile_one, series
+from core import metrics
+from studies.research.marketProfile import one as profile_one
+from studies.research.marketProfile import series
 
 # The profile's measures whose statistic is a hit rate, not the t of the trades: the spread of
 # their null is in other units and cannot widen an error in costs.
@@ -60,7 +62,7 @@ def run(
     )
     p = profile_one.pvalues(real, sims)
     opens = bars["Open"].to_numpy()
-    years = (bars.index[-1] - bars.index[0]).days / 365.25
+    years = metrics.years(bars.index[0], bars.index[-1])
     rows = []
     for k, (name, direction, stat, entry, leave, _) in enumerate(real):
         centre, spread = sims[:, k].mean(), sims[:, k].std(ddof=1)

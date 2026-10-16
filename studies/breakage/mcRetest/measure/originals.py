@@ -8,7 +8,7 @@ import pyarrow as pa
 
 from core import assets, sqxfile
 from core import trades as core_trades
-from core.paths import harvest_dir
+from core.paths import latest_harvest
 
 KEEP = ["strategy", "Type", "Open time", "Close time", "Size", "cost", "pnl"]
 
@@ -28,27 +28,6 @@ def feed_of(path: Path) -> tuple[str, str, str]:
     symbol, fed = sqxfile.symbol(path)
     feed, _, timeframe = fed.partition("_LOM_")
     return symbol, f"{symbol}_{feed}", timeframe
-
-
-def newest_harvest(project: str, databank: str) -> Path:
-    """The most recently harvested day of one project's build databank.
-
-    Args:
-        project: SQX project name.
-        databank: The build databank `studies.screening.gate.harvest` paired, e.g. "Results".
-
-    Returns:
-        Its directory. Asserts one exists: a Monte Carlo Retest without its project's own
-        harvest cannot price a benchmark, and running one first is the fix, not a fallback.
-    """
-    root = harvest_dir(project, databank, "x").parent
-    days = sorted(d for d in root.glob("*") if (d / "trades.parquet").exists())
-    assert days, (
-        f"no harvest under {root}; run "
-        f"`python3 -m studies.screening.gate.harvest --project {project} "
-        f"--databank {databank} ...` first"
-    )
-    return days[-1]
 
 
 def read(
@@ -83,7 +62,7 @@ def read(
     by_identity = {identity: strategy for strategy, identity in identities.items()}
     # Only this ingest's rows and the columns `cost` and KEEP read: the harvest holds 10,000 strategies.
     got = pd.read_parquet(
-        newest_harvest(project, harvest_databank) / "trades.parquet",
+        latest_harvest(project, harvest_databank) / "trades.parquet",
         columns=[
             "identity",
             "sample",

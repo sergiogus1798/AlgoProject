@@ -7,8 +7,10 @@ firm's curves, one verdict block per firm tagged `"firm"` so the window can togg
 from collections.abc import Callable
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
+from core import metrics
 from core.study import blocks
 from mt5 import compare
 from mt5.verify import firms, sizing
@@ -59,9 +61,10 @@ def max_dd(frame: pd.DataFrame, deposit: float) -> float:
     """Largest fall of the closed-trade balance from its high, in % of the account."""
     if frame.empty:
         return 0.0
-    equity = deposit + frame.sort_values("Close time")["Profit/Loss"].cumsum()
-    peak = equity.cummax().clip(lower=deposit)
-    return float(((peak - equity) / peak).max() * 100)
+    pnl = (
+        frame.sort_values("Close time")["Profit/Loss"].fillna(0.0).to_numpy(dtype=float)
+    )  # a NaN row adds nothing, as cumsum skipped it
+    return metrics.dd_pct(deposit + np.cumsum(pnl), deposit)
 
 
 def rows(

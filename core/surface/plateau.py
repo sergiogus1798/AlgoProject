@@ -84,10 +84,16 @@ class Deflated(TypedDict):
     sharpe: float
     n_eff: int
     dsr: float
+    state: str
 
 
 def deflated_sharpe(
-    sharpe: float, sigma_sr: float, n_eff: int, n_obs: int, skew: float, kurtosis: float
+    sharpe: float,
+    sigma_sr: float,
+    n_eff: int,
+    n_obs: float,
+    skew: float,
+    kurtosis: float,
 ) -> Deflated:
     """Is this Sharpe real, given how many configurations were tried to find it?
 
@@ -100,7 +106,8 @@ def deflated_sharpe(
         kurtosis: Raw kurtosis, 3 for a normal, as `core.significance.moments` returns it.
 
     Returns:
-        The benchmark, and the probability the true Sharpe clears it. **Both Sharpes must
+        The benchmark, the probability the true Sharpe clears it, and `state` ("undefined"
+        when that probability is NaN: a flat series, not a fail). **Both Sharpes must
         be in the same unit**: SQX stores annualised ones and `core.significance` works
         per observation, and mixing the two produces a number that looks reasonable and
         means nothing. Convert before calling.
@@ -116,7 +123,38 @@ def deflated_sharpe(
         "sharpe": sharpe,
         "n_eff": n_eff,
         "dsr": float(stats.norm.cdf(z)),
+        "state": "undefined" if np.isnan(z) else "measured",
     }
+
+
+def effective_n(returns: np.ndarray) -> float:
+    """How many independent observations an autocorrelated return series is worth.
+
+    Args:
+        returns: One return per period, in time order (daily P&L, any constant unit).
+
+    Returns:
+        `n / (1 + 2 Σ_k w_k ρ_k)` over lags k = 1..L, with Newey and West's (1994) automatic
+        truncation L = floor(4 (n/100)^(2/9)) (8 lags for ten years of days) and Bartlett
+        weights w_k = 1 - k/(L+1): the same long-run variance a HAC standard error uses, and
+        the Bartlett kernel keeps it non-negative where raw ρ sums can go below -1/2. Capped
+        at n: a negative ρ estimate on a short series is mostly noise, and deflation must
+        never grant more certainty than the i.i.d. count. NaN with fewer than 3 returns or
+        a flat series. Written beside `deflated_sharpe`'s i.i.d. `n_obs` (encargo 75 E);
+        production does not read it until the owner says so.
+    """
+    x = np.asarray(returns, dtype=np.float64)
+    n = x.size
+    if n < 3 or not np.isfinite(x).all():
+        return float("nan")
+    d = x - x.mean()
+    var = float(d @ d)
+    if var <= 0:
+        return float("nan")
+    lags = max(1, min(n - 2, int(4 * (n / 100) ** (2 / 9))))
+    rho = np.array([float(d[k:] @ d[:-k]) / var for k in range(1, lags + 1)])
+    weights = 1 - np.arange(1, lags + 1) / (lags + 1)
+    return float(min(n, n / max(1 + 2 * float(weights @ rho), 1 / n)))
 
 
 def rank_of(values: np.ndarray, reference: float) -> float:

@@ -5,11 +5,12 @@ from typing import TypedDict
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
+from core.metrics import sharpe
+
 
 def _sharpe(windows: np.ndarray) -> np.ndarray:
-    """Daily Sharpe along the last axis; 0 where a window does not vary."""
-    sd = windows.std(axis=-1, ddof=1)
-    return np.divide(windows.mean(axis=-1), sd, out=np.zeros_like(sd), where=sd > 0)
+    """`core.metrics.sharpe` per day along the last axis; 0 where a window does not vary."""
+    return np.nan_to_num(sharpe(windows, 1), nan=0.0)
 
 
 FIGURES = {"pnl": lambda windows: windows.sum(axis=-1), "sharpe": _sharpe}

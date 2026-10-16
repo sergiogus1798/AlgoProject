@@ -1,17 +1,19 @@
 """What step 20 reads: its knobs, the ledger's two doors, the mothers' oos2 days and their random traders'."""
 
-from typing import Any, cast
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 
-from core.assetdata import load as load_asset, window as asset_window
+from core.assetdata import load as load_asset
+from core.assetdata import window as asset_window
 from core.barstore import source as read_bars
 from core.study import config as study_config
 from engines.market import reprice
 from engines.nulls import footprint
-from ledger import gate, study as studymod, thresholds
+from ledger import gate, thresholds
+from ledger import study as studymod
 from portfolio.common.construct.equity import closecurve
 
 CONFIG = Path(__file__).with_name("config.yaml")
@@ -267,7 +269,7 @@ def random_traders(
     bars = cast(pd.DataFrame, bars[(bars.index >= span[0]) & (bars.index < span[1])])
     costs = reprice.costs(feed, SEGMENT)
     got = {
-        m: footprint.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"])
+        m: footprint.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"], m)
         for m, b in batches.items()
     }
     return (

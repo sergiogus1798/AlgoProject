@@ -14,7 +14,7 @@ ROWS = (
 
 def warm() -> None:
     """Compile the drawdown and homogeneity kernels in the calling process, before a study forks: a fork child that compiles its own took the pool down."""
-    drawdowns(np.ones(2), 0.0, 2, 1, 1, stream(0, ""))
+    null_drawdowns(np.ones(2), 0.0, 2, 1, 1, stream(0, ""))
     q_null(np.zeros(4), np.array([2, 2]), 1, stream(0, ""))
 
 
@@ -135,20 +135,7 @@ def homogeneity(
     return p_upper(*q_null(values, sizes, permutations, rng))
 
 
-def max_drawdown(pnl: np.ndarray) -> np.ndarray:
-    """The deepest fall of a closed-trade curve from its running high.
-
-    Args:
-        pnl: Per-trade P/L in time order along the last axis.
-
-    Returns:
-        Positive, one per sequence; the curve starts at 0, which counts as a high.
-    """
-    curve = np.cumsum(pnl, axis=-1)
-    return (np.maximum(np.maximum.accumulate(curve, axis=-1), 0.0) - curve).max(axis=-1)
-
-
-def drawdowns(
+def null_drawdowns(
     build: np.ndarray,
     mean: float,
     length: int,
@@ -191,7 +178,7 @@ def drawdowns(
 def _dd_stream(
     shifted: np.ndarray, starts: np.ndarray, block: int, length: int, out: np.ndarray
 ) -> None:
-    """max_drawdown() of each row of block starts, walked trade by trade and cut at `length`.
+    """`core.metrics.dd_money` of `cumulative` of each row of block starts, walked trade by trade and cut at `length`.
 
     numba's max() drops a NaN that numpy's maximum carries, so a curve that stops being a
     number is flagged and answered NaN, never a drawdown of 0 that looks measured.

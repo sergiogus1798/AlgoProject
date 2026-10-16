@@ -1,7 +1,7 @@
 """Combinatorially symmetric cross-validation off block sums: each half of the blocks chooses, the other judges."""
 
-from typing import Any, TypedDict
 import itertools
+from typing import Any, TypedDict
 
 import numpy as np
 from numba import njit
@@ -61,7 +61,9 @@ def sums(values: np.ndarray, blocks: int) -> Sums:
     }
 
 
-def sharpe(n: np.ndarray, s1: np.ndarray, s2: np.ndarray, safe: bool) -> np.ndarray:
+def ratio_from_sums(
+    n: np.ndarray, s1: np.ndarray, s2: np.ndarray, safe: bool
+) -> np.ndarray:
     """Per-period Sharpe (deviation with ddof=1) from sums; `s2` is overwritten.
 
     Args:
@@ -70,7 +72,9 @@ def sharpe(n: np.ndarray, s1: np.ndarray, s2: np.ndarray, safe: bool) -> np.ndar
         safe: True when no entry can have zero variance, which skips the guard.
 
     Returns:
-        mean / deviation = s1 · sqrt((n − 1) / n) / sqrt(n · s2 − s1²); 0 where nothing moved.
+        mean / deviation = s1 · sqrt((n − 1) / n) / sqrt(n · s2 − s1²); 0 where nothing moved —
+        not `core.metrics.sharpe`'s NaN, on purpose: CSCV ranks the columns, and a flat
+        one ranks as no edge rather than poisoning the argsort.
     """
     scale = np.sqrt((n - 1.0) / n)
     s2 *= n
@@ -98,7 +102,7 @@ def edges(got: Sums, reach: float) -> tuple[float, float]:
             each side; what falls beyond lands in the end bins.
     """
     n = got["n"].sum()
-    whole = sharpe(n, got["s1"].sum(axis=0), got["s2"].sum(axis=0), False)
+    whole = ratio_from_sums(n, got["s1"].sum(axis=0), got["s2"].sum(axis=0), False)
     wide = reach / np.sqrt(n / 2)
     return float(whole.min() - wide), float(whole.max() + wide)
 
@@ -213,7 +217,10 @@ def run(
         size = (take @ n)[:, None]
         a1, a2 = take @ s1, take @ s2
         b1, b2 = all1 - a1, all2 - a2
-        first, second = sharpe(size, a1, a2, safe), sharpe(all_n - size, b1, b2, safe)
+        first, second = (
+            ratio_from_sums(size, a1, a2, safe),
+            ratio_from_sums(all_n - size, b1, b2, safe),
+        )
         for side, (train, test) in enumerate(((first, second), (second, first))):
             _rows(
                 train,

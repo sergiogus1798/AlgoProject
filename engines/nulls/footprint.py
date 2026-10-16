@@ -1,16 +1,22 @@
 """What a random trader with a mother's own footprint and clock hours earns per day: step 20's benchmark and the oos2 reading's monkey."""
 
+import zlib
 from typing import cast
 
 import numpy as np
 import pandas as pd
 
 from engines.market import reprice
-from engines.nulls import inputs as nulls_inputs, windowed
+from engines.nulls import inputs as nulls_inputs
+from engines.nulls import windowed
 
 
 def footprint(
-    trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs, knobs: dict
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    costs: reprice.Costs,
+    knobs: dict,
+    mother: str,
 ) -> tuple[pd.Series, float]:
     """The expected daily P&L of trading one mother's footprint at random entries.
 
@@ -20,6 +26,8 @@ def footprint(
             hours null's ATR), naive bar-open index.
         costs: `reprice.costs()` of the feed and segment — what the mother's own retest paid.
         knobs: `benchmark` of config.yaml: `rung`, `draws`, `seed`.
+        mother: Her name, which salts the seed: each mother's random traders are her own
+            draws, never the same stream shared by every mother of the batch.
 
     Returns:
         One value per feed day: the MEAN over `draws` random traders of the day's P&L marked
@@ -60,7 +68,10 @@ def footprint(
         bars["Close"].to_numpy(),
         bars.index.to_numpy(),
     )
-    draws, rng = knobs["draws"], np.random.default_rng(knobs["seed"])
+    draws = knobs["draws"]
+    rng = np.random.default_rng(
+        np.random.SeedSequence([knobs["seed"], zlib.crc32(mother.encode())])
+    )
     entered, left, paid = np.zeros((3, len(bars)))
     total = np.empty(draws)
     # Priced in blocks, as windowed.means: a draw takes the same random numbers whatever the

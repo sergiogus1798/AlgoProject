@@ -16,7 +16,7 @@ from core.assetdata import AUTONOMOUS  # noqa: E402
 from ui.daemon import progress  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
 from ui.daemon.loader import find  # noqa: E402
-from ui.daemon.tearsheet import borrow, harvest, oos2  # noqa: E402
+from ui.daemon.tearsheet import borrow, oos2  # noqa: E402
 
 # A self-contained copy of one Test_ project that has since been retired: its project.cfx, one
 # strategy (4.8.424) and the harvest rows of that strategy alone, laid out as the routes look.
@@ -37,7 +37,6 @@ def main() -> None:
         mock.patch.object(paths, "DATA", data),
         mock.patch.object(find, "DATA", data),
         mock.patch.object(borrow, "DATA", data),
-        mock.patch.object(harvest, "DATA", data),
         mock.patch.object(oos2, "DATA", data),
     ):
         check()

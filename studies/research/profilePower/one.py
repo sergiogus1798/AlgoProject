@@ -2,12 +2,14 @@
 
 import time
 import zlib
-from typing import Any, cast, TypedDict
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
 
-from studies.research.marketProfile import one as profile_one, series
+from core import metrics
+from studies.research.marketProfile import one as profile_one
+from studies.research.marketProfile import series
 from studies.research.profilePower import inputs, plant
 
 SIDE = {"long": 0, "short": 1}
@@ -168,7 +170,7 @@ def run(key: tuple, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict[str, Any
         got.pop("entry"),
         got.pop("leave"),
     )
-    years = (bars.index[-1] - bars.index[0]).days / 365.25
+    years = metrics.years(bars.index[0], bars.index[-1])
     return {
         "symbol": symbol,
         "timeframe": timeframe,

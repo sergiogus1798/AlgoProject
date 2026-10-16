@@ -6,7 +6,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from core.paths import DATA
 from core.study import config as study_config
 from ledger import thresholds
 from sqx.inspect import feeds
@@ -31,12 +30,6 @@ def config(overrides: list[str]) -> dict[str, Any]:
     if cfg["shuffle"]["seed"] is None:
         cfg["shuffle"]["seed"] = int(np.random.SeedSequence().generate_state(1)[0])
     return cfg
-
-
-def newest(project: str, databank: str) -> Path:
-    """The most recent harvest of one databank (harvests are dated and immutable)."""
-    folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def oos_trades(folder: Path) -> pd.DataFrame:

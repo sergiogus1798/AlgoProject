@@ -10,7 +10,6 @@ from typing import cast
 
 import numpy as np
 import pandas as pd
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
@@ -21,6 +20,7 @@ from engines.variants import excess as engines_excess
 from studies.breakage.mcRetest.model.retention import retention
 from studies.breakage.mcRetest.neighbours import excess
 from studies.screening.gate import inputs as gate
+from studies.screening.gate import inputs as gate_inputs
 
 STORE, FILE = "T1_Neighbours", "neighbours.parquet"
 BATCH = (
@@ -28,7 +28,6 @@ BATCH = (
 )
 SEGMENTS = ("build", "oos1")  # the fact names are the contract: oos2 is never read
 # The measure's parameters are the gate's, not a copy: T1's excess must be step 8's.
-GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 COLLISION = r"\(\d+\)$"  # what SQX appends to a duplicate on reload
 
 
@@ -135,7 +134,7 @@ def measure(project: str, work: Path, symbol: str, timeframe: str, day: str) -> 
     asset = assetdata.load(symbol)
     feed = asset["sqx_symbol"]
     bars = barstore.read(feed, timeframe)
-    drift = yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
+    drift = gate_inputs.drift()
     out, paths = plan, []
     for leg in json.loads((work / "ran.json").read_text(encoding="utf-8"))["legs"]:
         seg = leg["segment"]
@@ -171,7 +170,7 @@ def measure(project: str, work: Path, symbol: str, timeframe: str, day: str) -> 
             got.add_prefix(f"{seg}_"), left_on="variant_id", right_index=True
         )
     out = out.merge(
-        excess.drawdowns(paths, gate.market(feed)["risk"]).rename("dd_r"),
+        excess.dd_r(paths, gate.market(feed)["risk"]).rename("dd_r"),
         left_on="variant_id",
         right_index=True,
         how="left",

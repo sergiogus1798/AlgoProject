@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import Any, TypedDict, cast
 
 import pandas as pd
-
 from fastapi import APIRouter, Query
 
 from core import barstore
 from core.study.blocks import validate
 from ui.daemon.strategy import archived
 from ui.daemon.tearmarket import months, source, trades
+from ui.daemon.tearsheet import harvest as cosecha
 
 ROUTER = APIRouter()
 
@@ -43,7 +43,7 @@ def _strategy(
     if wrong:
         return wrong if isinstance(wrong, str) else wrong["error"]
     harvest = (
-        source.newest(project, databank)
+        cosecha.newest(project, databank)
         if origin == "live"
         else archived.harvest_folder(identity, version)
     )

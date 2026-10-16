@@ -9,6 +9,7 @@ from collections.abc import Callable
 import numpy as np
 import pytest
 
+from core import metrics
 from studies.screening.analysis import improvement, resample
 
 
@@ -20,12 +21,13 @@ def old_drawdowns(
     sequences: int,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """`resample.drawdowns` before the streaming kernel: index matrix, copy, cumsum."""
+    """`resample.null_drawdowns` before the streaming kernel: index matrix, copy, cumsum."""
     shifted = build - build.mean() + mean
     block = min(block, len(shifted))
     starts = rng.integers(0, len(shifted) - block + 1, (sequences, -(-length // block)))
     index = (starts[:, :, None] + np.arange(block)).reshape(sequences, -1)[:, :length]
-    return resample.max_drawdown(shifted[index])
+    curve = np.cumsum(shifted[index], axis=-1)  # the old max_drawdown, frozen here
+    return (np.maximum(np.maximum.accumulate(curve, axis=-1), 0.0) - curve).max(axis=-1)
 
 
 def old_q_null(
@@ -153,17 +155,19 @@ def test_drawdowns_are_the_old_ones() -> None:
         for label, build, pnl, block, sequences in cases + extra:
             r0, r1 = resample.stream(42, "id"), resample.stream(42, "id")
             a = old_drawdowns(build, pnl.mean(), len(pnl), block, sequences, r0)
-            b = resample.drawdowns(build, pnl.mean(), len(pnl), block, sequences, r1)
+            b = resample.null_drawdowns(
+                build, pnl.mean(), len(pnl), block, sequences, r1
+            )
             assert same(a, b), label
             assert r0.bit_generator.state == r1.bit_generator.state, label
-            seen = resample.max_drawdown(pnl.astype(float))
+            seen = metrics.dd_money(metrics.cumulative(pnl.astype(float)))
             assert resample.p_upper(a, seen) == resample.p_upper(b, seen), label
             assert same(np.percentile(a, 95) / 250.0, np.percentile(b, 95) / 250.0), (
                 label
             )
     # No trades on a side is an error on both, never a drawdown of zero.
     for build, length, error in ((b0, 0, ValueError), (b0[:0], 5, ZeroDivisionError)):
-        for form in (old_drawdowns, resample.drawdowns):
+        for form in (old_drawdowns, resample.null_drawdowns):
             with pytest.raises(error), warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 form(build, 1.0, length, 8, 10, resample.stream(1, "x"))
@@ -312,7 +316,7 @@ def test_resampled_in_chunks_is_the_old_one() -> None:
 def test_it_is_faster() -> None:
     """3.4a and 3.9c on one core: the same call before and after, printed, and never slower."""
     g = np.random.default_rng(2)
-    resample.drawdowns(g.normal(size=50), 0.0, 20, 8, 10, resample.stream(1, "x"))
+    resample.null_drawdowns(g.normal(size=50), 0.0, 20, 8, 10, resample.stream(1, "x"))
     resample.q_null(g.normal(size=40), np.array([20, 20]), 3, resample.stream(1, "x"))
     print()
     for nb, length in ((1500, 300), (5000, 1000)):
@@ -324,7 +328,7 @@ def test_it_is_faster() -> None:
             ]
         )
         now = clock(
-            lambda: resample.drawdowns(
+            lambda: resample.null_drawdowns(
                 build, mean, length, 8, 40_000, resample.stream(1, "x")
             )
         )  # noqa: B023 timed immediately

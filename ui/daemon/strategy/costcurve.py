@@ -2,6 +2,8 @@
 
 from typing import TypedDict
 
+from core.metrics import dd_money
+
 
 class Curve(TypedDict):
     """The curve payload; `split` is the index of the first OOS day (None without OOS)."""
@@ -12,15 +14,6 @@ class Curve(TypedDict):
     sqx_net: dict[str, float]
     sqx_dd: float
     source: str
-
-
-def drawdown(curve: list[float]) -> float:
-    """The worst fall from a peak of a cumulative curve, in money, as a negative number."""
-    peak, worst = 0.0, 0.0
-    for v in curve:
-        peak = max(peak, v)
-        worst = min(worst, v - peak)
-    return worst
 
 
 def curve(data: dict) -> Curve:
@@ -45,6 +38,6 @@ def curve(data: dict) -> Curve:
         "sqx": sqx,
         "split": oos.index(True) if True in oos else None,
         "sqx_net": {s: float(g["pnl"].sum()) for s, g in eq.groupby("sample")},
-        "sqx_dd": drawdown(sqx),
+        "sqx_dd": -dd_money([0.0, *sqx]),
         "source": f"cosecha del {data['day']}",
     }

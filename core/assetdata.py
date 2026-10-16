@@ -7,9 +7,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from core.assetyaml import safe_load
-
 from core import assetoverride
+from core.assetyaml import safe_load
 from core.paths import ASSETS
 
 POLICY, CLASSES, MARKETS = "_policy.yaml", "_classes.yaml", "_markets.yaml"
@@ -225,6 +224,16 @@ def window(data: dict, segment: str) -> tuple[int, int]:
     return _ms(seg["from"], False), _ms(seg["to"], True)
 
 
+def first_day(bound: int | object) -> str:
+    """A segment's opening bound as an ISO date: a bare year is its 1 January."""
+    return f"{bound}-01-01" if isinstance(bound, int) else str(bound)
+
+
+def last_day(to: int | object) -> str:
+    """A segment's closing bound as an ISO date: a bare year is its 31 December, a date itself."""
+    return f"{to}-12-31" if isinstance(to, int) else str(to)
+
+
 def segment_start(data: dict, segment: str) -> str:
     """One segment's own first day, as an ISO date — never a retested leg's warm-up start
     (`knowhow/sqx-format/leg-curve-warmup.md`). Raises when `from` is undecided.
@@ -242,7 +251,7 @@ def segment_start(data: dict, segment: str) -> str:
             f"el tramo `{segment}` de {data['symbol']} no tiene fechas decididas; "
             f"están en assets/_policy.yaml, bajo `segments: {data['symbol']}:`"
         )
-    return f"{bound}-01-01" if isinstance(bound, int) else str(bound)
+    return first_day(bound)
 
 
 def sqx_settings(data: dict, segment: str) -> dict[str, Any]:

@@ -5,7 +5,9 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 
-YEAR = 365.25 * 24 * 3600
+from core import metrics
+
+YEAR = metrics.YEAR_DAYS * 24 * 3600  # seconds
 
 
 def shape(steps: pd.DataFrame) -> pd.DataFrame:

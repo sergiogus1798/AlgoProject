@@ -58,8 +58,8 @@ def oracle(
         size = (take @ n)[:, None]
         a1, a2 = take @ s1, take @ s2
         b1, b2 = all1 - a1, all2 - a2
-        first = cscv.sharpe(size, a1, a2, safe)
-        second = cscv.sharpe(all_n - size, b1, b2, safe)
+        first = cscv.ratio_from_sums(size, a1, a2, safe)
+        second = cscv.ratio_from_sums(all_n - size, b1, b2, safe)
         for side, (train, test) in enumerate(((first, second), (second, first))):
             to = slice(at + side * halves, at + side * halves + len(take))
             pick = train.argmax(axis=1)

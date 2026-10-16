@@ -6,6 +6,7 @@ from typing import Any, TypedDict
 
 import yaml
 
+from core import metrics
 from core.assetdata import window
 from core.paths import ASSETS
 
@@ -13,7 +14,7 @@ STUDY = ASSETS / "_study.yaml"
 MODES = ("study", "calibration")
 # `sample:` of the file -> the key of `sqx.projects.acceptance.READS` a condition is read with.
 SAMPLES = {"IS": "is"}
-YEAR_MS = 365.25 * 86400 * 1000
+YEAR_MS = metrics.YEAR_DAYS * 86400 * 1000
 
 
 class Condition(TypedDict):

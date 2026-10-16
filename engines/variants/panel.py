@@ -3,10 +3,10 @@
 from pathlib import Path
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from core import assetdata
-
 
 # Which segments sit on each side of the split. Owner, 2026-09-27 (encargo 24, Q11): `build`
 # is ALWAYS in sample; the in-sample side is `build` or `build+oos1`; the out-of-sample side is
@@ -132,13 +132,23 @@ def panel(work: Path, period: str) -> pd.DataFrame:
         spans (zero-P&L days included, they are rows of the joined index) plus the few
         Sundays a feed clock opens on, never a weekend or holiday filled with zeros. The
         three legs overlap by their ~2-month warm-up, so a date can appear twice in
-        `equity.parquet`; the two increments are summed, as the weekly resample always did.
+        `equity.parquet`; the two increments are summed, as the weekly resample always did,
+        and a date where both legs carry P&L raises: the warm-up side must be zero.
 
         **The final period is dropped.** SQX marks a position that is still open on the
         last bar to market in the equity curve while its net profit counts only closed
         trades, so the last period carries an unrealised number that no other carries.
     """
-    days = pd.read_parquet(work / "equity.parquet").groupby(level=0).sum()
+    raw = pd.read_parquet(work / "equity.parquet")
+    twice = raw[raw.index.duplicated(keep=False)]
+    # a warm-up day is zero P&L: two legs both trading one date is double counting
+    clash = int((np.asarray(twice.fillna(0.0).ne(0).groupby(level=0).sum()) > 1).sum())
+    if clash:
+        raise ValueError(
+            f"{work / 'equity.parquet'}: {clash} (date, variant) cells repeated with P&L in "
+            "both legs; the warm-up overlap must be zero on one side"
+        )
+    days = raw.groupby(level=0).sum()
     return (days if period == "D" else days.resample(period).sum()).iloc[:-1]
 
 

@@ -5,7 +5,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-TRADING_DAYS = 252
+from core import metrics
 
 # Panel 1: histograms across the whole permutation grid. (SQX column, Spanish label, unit).
 METRICS = [
@@ -113,27 +113,21 @@ def real_from_trades(trades: pd.DataFrame) -> dict[str, float]:
         trades: IS and OOS trades of one strategy, concatenated (any order; sorted here).
 
     Returns:
-        {"SharpeRatio", "SortinoRatio"}, both `mean / deviation * sqrt(252)` of the daily
-        P/L (flat days at zero; `SharpeRatio` NaN or infinite when the P/L has no dispersion,
-        std 0) -- the same daily-equity basis SQX itself uses for these two
+        {"SharpeRatio", "SortinoRatio"}, both annualised over 252 weekdays from the daily
+        P/L (`core.metrics.weekday_pnl`, flat days at zero; `SharpeRatio` NaN when the P/L
+        has no dispersion) -- the same daily-equity basis SQX itself uses for these two
         (`studies/breakage/mcRetest/model/recon.py`), and the app's own "Sharpe total"
         (owner, 2026-09-30). Only called when both windows' trades were exported; the grid
         alone cannot give this because it holds no per-permutation trades.
     """
-    day = pd.DatetimeIndex(trades["Close time"]).normalize() + pd.offsets.BDay(0)  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs omit DatetimeIndex.normalize
-    daily = (
-        pd.Series(trades["Profit/Loss"].to_numpy(dtype=float), index=day)
-        .groupby(level=0)
-        .sum()
-    )
-    daily = daily.reindex(
-        pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0
+    daily = metrics.weekday_pnl(
+        trades["Profit/Loss"].to_numpy(dtype=float), trades["Close time"].to_numpy()
     )
     downside = float(np.sqrt((cast(pd.Series, daily.clip(upper=0)) ** 2).mean()))
     return {
-        "SharpeRatio": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS)),
+        "SharpeRatio": metrics.sharpe(daily, metrics.TRADING_DAYS),
         "SortinoRatio": (
-            float(daily.mean() / downside * np.sqrt(TRADING_DAYS))
+            float(daily.mean() / downside * np.sqrt(metrics.TRADING_DAYS))
             if downside
             else float("inf")
         ),

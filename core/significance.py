@@ -1,10 +1,11 @@
-"""Could this edge be zero? The Sharpe-based tests three studies now share, and the one Sharpe total."""
+"""Could this edge be zero? The Sharpe-based tests three studies now share."""
 
 from typing import TypedDict
 
 import numpy as np
-import pandas as pd
 from scipy import stats
+
+from core import metrics
 
 
 def moments(returns: np.ndarray) -> tuple[float, float, float]:
@@ -16,11 +17,12 @@ def moments(returns: np.ndarray) -> tuple[float, float, float]:
 
     Returns:
         (sharpe, skew, kurtosis). Sharpe is the plain mean over standard deviation with
-        ddof=1, unannualised, because that is the unit the two formulas below need.
+        ddof=1, unannualised, because that is the unit the two formulas below need; NaN
+        for a flat series (`core.metrics.sharpe`), never the infinite ratio that would pass.
         Kurtosis is raw, 3 for a normal, not excess: `variance_factor`'s (kurtosis - 1) / 4
         term expects it that way and excess kurtosis silently shifts both answers.
     """
-    sharpe = float(returns.mean() / returns.std(ddof=1))
+    sharpe = float(metrics.sharpe(returns, 1))
     return (
         sharpe,
         float(stats.skew(returns)),
@@ -116,6 +118,7 @@ class Psr(TypedDict):
     kurtosis: float
     n: int
     psr: float
+    state: str
 
 
 class TrackRecord(TypedDict):
@@ -141,7 +144,9 @@ def psr(returns: np.ndarray, benchmark: float) -> Psr:
 
     Returns:
         The observed Sharpe, its skew and kurtosis, the observation count, and the
-        probability that the true Sharpe exceeds the benchmark. It is a point estimate,
+        probability that the true Sharpe exceeds the benchmark, and `state`: "undefined" when
+        the Sharpe is NaN (fewer than two returns or a flat series), so a caller never reads
+        that NaN as a fail. It is a point estimate,
         not a distribution: bootstrapping it would count the same sampling uncertainty
         twice.
     """
@@ -157,6 +162,7 @@ def psr(returns: np.ndarray, benchmark: float) -> Psr:
         "kurtosis": kurtosis,
         "n": returns.size,
         "psr": float(stats.norm.cdf(z)),
+        "state": "undefined" if np.isnan(sharpe) else "measured",
     }
 
 
@@ -192,28 +198,3 @@ def min_track_record(
         "have": len(returns),
         "enough": bool(len(returns) >= needed),
     }
-
-
-def annual_sharpe(pnl: np.ndarray, closed: np.ndarray) -> float:
-    """ "Sharpe total" (owner's rule): the classic Sharpe of the whole backtest's daily P&L.
-
-    Args:
-        pnl: Account currency per trade.
-        closed: Each trade's close time, same order as `pnl`.
-
-    Returns:
-        Mean over standard deviation (ddof=1) of the P&L of every trading day — Monday to
-        Friday, from the first close to the last, days with nothing closed at zero — times
-        sqrt(252). A trade closing on a weekend counts on the next Monday. NaN with fewer
-        than two days or no variation. Fixed sizing makes daily P&L and daily return on the
-        account the same series up to a constant, so the ratio is the same either way.
-    """
-    day = pd.DatetimeIndex(closed).normalize() + pd.offsets.BDay(0)  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs omit DatetimeIndex.normalize
-    daily = (
-        pd.Series(np.asarray(pnl, dtype=np.float64), index=day).groupby(level=0).sum()
-    )
-    rets = daily.reindex(
-        pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0
-    )
-    sd = rets.std(ddof=1) if len(rets) > 1 else 0.0
-    return float(rets.mean() / sd * np.sqrt(252)) if sd > 0 else float("nan")

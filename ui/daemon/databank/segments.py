@@ -5,6 +5,7 @@ from typing import TypedDict, cast
 
 import pandas as pd
 
+from core.metrics import cumulative, dd_money, finite, profit_factor
 from core.paths import harvest_dir
 from ui.daemon.loader import find
 from ui.daemon.loader.state import newest
@@ -35,14 +36,13 @@ def figures(pnl: pd.Series) -> dict[str, float | None]:
     Returns:
         Metric → value; a PF without a losing trade and a Ret/DD without a drawdown are None.
     """
-    curve = pnl.cumsum()
-    dd = float((curve.cummax().clip(lower=0) - curve).max())
-    loss, net = -pnl[pnl < 0].sum(), float(pnl.sum())
+    dd = dd_money(cumulative(pnl.to_numpy(dtype=float)))
+    net = float(pnl.sum())
     decided = int((pnl != 0).sum())
     return {
         "Net profit": net,
         "# of trades": len(pnl),
-        "Profit factor": float(pnl[pnl > 0].sum() / loss) if loss > 0 else None,
+        "Profit factor": finite(profit_factor(pnl)),
         "Winning Percent": float((pnl > 0).sum() / decided * 100) if decided else None,
         "Drawdown": dd,
         "Ret/DD Ratio": net / dd if dd > 0 else None,

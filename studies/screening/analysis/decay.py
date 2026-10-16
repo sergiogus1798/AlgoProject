@@ -6,7 +6,8 @@ from typing import Any, TypedDict
 import numpy as np
 import pandas as pd
 
-YEAR = 252
+from core import metrics
+
 MIN_YEARS_POSITIVE = 4  # of the OOS years; 3 of 5 is what a coin flip gives
 MAX_CONCENTRATION = 0.40  # share of OOS profit allowed to come from one quarter
 # NOT a one-sided 5 % test: the curve this t is read on is SQX's daily curve, each day's LOWEST
@@ -31,19 +32,6 @@ class Diagnosis(TypedDict):
     net_profit_oos: float
 
 
-def sharpe(returns: pd.Series) -> float:
-    """Annualised Sharpe of a daily P&L series, with no risk-free adjustment.
-
-    Args:
-        returns: Daily change in cumulative P&L.
-
-    Returns:
-        Mean over standard deviation, scaled by sqrt(252), SQX's own convention. NaN (0/0) or infinite for a flat series (std 0), and NaN
-        for fewer than two days; the caller's verdict compares it, and a NaN compares false.
-    """
-    return returns.mean() / returns.std(ddof=1) * np.sqrt(YEAR)
-
-
 def diagnose(curve: pd.Series, split: str, end: str) -> Diagnosis:
     """Everything the verdict needs about one strategy, from its daily equity.
 
@@ -66,15 +54,16 @@ def diagnose(curve: pd.Series, split: str, end: str) -> Diagnosis:
         after.groupby([when.year.to_numpy(), when.quarter.to_numpy()]).sum()
     )
     years = pd.Series(after.groupby(when.year.to_numpy()).sum())
-    edge = sharpe(after)
+    edge = metrics.sharpe(after, metrics.TRADING_DAYS)
     total = float(after.sum())
 
     # Lo (2002), iid: SE of a per-day Sharpe over T days is sqrt((1 + SR_day**2 / 2) / T);
     # annualised, the squared term is the annual Sharpe's over the days in a year.
-    error = np.sqrt((1 + 0.5 * edge**2 / YEAR) / (len(after) / YEAR))
-    base = sharpe(
-        before
-    )  # a ratio on a losing denominator flips sign: undefined, not a survival
+    error = np.sqrt(
+        (1 + 0.5 * edge**2 / metrics.TRADING_DAYS) / (len(after) / metrics.TRADING_DAYS)
+    )
+    # a ratio on a losing denominator flips sign: undefined, not a survival
+    base = metrics.sharpe(before, metrics.TRADING_DAYS)
     return Diagnosis(
         sharpe_is=base,
         sharpe_oos=edge,

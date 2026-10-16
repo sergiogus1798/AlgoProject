@@ -46,7 +46,7 @@ def main() -> None:
         trades = inputs.mother_trades(batch, span)
         excess = measure.weekly(
             inputs.daily(trades, bars),
-            footprint.footprint(trades, bars, costs, cfg["benchmark"])[0],
+            footprint.footprint(trades, bars, costs, cfg["benchmark"], name)[0],
         )
         seed = np.random.SeedSequence([cfg["null"]["seed"], zlib.crc32(name.encode())])
         facts = measure.read(excess, cfg["null"], seed)

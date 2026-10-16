@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 
+from core import metrics
+
 
 def table(
     daily: pd.DataFrame, trades: pd.DataFrame, risk: float, years: float
@@ -26,11 +28,14 @@ def table(
         never repaid and the ratio is +inf — not NaN, which a rule would read as a missing
         fact — so any "<=" rule fails it; NaN only where a strategy has no equity or trades.
     """
-    equity = daily.fillna(0.0).cumsum()
     by = trades.groupby("identity", sort=False)
     table = pd.DataFrame(
         {
-            "max_dd_r": (equity.cummax().clip(lower=0.0) - equity).max() / risk,
+            "max_dd_r": pd.Series(
+                metrics.dd_money(metrics.cumulative(daily.fillna(0.0), axis=0), axis=0),
+                index=daily.columns,
+            )
+            / risk,
             "worst_day_r": daily.min() / risk,
             "worst_trade_mae_r": pd.Series(by["MAE ($)"].min()) / risk,
             "net_per_year_r": pd.Series(by["Profit/Loss"].sum()) / years / risk,

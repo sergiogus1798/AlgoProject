@@ -5,7 +5,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-from core import significance
+from core import metrics
 
 POINTS = 101  # 0 to 100 %, one point per percentage point
 
@@ -48,9 +48,9 @@ def per_cell(trades: pd.DataFrame, strategy: str) -> pd.DataFrame:
         strategy: Which strategy's cells to read.
 
     Returns:
-        `result`, `net_profit`, `profit_factor`, `sharpe` (`core.significance.annual_sharpe`: daily P/L on
+        `result`, `net_profit`, `profit_factor`, `sharpe` (`core.metrics.sharpe` of `weekday_pnl`: daily P/L on
         business days, idle days 0, a weekend close on Monday, mean/std ×√252), `max_dd` (closed
-        trades, in money) and `trades`.
+        trades, in money, from 0) — `profit_factor` inf without a loss and `trades`.
     """
     mine = cast(
         pd.DataFrame,
@@ -61,17 +61,16 @@ def per_cell(trades: pd.DataFrame, strategy: str) -> pd.DataFrame:
         pl = g["Profit/Loss"].to_numpy(dtype=float)
         if pl.size < 2:
             continue
-        cum = np.cumsum(pl)
-        loss = -pl[pl < 0].sum()
         rows.append(
             {
                 "result": str(cell),
                 "net_profit": pl.sum(),
-                "profit_factor": pl[pl > 0].sum() / loss if loss else np.nan,
-                "sharpe": significance.annual_sharpe(pl, g["Close time"].to_numpy()),
-                "max_dd": float(
-                    (np.maximum.accumulate(np.maximum(cum, 0)) - cum).max()
+                "profit_factor": metrics.profit_factor(pl),
+                "sharpe": metrics.sharpe(
+                    metrics.weekday_pnl(pl, g["Close time"].to_numpy()),
+                    metrics.TRADING_DAYS,
                 ),
+                "max_dd": metrics.dd_money(metrics.cumulative(pl)),
                 "trades": pl.size,
             }
         )
@@ -99,12 +98,14 @@ def aggregate(cells: pd.DataFrame) -> pd.DataFrame:
     for col, label in names.items():
         v = cells[col].dropna()
         worst, best = (v.max(), v.min()) if col == "max_dd" else (v.min(), v.max())
+        # PF is inf in a cell without a loss: interpolating toward it is inf or inf-inf (NaN)
+        how = "lower" if col == "profit_factor" else "linear"
         rows.append(
             {
                 "métrica": label,
-                "mediana": v.median(),
-                "p25": v.quantile(0.25),
-                "p75": v.quantile(0.75),
+                "mediana": v.quantile(0.5, interpolation=how),
+                "p25": v.quantile(0.25, interpolation=how),
+                "p75": v.quantile(0.75, interpolation=how),
                 "peor": worst,
                 "mejor": best,
             }

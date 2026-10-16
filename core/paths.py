@@ -192,6 +192,39 @@ def harvest_dir(project: str, databank: str, day: str) -> Path:
     return DATA / "harvest" / project / databank.replace(" ", "_") / day
 
 
+def latest_harvest(project: str, databank: str, need: str = "trades.parquet") -> Path:
+    """The current cosecha of one databank: its newest day folder.
+
+    Args:
+        project: Project name.
+        databank: Databank name as SQX shows it (spaces or underscores).
+        need: The file the caller reads from it.
+
+    Returns:
+        Its folder. Cosechas are dated and immutable, so the newest is the current one;
+        `_aparte`/`_work` (set aside, in progress) are not cosechas. Raises FileNotFoundError
+        naming the project and databank when there is none, or when the newest lacks `need`
+        (an unfinished harvest is never silently passed over for an older one).
+    """
+    root = harvest_dir(project, databank, "x").parent
+    days = (
+        sorted(d for d in root.iterdir() if d.is_dir() and d.name[0] != "_")
+        if root.is_dir()
+        else []
+    )
+    if not days:
+        raise FileNotFoundError(
+            f"no hay cosecha de {project} / {databank} en {root}; se crea con "
+            f"`python3 -m studies.screening.gate.harvest --project {project} --databank {databank}`"
+        )
+    if not (days[-1] / need).is_file():
+        raise FileNotFoundError(
+            f"la cosecha más reciente de {project} / {databank} ({days[-1]}) no tiene {need}: "
+            "cosecha incompleta; rehazla o apártala con un nombre que empiece por «_»"
+        )
+    return days[-1]
+
+
 def report_dir(project: str, databank: str, day: str) -> Path:
     """Where one day's rendered analysis of a databank lands.
 

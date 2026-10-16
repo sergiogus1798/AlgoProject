@@ -119,7 +119,7 @@ def own_window(feed: str) -> dict[str, str] | None:
     last = data["segments"]["oos1"]["to"]
     return {
         "from": assetdata.segment_start(data, "build"),
-        "to": f"{last}-12-31" if isinstance(last, int) else str(last),
+        "to": assetdata.last_day(last),
     }
 
 

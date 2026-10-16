@@ -5,6 +5,7 @@ from typing import TypedDict, cast
 import numpy as np
 import pandas as pd
 
+from core.metrics import sharpe
 from engines.inference.snooping import superior
 from portfolio.common.construct.mc import paths as mc_paths
 
@@ -155,9 +156,8 @@ def arms(unit: pd.DataFrame, cuts: list[dict], methods: dict, cfg: dict) -> Arms
 
 
 def _sharpe(paths: np.ndarray) -> np.ndarray:
-    """Daily Sharpe along the last axis; 0 where a path does not vary."""
-    sd = paths.std(axis=-1, ddof=1)
-    return np.divide(paths.mean(axis=-1), sd, out=np.zeros_like(sd), where=sd > 0)
+    """`core.metrics.sharpe` per day along the last axis; 0 where a path does not vary."""
+    return np.nan_to_num(sharpe(paths, 1), nan=0.0)
 
 
 def compare(got: Arms, cfg: dict, rng: np.random.Generator) -> pd.DataFrame:

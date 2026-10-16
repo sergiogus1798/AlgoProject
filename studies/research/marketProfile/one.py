@@ -8,6 +8,7 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 
+from core import metrics
 from studies.research.marketProfile import context, higher, inputs, series
 from studies.research.marketProfile.measure import REGISTRY, SYMMETRIC
 
@@ -173,7 +174,7 @@ def run(
         series.logs(bars), series.calendar(bars.index, timeframe, cfg), cfg, block, rng
     )
     p = pvalues(real, sims)
-    years = (bars.index[-1] - bars.index[0]).days / 365.25
+    years = metrics.years(bars.index[0], bars.index[-1])
     rows = []
     for k, (name, direction, stat, entry, leave, detail) in enumerate(real):
         spread = sims[:, k].std(ddof=1)

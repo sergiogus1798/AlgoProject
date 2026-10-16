@@ -7,7 +7,6 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 from core import assetdata, barstore
-from core.paths import DATA
 from ui.daemon.runs import context, guess_asset
 
 SAMPLES = ("IS", "OOS")
@@ -30,20 +29,6 @@ class Market(TypedDict):
     asset: str
     feed: str
     end: str
-
-
-def newest(project: str, databank: str) -> Path | None:
-    """The newest harvest day of one databank, by its folder date.
-
-    Args:
-        project: SQX project name.
-        databank: Databank folder name.
-
-    Returns:
-        The harvest folder, or None when there is none.
-    """
-    days = sorted((DATA / "harvest" / project / databank).glob("*/metrics.parquet"))
-    return days[-1].parent if days else None
 
 
 def bad_name(*names: str) -> str | None:
