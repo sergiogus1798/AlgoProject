@@ -46,6 +46,8 @@
 
 - 2026-10-16 15:30 — **Oro oos2, causa raíz (R3e A):** la librería de barras salía del export de SQX redondeada a 2 decimales (XAUUSD y 8 índices) y el `.dat` de SQX lleva 3; ahora se llena del `.dat` (e9cf09e, sync hecha, 27 feeds). Con barras finas `tick` reprecia al 0 % en las 28 tandas-tramo del oro: XAUUSD, USA500, DAX40 → `tick` (AUS200 inferido); la tolerancia de R3d sobra. **Paso 26** sobre las 14 de gorilla (every_tick, 2022-06-01→2026-10-08, FTMO y Hantec; FundingPips sin símbolo en las fichas): 13 «No validada», 1 caída por puerto del conductor (arreglado: `advance.run.ready` reintenta). Causas: fila 1/1b al 0,95 con USDJPY en 0,94-0,95; huecos de Hantec (2022-06, 2023-01, calidad 76 %); y las que llevan `SqZScore` casan 0,03-0,79 → preguntas P26d-f.
 
+- 2026-10-16 16:30 — Gorilla: `Trade_GBPJPY_H1_trendL_gorilla` FIN, 10.000 → 4 en el 8, 0 tras el 19.5. `Trade_XAUUSD_M15_trendL_gorilla`: 10.000 → 3 → 1 (10, 12) → pasa el 19.5; el 20 falló dos veces (56 % de días): el recorte de `closecurve.measured` se vaciaba con swaps grandes y el valor por punto salía 0 → arreglado (5040eaa, Z5 A del dueño), FIN con **1 finalista**, recogida (3 archivadas). Barras de gorilla rehechas del `.dat`. Siguiente en gorilla: `Trade_USDJPY_M30_momentumL_gorilla`.
+
 ## Reglas de la noche
 
 - Nada pesado de CPU junto a una corrida de SQX (regla 19). El custodio tiene un solo dueño a la vez.
