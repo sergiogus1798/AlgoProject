@@ -152,6 +152,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_ledger.py` | The ledger's two guarantees: the door refuses, and pooling widens what the DSR must clear. | — |
 | `test_ledger_blind_cscv.py` | ledger.blind.from_batch reads the CSCV's contract envelope (estudios/cscv.json), not the old flat file. | — |
 | `test_ledger_cells.py` | Known-answer tests: the per-cell counter and accumulated(extra=None). | — |
+| `test_ledger_gate_195.py` | Step 19.5 (the single oos2 reading) passes the door as WFM's 19; any other unlisted step does not. | — |
 | `test_ledger_ideas.py` | Known answer: the hypotheses the research memory counts raise the ledger's N and lower the DSR. | — |
 | `test_ledger_shards.py` | D27 phase 1: the union of shards counts a common row once, legacy rows dedup against the same row with `id`/`host`, and the rows of every shard add up. Data root is a temp folder. | — |
 | `test_ledger_steprows.py` | A recorded build leaves a step-6 row, and the report prints the study's N and the global N. | — |

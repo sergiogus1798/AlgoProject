@@ -114,11 +114,16 @@ def _base_root() -> Path:
 
 def _on_bars(stamps: pd.DatetimeIndex) -> pd.DatetimeIndex:
     """Each stamp moved to the next real USDJPY M30 bar (a holiday has none), so the common repricer can fill it."""
-    from core import barstore  # here: core.paths must read ALGO_DATA_ROOT after plant() sets it
+    from core import (
+        barstore,
+    )  # here: core.paths must read ALGO_DATA_ROOT after plant() sets it
 
     try:
         grid = barstore.read("USDJPY_M1", "M30").index
-    except (KeyError, FileNotFoundError):  # a machine without the bars: nothing reprices here anyway
+    except (
+        KeyError,
+        FileNotFoundError,
+    ):  # a machine without the bars: nothing reprices here anyway
         return stamps
     at = grid.searchsorted(stamps).clip(max=len(grid) - 1)
     return pd.DatetimeIndex(grid[at])

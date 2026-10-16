@@ -109,6 +109,25 @@ def main() -> None:
     value, commission = closecurve.measured(TRADES)
     if not np.isclose(value, VALUE) or not np.isclose(commission["value"], PER_LOT):
         failures.append(f"medido de las operaciones: {value} {commission}")
+    rng = np.random.default_rng(0)
+    move = rng.uniform(-5, 5, 60)
+    swapped = pd.DataFrame(
+        {
+            "Type": "Buy",
+            "Open time": pd.Timestamp("2020-01-02 01:00"),
+            "Close time": pd.Timestamp("2020-01-02 09:00"),
+            "Open price": 100.0,
+            "Close price": 100.0 + move,
+            "Size": 1.0,
+            "Profit/Loss": VALUE * move - PER_LOT,
+        }
+    )
+    swapped.loc[:2, "Profit/Loss"] -= (
+        40.0  # a rollover inside the day: swap, not commission
+    )
+    value2, commission2 = closecurve.measured(swapped)
+    if not np.isclose(value2, VALUE) or not np.isclose(commission2["value"], PER_LOT):
+        failures.append(f"el swap arrastra el ajuste: {value2} {commission2}")
     profit, low = closecurve.panel(TRADES, BARS, value, commission)
     if not np.allclose(profit, PROFIT) or not np.allclose(low.fillna(LOW), LOW):
         failures.append(f"panel:\n{profit}\n{low}")

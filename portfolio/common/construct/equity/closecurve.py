@@ -39,7 +39,9 @@ def measured(trades: pd.DataFrame) -> tuple[float, dict]:
         Account currency per 1.0 of price per lot, and the commission as the asset card
         spells one (`SizeBased`, $ per lot round turn). Fitted on the trades that opened and
         closed the same day, which carry no swap: per lot, `Profit/Loss` = point value x
-        signed move − commission, exact to the cent. Measured, not read from the card: 🔬 a
+        signed move − commission, exact to the cent once the few that still carry a
+        swap (a rollover inside the same calendar day) are trimmed: 🔬 untrimmed, XAUUSD's
+        fit read 6.1 and 8.2 $/lot against the card's 5.0 and lost the day-low match. Measured, not read from the card: 🔬 a
         card recalibrated after the build no longer holds the build's figures (USDJPY's
         point value 653.92 in a build of 2026-09-30, 631.34 on the card four days later).
     """
@@ -49,9 +51,13 @@ def measured(trades: pd.DataFrame) -> tuple[float, dict]:
     side = np.where(same["Type"].astype(object) == "Buy", 1.0, -1.0)
     move = side * np.asarray(same["Close price"] - same["Open price"], dtype=np.float64)
     per_lot = np.asarray(same["Profit/Loss"] / same["Size"], dtype=np.float64)
-    value, minus_cost = np.linalg.lstsq(
-        np.c_[move, np.ones(len(move))], per_lot, rcond=None
-    )[0]
+    design, keep = np.c_[move, np.ones(len(move))], np.ones(len(move), dtype=bool)
+    value = minus_cost = 0.0
+    for _ in range(
+        3
+    ):  # trim the swap-bearing outliers, which drag a plain fit off the card
+        value, minus_cost = np.linalg.lstsq(design[keep], per_lot[keep], rcond=None)[0]
+        keep = np.abs(per_lot - design @ [value, minus_cost]) <= 0.5
     return float(value), {"method": "SizeBased", "value": float(-minus_cost)}
 
 
