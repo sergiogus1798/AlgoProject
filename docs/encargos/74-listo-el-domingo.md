@@ -69,6 +69,10 @@
 | K5 ✅ A (`c007392`, una orden) | 11 | GBPJPY y USDJPY de gorilla no se pueden archivar aquí: no están en `projects/registry.csv` de leaseWeb (`core/archive/manifest.py:60`) | A traer sus filas del registro y sus informes con el espejo · B pool sólo USATEC para probar el módulo | A para un pool de varios activos |
 | K6 ✅ A | 11 | `real.py` sin plan: su techo de lote | se queda (cartera real aplazada, 72 punto 7) | — |
 | K7 ✅ A | 11 | P(aprobar) = 0 exacto en toda la etapa A | un agente busca la causa, la arregla si es fallo y repite A con 14 (USATEC, GBPJPY, USDJPY) | — |
+| Z1 ✅ A · Z2 ✅ C | 11 | el pool de 14 no aprueba ningún plan (6 corridos, P = 0; FundingPips/FundedNext sin universo, instant sin challenge → `a96161b`) | — | — |
+| Z3 | 11 | FundingPips «candidate» en `firms.yaml` aunque hay cuenta (fase 2 de 2) | A marcarla activa y meterla en el universo · B dejarla | A, al reabrir |
+| Z4 | 11 | 8 versiones archivadas sin cosecha junto a las buenas | A borrarlas · B dejarlas | A, al reabrir |
+| **❄ cartera** | 11 | **congelada por el dueño (2026-10-16)** hasta verificar el resto (`portfolio/CLAUDE.md`) | — | — |
 | W1 ✅ fuera | 7 | la celda interrumpida `squeezeBBLong XAUUSD H1` es un test de 15 min y `following()` la corre la primera | A dejar que termine · B marcarla hecha/fallida en el ledger | B |
 | W2 ✅ B (`c5ca165`) | 7 | `claude -p` con límite de uso: el bucle ahora para (`7f6a293`) | A parar · B dormir 30 min y reintentar, con tope | B si va desatendido |
 | W3 ✅ B | 7 | la campaña no retira sus `Trade_` (1,1 GB el de NIKKEI) y SQX los carga al arrancar | A dejarlos · B retirarlos tras `keep` | A un fin de semana, B si dura semanas |

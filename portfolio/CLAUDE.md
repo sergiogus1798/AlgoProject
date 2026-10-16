@@ -1,5 +1,11 @@
 # portfolio — combining strategies
 
+**FROZEN (owner, 2026-10-16).** No work on `portfolio/common/construct` or `portfolio/funded/**` until the
+owner reopens it: the rest of the chain is verified first. State at freeze: end to end through stage A
+(4f8241a, e7f8d65, a96161b); today's 14 survivors give P(pass) = 0 on every plan, a result
+(`knowhow/research/stagea-zero-is-edge-per-worst-day.md`). Open items: encargo 74 rows Z3, Z4. Reopen
+when a step-20 pool has a member making ≥ 4 worst days in 126 days.
+
 **The implementation plan is `PLAN.md`** (2026-09-30): module layout, data shapes, every knob, the
 AlphaForge port, tests, milestones and the owner's open questions (§12). **Order: M0-M2 (shared
 universe and pairs) → F1-F5 (the funded path, §14 — the owner's priority) → M3-M8 (the real-account
