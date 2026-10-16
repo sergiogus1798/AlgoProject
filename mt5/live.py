@@ -75,8 +75,8 @@ def series(
         },
         account,
     )
-    if not answer["rows"]:
-        return {"rows": 0, "error": answer["error"]}
+    if not answer.get("rows"):  # a failed initialize answers with "error" alone
+        return {"rows": 0, "error": answer.get("error", "")}
     frame = pd.read_csv(csv)
     frame["time"] = pd.to_datetime(frame["time"], unit="s")
     if "time_msc" in frame:

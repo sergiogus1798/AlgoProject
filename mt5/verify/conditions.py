@@ -88,6 +88,8 @@ def holes(times: pd.Series, window: tuple[str, str]) -> list[str]:
 def gap_months(symbol: str, account: dict, window: tuple[str, str]) -> list[str]:
     """`holes` of the H1 bars the firm's server gives for the window (one query)."""
     got = live.series("bars", symbol, window[0], window[1], "H1", account)
+    if got.get("error"):  # 🔬 "Authorization failed" 2026-10-16: no bars is not "no gaps"
+        raise RuntimeError(f"MT5 no da las barras H1 de {symbol}: {got['error']}")
     if not got["rows"]:
         return []
     return holes(pd.Series(pd.read_parquet(got["file"])["time"]), window)
