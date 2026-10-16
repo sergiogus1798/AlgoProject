@@ -87,6 +87,7 @@ def test_edits_since_seal(monkeypatch: object, tmp_path: object) -> None:
     """No seal: edits is None. After it, the same hash adds nothing; each different one counts once."""
     setup(monkeypatch, tmp_path)
     cell = "XAUUSD_H1_long_breakout"
+    monkeypatch.setattr(cells, "_now", lambda: "2026-10-11T00:00:00+00:00")
     cells.note("Test_A_1", 40)
     assert cells.edits(cell) is None
     monkeypatch.setattr(cells, "_now", lambda: "2026-10-12T00:00:00+00:00")
@@ -101,6 +102,10 @@ def test_edits_since_seal(monkeypatch: object, tmp_path: object) -> None:
     (tmp_path / "criteria.yaml").write_text("c")
     cells.note("Trade_A_2", 40)
     assert cells.edits(cell) == 2
+    monkeypatch.setattr(cells, "_now", lambda: "2026-10-14T00:00:00+00:00")
+    cells.seal(again=True)  # S1: the owner reseals, the old seal kept
+    assert cells.edits(cell) == 0
+    assert len(json.loads(cells.SEAL.read_text())["previous"]) == 1
 
 
 def test_batches_for_counts_the_current_batch_once(

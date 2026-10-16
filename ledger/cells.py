@@ -30,7 +30,7 @@ PROJECTS = FOLDER / "projects.csv"
 EXTRAS = FOLDER / "extras.json"  # per-cell integers nothing derives yet: oos2 looks
 SEAL = (
     FOLDER / "seal.json"
-)  # {"sha256", "date"}: put once, by `--seal`, on every cell at once
+)  # {"sha256", "date", "previous"}: `--seal`; again only by `--reseal` (the owner's call)
 JUDGEMENTS = (
     FOLDER / "judgements.csv"
 )  # append-only: project, date, sha256 of criteria.yaml at each step-8 judgement
@@ -129,18 +129,24 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def seal() -> dict[str, str]:
-    """Put the first seal, once: the sha256 of `criteria.yaml` now, on every cell at once.
+def seal(again: bool = False) -> dict:
+    """Seal the sha256 of `criteria.yaml` now, on every cell at once.
+
+    Args:
+        again: Reseal over an existing seal (the owner's call: S1, 2026-10-16). The old
+            seals are kept in `previous`; edits are counted from the newest one on.
 
     Returns:
-        The stored seal. Raises SystemExit when one exists: a second seal is the owner's call.
+        The stored seal. Raises SystemExit when one exists and `again` is not given.
     """
-    if SEAL.exists():
-        sys.exit(f"{SEAL} ya existe: el sello se pone una vez")
+    old = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.exists() else None
+    if old and not again:
+        sys.exit(f"{SEAL} ya existe: un segundo sello es del dueño (`--reseal`)")
     FOLDER.mkdir(parents=True, exist_ok=True)
     seal_ = {
         "sha256": hashlib.sha256(CRITERIA.read_bytes()).hexdigest(),
         "date": _now(),
+        "previous": [*old.pop("previous", []), old] if old else [],
     }
     SEAL.write_text(json.dumps(seal_), encoding="utf-8")
     return seal_
@@ -428,8 +434,8 @@ if __name__ == "__main__":
             else "\n".join(f"{k}: {v}" for k, v in out.items())
         )
         sys.exit()
-    if "--seal" in sys.argv:
-        print(seal())
+    if "--seal" in sys.argv or "--reseal" in sys.argv:
+        print(seal(again="--reseal" in sys.argv))
         sys.exit()
     print(backfill())
     for k, c in sorted(table().items()):
