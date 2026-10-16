@@ -1,6 +1,7 @@
 """Ask the running MT5 terminal read-only questions through the Windows Python in its Wine prefix."""
 
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -29,15 +30,25 @@ def ask(verb: str, args: dict | None = None, account: dict | None = None) -> Any
     if account and not wine.open_terminal():
         raise SystemExit("el terminal de MT5 no arrancó")
     args = {**(args or {}), **(account or {})}
-    proc = wine.run(
-        wine.PYTHON, [wine.windows(QUERY), verb, json.dumps(args)], timeout=900
-    )
-    line = next((ln for ln in proc.stdout.splitlines() if ln.startswith(MARK)), None)
-    if line is None:
-        raise SystemExit(
-            f"no answer from the Windows Python:\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}"
+    # 🔬 2026-10-16: the first login of a just-started terminal answers "Authorization
+    # failed" (-6) and the same call a minute later logs in; three tries, then the error
+    for attempt in range(3):
+        proc = wine.run(
+            wine.PYTHON, [wine.windows(QUERY), verb, json.dumps(args)], timeout=900
         )
-    return json.loads(line[len(MARK) :])
+        line = next(
+            (ln for ln in proc.stdout.splitlines() if ln.startswith(MARK)), None
+        )
+        if line is None:
+            raise SystemExit(
+                f"no answer from the Windows Python:\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}"
+            )
+        answer = json.loads(line[len(MARK) :])
+        error = answer.get("error", "") if isinstance(answer, dict) else ""
+        if "Authorization failed" not in str(error) or attempt == 2:
+            return answer
+        time.sleep(30)
+    return answer
 
 
 def series(
