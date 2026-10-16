@@ -85,8 +85,6 @@ overrides:
   MABarOpensBelowAfterOpenAbove: 1
   Highest: 3
   Lowest: 3
-  HighestInRange: 3
-  LowestInRange: 3
   DonchianChannels: 3
   HighD: 2
   LowD: 2

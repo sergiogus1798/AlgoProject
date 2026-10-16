@@ -43,8 +43,8 @@ segments_default:
     # build+oos1+oos2, y apunta en el Ledger un renglón por tramo que lee.
     # Desde el 2026-09-28 esta lista sólo obliga a un agente autónomo (`core.assetdata.enforced`);
     # el ledger sigue contando cada mirada, sea de quien sea.
-    # BlindJoint añadido por el dueño el 2026-10-04: la lectura elegida del paso 20 (piezas
-    # sin_fallo, población entrantes) necesita el StepM sobre oos2 también en el autopilot.
+    # BlindJoint añadido por el dueño el 2026-10-04: el StepM del paso 20 lee oos2 también
+    # en el autopilot.
     reserved_for: [WFC, CSCV, MarketSurfaces, WFM, BlindJoint, ATRStop]
 
 segments:

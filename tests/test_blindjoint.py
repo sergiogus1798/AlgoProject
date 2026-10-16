@@ -196,10 +196,7 @@ def main() -> None:
         got = measure.run({"population": vetoed, **market(s, "m1")}, CFG)
         hits += "m1" in got["named"][everyone]
         calls = got["calls"].loc["m1"]
-        if (
-            calls["unanimidad+entrantes"] != "fail"
-            or calls["sin_fallo+supervivientes"] != "fail"
-        ):
+        if calls["unanimidad+entrantes"] != "fail":
             failures.append(
                 f"semilla {s}: una pieza en fail no veta a m1 ({calls.to_dict()})"
             )
@@ -246,13 +243,11 @@ def main() -> None:
         )
 
     states = measure.states(vetoed)
-    if readings.kept(states, "sin_fallo") != ["m0", "m2", "m3", "m4"] or readings.kept(
-        states, "unanimidad"
-    ) != ["m0", "m2", "m3", "m4"]:
+    if readings.kept(states, "unanimidad") != ["m0", "m2", "m3", "m4"]:
         failures.append("readings: fail no descarta")
     watch = measure.states(mothers({"a": ["pass", "watch", "pass", "pass"]}))
-    if readings.kept(watch, "sin_fallo") != ["a"] or readings.kept(watch, "unanimidad"):
-        failures.append("readings: watch debe pasar sin_fallo y no unanimidad")
+    if readings.kept(watch, "unanimidad"):
+        failures.append("readings: watch no debe pasar unanimidad")
 
     blind = mothers({"a": ["pass"] * 4, "b": ["pass"] * 4}, {"b": ["wfc", "cscv"]})
     refused = {"population": blind, "refused": "política", "source": "test"}
@@ -300,7 +295,7 @@ def main() -> None:
     except PermissionError:
         pass
     if (
-        many.run(refused, {**CFG, "joint": {**CFG["joint"], "pieces": "sin_fallo"}})[
+        many.run(refused, {**CFG, "joint": {**CFG["joint"], "pieces": "unanimidad"}})[
             "population"
         ]["verdict"]["label"]
         == "Sin regla"
@@ -325,7 +320,7 @@ def main() -> None:
         f"en un mercado con deriva ganan {drift.mean():.0f} y exceden {sums.mean():.1f} "
         f"(z {z:.2f}), nombradas en {named} de {RUNS}, y un edge por operación sale en {found} "
         f"de {RUNS}; una pieza en fail "
-        f"veta bajo unanimidad y sin_fallo; una madre incompleta no se lee; sin oos2 no se "
+        f"veta bajo unanimidad; una madre incompleta no se lee; sin oos2 no se "
         f"decide; y la puerta ciega se niega sin 17, 18 y 19"
     )
     sys.exit(1 if failures else 0)

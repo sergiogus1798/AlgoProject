@@ -40,8 +40,7 @@ joint:
   pieces: null                # owner, 2026-10-12: NOBODY is discarded at step 20 — null, every row
                               # MANTENER; the step is a summary and the StepM a diagnostic. The
                               # `peor` reading was removed. The readings that remain, selectable:
-                              # unanimidad (all three pass), sin_fallo (none fails; indeciso/ciego
-                              # tolerated), ninguna (the pieces are context and the StepM decides
+                              # unanimidad (all three pass), ninguna (the pieces are context and the StepM decides
                               # alone)
   population: entrantes       # decided 2026-10-04 (P2, the Council on the owner's delegation).
                               # Over whom the StepM counts its search: entrantes (every mother

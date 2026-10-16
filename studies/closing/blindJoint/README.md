@@ -40,7 +40,7 @@ study wrote it; the mother's oos2 curve against the random trader of her own foo
 
 **Decided 2026-10-04 (P2):** `joint.population` is `entrantes` — the StepM's K is every mother
 that entered step 20. **Still open, exposed rather than chosen (hard rule 11):** `joint.pieces` —
-`unanimidad`, `sin_fallo` or `ninguna`. While it is null the study computes the call under **every** reading, shows them side by side, writes MANTENER for all
+`unanimidad` or `ninguna`. While it is null the study computes the call under **every** reading, shows them side by side, writes MANTENER for all
 (as part A annotates) and, if it read oos2, a soft ledger row. With both set, `verdict.csv` says
 DESCARTAR for a mother that reading drops.
 
@@ -53,8 +53,8 @@ reading that uses the StepM raises while the policy refuses oos2 (`report.need_s
 **Owner, 2026-10-12: nobody is discarded at step 20.** `joint.pieces: null`, so no reading is chosen,
 every row is `MANTENER` and `verdict_csv.drop` is 0 (the rule in `criteria.yaml` stays and finds
 nothing to cut). The step is a summary: the StepM and the SPA are a diagnostic, and the `REVISAR`
-label stays in `report.VERDICT`. The `peor` reading («the worst state wins») was removed. `sin_fallo`,
-`unanimidad` and `ninguna` remain selectable and are shown side by side in `readings.csv`.
+label stays in `report.VERDICT`. The `peor` reading («the worst state wins») was removed. `sin_fallo`
+was deleted (owner, 2026-10-16, Q3 A). `unanimidad` and `ninguna` remain selectable and are shown side by side in `readings.csv`.
 
 ## The benchmark: the mother's own trades, entered at random (owner, 2026-10-11)
 

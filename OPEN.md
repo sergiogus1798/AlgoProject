@@ -68,8 +68,7 @@ measure them the first time 17-19 run for real, not before. The MC Retest and th
 
 `studies/closing/blindJoint/`. `joint.pieces` is null in `config.yaml` (owner, 2026-10-12: nobody is
 discarded at step 20). **Contestado 2026-10-15 (encargo 72, C8 A): manda el 65, se borra `sin_fallo`;
-falta aplicarlo** (`sin_fallo` still lives in `studies/closing/blindJoint/{readings.py,config.yaml,tooltips.py}`
-and `assets/_policy.yaml:47`). Still open: whether an autonomous agent (`ALGO_AUTONOMOUS=1`) is held
+aplicado 2026-10-16** (`sin_fallo` deleted from `studies/closing/blindJoint/` and `assets/_policy.yaml`). Still open: whether an autonomous agent (`ALGO_AUTONOMOUS=1`) is held
 out of oos2 for BlindJoint (not in `reserved_for`). Owner's look at the USDJPY mothers' oos2 daily P&L on
 2026-09-26 left no ledger row: his call whether to add one. Part V of encargo 48: a real variant batch
 with `variant_trades.parquet` has never been produced, so the real read in

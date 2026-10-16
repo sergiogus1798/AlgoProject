@@ -26,7 +26,7 @@ note: 'Paleta PURA de familia, sin CurrentHour, sin día del mes y sin ningún b
   SessionHigh/Low/Open, OpenD, HighD, LowD) tienen en SQX doble papel, indicador y
   nivel stop/limit, y una paleta enciende los dos a la vez: con órdenes a mercado
   el papel de nivel no se usa. Fuera: HighestInRange/LowestInRange y TimeBreakout
-  (duplican SessionHigh/Low), Pivots (se calculan de HighD/LowD/CloseD), semana y
+  (relojes, regla 15), Pivots (se calculan de HighD/LowD/CloseD), semana y
   mes, y el perfil de volumen y TPO.'
 unlabelled: 'off'
 overrides:

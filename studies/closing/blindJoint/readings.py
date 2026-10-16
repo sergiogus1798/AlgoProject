@@ -12,13 +12,10 @@ from studies.closing.blindJoint.pieces import PIECES
 # | reading    | holds fixed                     | tolerates                           |
 # |------------|---------------------------------|-------------------------------------|
 # | unanimidad | every piece in `pass`           | nothing                             |
-# | sin_fallo  | no piece in `fail`              | `watch`: indeciso, ciego, a medias, |
-# |            |                                 | and the WFC's LIMBO (`pieces.WFC`)  |
 # | ninguna    | nothing: the pieces are context | everything; the StepM decides alone |
 
 COMBINE = {
     "unanimidad": lambda states: all(s == "pass" for s in states),
-    "sin_fallo": lambda states: not any(s == "fail" for s in states),
     "ninguna": lambda states: True,
 }
 

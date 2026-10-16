@@ -192,6 +192,5 @@ overrides:
   TrueRange: 1
   CBlock_TimeBreakoutLong: 0
   CBlock_BreakoutDonchianLong: 0
-  HighestInRange: 0
   Highest: 0
   DonchianChannels: 0

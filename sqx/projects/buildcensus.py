@@ -23,6 +23,8 @@ CLOCK_NAMES = frozenset(
         "SessionLow",
         "SessionOpen",
         "SessionClose",
+        "HighestInRange",
+        "LowestInRange",
         "VolumeProfileCustomHours",
         "VolumeProfileCustomHoursMultiSession",
     }
