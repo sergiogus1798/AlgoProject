@@ -123,4 +123,20 @@ sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño
 
 ### Informe de las 5:40 — algoproject-07
 
-(pendiente)
+| qué | estado | commit |
+|---|---|---|
+| Motor de carteras de punta a punta sobre `Test_nikkei_ref` (M0-F5, < 90 s por paso) | hecho; secuencia «Con supervivientes reales» en el README | `2d6f031` |
+| Prueba en seco de la campaña: una celda real ya no hereda el modo test; `claude -p` fallido no aparta la celda | hecho, tests verdes | `7f6a293` |
+| W3 B (retirar el `Trade_` terminado) · squeezeBB fuera (`dropped_templates`) | hecho | `f5636b0` |
+| La campaña sólo ofrece activos con `price_rounding` (filtro; se borra si R1 = A) | hecho | `ad41f58` |
+| W2 B: `claude -p` caído espera 30 min y reintenta (6 veces) | hecho, test | `c5ca165` |
+| K1 A: la cartera dimensiona sin stop (factor = 1 / peor día de MAE en build; tope `open_risk_cap`) | hecho; sin correr el motor entero sobre supervivientes reales | `4f8241a` |
+| Campaña lanzada 22:05: `Trade_EURUSD_M30_cciPercLong`, luego `Trade_USDJPY_H1_cciPercLong_withExit` | **EURUSD falló dos veces en el 6+7** («el disco se paró 120 s sin igualar la memoria», 00:54 y 04:04); va por su 3.er intento (`--restart`, build desde 04:04) | — |
+| #93 (C2-C11) + parche del 49 de 18 en `criteria.yaml` | pendiente: un solo commit cuando acabe la campaña | — |
+
+**Custodio de leaseWeb: NO está libre.** El bucle (PID 2310663) sigue con el 3.er intento de EURUSD; el build acaba hacia las 07:05 y después vienen los pasos 8-21; luego la celda USDJPY (~6-7 h).
+
+**Siguientes pasos del día**
+1. Diagnosticar el fallo del 6+7 (guardado del databank tras un build de 10.000) antes de que el 3.er intento caiga igual; si es de código, arreglarlo y relanzar la celda con `run`.
+2. Al acabar el bucle: la #93 + el parche del 49 en un único commit; quitar `stop_x` de `pipeline/campaign/shelf.py`.
+3. Dueño: **K3** (de qué proyecto sale el pool de la cartera), **K1a-c** (ya en A), **R1** (si A, se borra el filtro de `price_rounding`), **R2**.
