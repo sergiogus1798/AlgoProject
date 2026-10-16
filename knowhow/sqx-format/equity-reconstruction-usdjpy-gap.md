@@ -4,15 +4,13 @@ kw: exit at 02:00 flat day gap, SQX low sampled only while open, days.low_open, 
 tag: 🔬  date: 2026-10-04  see: sqx-format/daily-equity-bin, research/gate-t-scales, export/mae-mfe-from-m1
 ---
 # SQX's daily curve carries the whole round-turn commission from the ENTRY; the rebuild booked it at the close
-Pass `commission` to `equity/paths.minute_path` (or use `equity/closecurve.panel`, which does): 🔬 SQX takes the
-full round-turn commission off the floating equity from the entry minute — gap = 5.000 $ × lots on USDJPY, no
-dependence on nights held (swap is NOT in floating; `MAE ($)`/`MFE ($)` carry neither). Read point value and
-commission off the trades (`closecurve.measured`), not the card: a recalibrated card is not the build's. A
-population built on a feed whose clock later changed still fails in the DST weeks — refuse it, or rebuild it on bars
-re-stamped to its own clock (`clock.reclock`, 🔬 100 %: `export/archived-trades-vs-reclocked-bars`). A broker debits the commission at the deal: SQX is the right side.
-Step 20's guard (`blindJoint/inputs.tolerance`, owner R4=A) allows each day max(1 $, half the export's last price decimal x
-point value x the most lots open at once that day): SQX fills gold at half a cent but exports 2 decimals, so each open lot is
-up to 0.5 $ off.
+Pass `commission` to `equity/paths.minute_path` (or use `equity/closecurve.panel`, which does): 🔬 SQX takes the full round-turn commission off the
+floating equity from the entry minute — gap = 5.000 $ × lots on USDJPY, no dependence on nights held (swap is NOT in floating; `MAE ($)`/`MFE ($)`
+carry neither). Read point value and commission off the trades (`closecurve.measured`), not the card: a recalibrated card is not the build's. A
+population built on a feed whose clock later changed still fails in the DST weeks — refuse it, or rebuild it on bars re-stamped to its own clock
+(`clock.reclock`, 🔬 100 %: `export/archived-trades-vs-reclocked-bars`). A broker debits the commission at the deal: SQX is the right side. Step 20's
+guard (`blindJoint/inputs.tolerance`, owner R4=A) allows each day max(1 $, half the export's last price decimal x point value x the most lots open at
+once that day): SQX fills gold at half a cent but exports 2 decimals, so each open lot is up to 0.5 $ off.
 
 ## Evidence
 - 🔬 2026-10-16, XAUUSD (price decimals 2, point value 100), days within tolerance: build 99.46 % -> 99.61 %, oos1
