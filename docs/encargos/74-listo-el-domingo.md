@@ -119,7 +119,7 @@ sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño
 1. Cuando aterrice el commit de la #93 de 07: marcar hecha la fila 1.6 del 49 y, si S1 = A, sellar de nuevo `criteria.yaml`.
 2. S1-S4 contestadas (dueño, vie): S4 A hecho (los pasos sin regla dejan fila con 0 cortes), S3 B y S2 A sin cambio de código; S1 A hecho: segundo sello tras la #93 (`python3 -m ledger.cells --reseal`, 7d347e58…, 2026-10-16T06:11 UTC; el del 12-10 queda en `previous`). K3: el pool de 07 sale de GBPJPY y USDJPY de gorilla y las USATEC de la V.
 3. Fila 12 del 74 (ensayo del sábado en leaseWeb): en cuanto el custodio quede libre de la campaña de 07, una celda del director a la cartera sin manos.
-4. Paso 20 (gorilla XAUUSD M15): la guarda de la curva (83 % < 99 %) falla antes de gastar la mirada de oos2; se relanza con `run` desde el 20 cuando 95 arregle el descuadre M15 (#120/#121). Saltar la madre en el 20 como en el 18.5 sería un filtro nuevo: pregunta del dueño, recomiendo fallar.
+4. Paso 20 (gorilla XAUUSD M15): R4 = A commiteado por 95 (b4fc59d, tolerancia por día; oos1 98,70 → 99,35 %); 95 relanza el oro con `run` desde el 20.
 5. Pendiente con la máquina libre: frente 5 del 50 (receta IS, Opus), calibraciones 12 y 16 del 49 (esperan al 53, aparcado).
 
 ### Informe de las 5:40 — algoproject-07

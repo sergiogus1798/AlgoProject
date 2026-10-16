@@ -240,7 +240,7 @@ def judge(
         criteria.resolved(spec.get("rules") or [], tags(project)), project
     )
     if not rules and not spec.get("medoids"):
-        seen = found["strategy"].nunique() if len(found) else 0
+        seen = int(found["strategy"].nunique()) if len(found) else 0
         ledger_row(project, n, spec, seen, seen, segment)  # S4 A: a row with 0 cut
         return {
             "n": n,

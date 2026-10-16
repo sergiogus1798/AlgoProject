@@ -129,7 +129,7 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def seal(again: bool = False) -> dict:
+def seal(again: bool = False) -> dict[str, Any]:
     """Seal the sha256 of `criteria.yaml` now, on every cell at once.
 
     Args:
