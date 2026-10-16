@@ -36,7 +36,7 @@ la **receta del IS del paso 6** (qué pedir en el Build de SQX), medida.
 | 1 · V | una corrida entera por `/workflow` con el paso 8 vigente | Sonnet | máquina libre | ✅ 2026-10-15: segunda corrida (Test_USATEC_H1_breakoutL_v8b_leaseWeb) — paso 8 verificado: B=2, línea 2,576, z_mono máx 2,84, embudo 10.000 → 7.356 → 6 → 4 medoides; ledger B 1→2; edits_since_seal = 1 por el α 0,01 del 15-10 (posterior al sello del 12-10, edición contada, no fallo). La primera corrida cayó en el paso 8 por «List index overflow» (arreglado en d52908d). La segunda llegó al 18 y paró en el 18.5 por fichas sin price_rounding (medidas esta noche; causa extra: rollout_hour sin comillas, 1fcb33b). Supervivientes en el almacén; proyectos retirados. |
 | 2 · Parada | Q2, Q3 y Q4 | dueño | — | ✅ contestada el 2026-10-15 (todas las recomendaciones) |
 | 4 · Z1 + M | cargar lo que decida la parada; documentación de la puerta | Sonnet | 2 ✅ (Z1 sin trabajo: Q2 y Q3 dejan todo como está); M puede empezar ya | ✅ 2026-10-15: documentación de la puerta al día (salvo `criterios-implementados-2026-10-12`, que tiene otra sesión, y la cabecera de `criteria.yaml`, que no se toca) |
-| 5 · Receta del IS (ex 42) | paso 6: dosis-respuesta, A/B dentro/fuera del Build, familia contra gemela, flotante, equipo rojo | Opus (+ Sonnet para lanzar) | Q7; nada pesado junto a un workflow | sin empezar |
+| 5 · Receta del IS (ex 42) | paso 6: dosis-respuesta, A/B dentro/fuera del Build, familia contra gemela, flotante, equipo rojo | Opus (+ Sonnet para lanzar) | custodio libre; nada pesado junto a un workflow | 🟡 2026-10-16: diseño cerrado (§5.2, R1-R7 = A); falta la fase 0 en el custodio |
 
 Orden: 1 → 4. El 5 es independiente salvo por la máquina (regla 19).
 
@@ -45,6 +45,7 @@ Orden: 1 → 4. El 5 es independiente salvo por la máquina (regla 19).
 - 2026-10-09 · consolidado desde los encargos 44 y 42. De 44 estaban hechas las oleadas 0 a 6 salvo K-m; 42 no se ejecutó nunca.
 - 2026-10-15 · el dueño contestó «todas las recomendaciones»: QV = A, Q2 = A (las reglas se quedan y se firman como v1), Q3 = A (sin tope en R5d), Q4 = A (sin frente N: V corre en USATEC H1 largo ruptura, la misma celda de la corrida nula), Q7 = A (las poblaciones de la receta suman a la B de sus celdas). Q4c: V lanzada el mismo día (🟡 en curso). El frente 3 (N) se borra.
 - 2026-10-15: reescrito contra el 65 (fila 5 del orden). Fuera: K-m (lo hizo la corrida nula del 65 §5.4 para la única regla que pesa), la tabla 1.2 de líneas (R3 ya no juzga), la parada 3 (`dev` borrado), los nulos de la t (Q5: R3 es columna) y la clave `by:` de familia (Q6 → no).
+- 2026-10-16 · frente 5: Council (Feynman, Kahneman, Taleb, Ada) sobre el diseño; dueño R1-R7 = A; §5.2 reescrito. Medido en la V: z_mono media 0,82, desviación 0,47 (no N(0, 1)). Siguiente: fase 0 cuando el custodio quede libre.
 - 2026-10-15 · frentes 1 y 4: V ✅ (segunda corrida, ver la tabla); M hecho: dossier del paso 8 con cabecera y `dd_esperado_r`, fila 8 de WORKFLOW, README de la puerta, `/oos-gate`, glosario, `memory/config.yaml` (`z_mono` → `not_beyond_random`), `gate-t-scales` y capítulo 29. Pendiente: `criterios-implementados-2026-10-12` (otra sesión) y el párrafo `dev` de la cabecera de `criteria.yaml`.
 
 ---
@@ -137,36 +138,55 @@ de 2 entradas y 2 salidas; si una pasa, para). Mide la duración de una poblaci�
 libres. Por población: Build → retest OOS (costes de `oos1`, sin aceptación) → cosecha → el paso 8
 vigente con la semilla anotada; nada de `feedQuality`, `profitShape` ni `entryQuality` (borrados).
 
-### 5.2 El diseño — qué medir
+### 5.2 El diseño — qué medir (Council del 2026-10-16 y R1-R7 = A del dueño)
 
-Celdas: activo (≥ 10-12) × marco (M30, H1) × dirección (poblaciones separadas, regla 13) × familia
-(sólo las que `assets/FAMILIAS.md` lista para ese activo y marco; **nunca** las «medido en contra», D4)
-× generación (genética con el bloque del dueño, `sqx/projects/buildmode_model.xml`, que no se toca;
-aleatoria en el control). Sin plantilla: Simple Strategy, 1..2 entradas y 1..2 salidas
-(`assets/_build.yaml`). **XAUUSD y USDJPY quedan fuera**: su oos1 ya se leyó para elegir umbrales y no se
-vuelve a leer (D8). Prioridad si el tiempo aprieta: ruptura y momentum, largo, H1 y M30 (DJ30, GBPJPY,
-EURJPY), después lo que el prior recomienda sin medida. «Buena» se define con datos que la regla no lee,
-se comprueba con dos o tres etiquetas alternativas, **tasas, no recuentos**.
+**Lo que cambió.** Con ~6 de 10.000 que pasan el paso 8 por población, «pasa o no» no mide nada: 10
+métricas × 6 umbrales sobre 6 eventos es ruido (Feynman, Kahneman, Taleb y Ada, por separado). Y la z del
+mono de una población real no es N(0, 1): en la V vale **media +0,82, desviación 0,47** (7.356
+estrategias; 6 sobre 2,326 donde N(0, 1) daría el 1 %) — el desplazamiento común del lote del 65 (D11),
+no una población peor que el azar. De ahí las siete reglas:
 
-1. **Dosis-respuesta.** Para cada métrica del IS que SQX pueda poner como condición del Build
-   (`knowhow/columns/`): operaciones por año (20, 25, 30, 35, 40 y 50; qué cuesta y qué compra el 35 —
-   el suelo mismo, 35/20, está decidido; la pérdida de la reversión diaria de índices se asume y se mide,
-   D5), PF, KER, Sharpe, Ret/DD, SQN, estabilidad, estancamiento, % de aciertos, operación media contra
-   el coste. Cuáles predicen pasar el paso 8 vigente y un OOS robusto, cuáles no, cuáles son el mismo eje.
-   Si el mejor predictor no es una columna de SQX, dilo y da la más cercana. (El PF del IS no es hecho
-   todavía, `OPEN.md` #93.)
-2. **A/B dentro y fuera del Build**, con réplicas: cada filtro recomendado como condición del Build y
-   como corte después en Python (la vez anterior, un solo build por brazo).
-3. **La prueba que nadie ha corrido:** un build que llena el databank y sigue reemplazando por Ret/DD
-   sus 180 min contra uno corto (6 min).
-4. **La familia:** ¿la que `FAMILIAS.md` recomienda da más supervivientes del paso 8 que su gemela
-   aleatoria? Las celdas sin enriquecimiento son un hallazgo: se listan. Los índices, contra comprar y
-   mantener a la misma exposición. Los criterios **no** varían por familia (Q6).
-5. **Riesgo flotante** como eje propio (peor día, peor MAE y drawdown sobre neto anual, en R).
-6. **Equipo rojo.** Un agente con contexto limpio recalcula la propuesta y devuelve CONFIRMADO / FALSO /
-   EXAGERADO / SIN APOYO por afirmación.
-7. **Por el camino real del código** (`pipeline/autopilot/facts.per_strategy` → `criteria.resolved` →
-   `criteria.outcomes`) en cada población: el embudo por población y agrupado.
+1. **R1 — el resultado es la z del mono continua** de cada estrategia en oos1, leída **dentro de su
+   población** (rango, o z referida a la nula empírica del lote, D11). Pasar el paso 8 es lectura
+   secundaria, con su intervalo de Wilson. Etiquetas alternativas: como mucho dos, escritas antes.
+2. **R2 — los filtros se miden después del build, en Python**, sobre poblaciones **sin filtrar** (el
+   databank nunca se llena: dentro del Build un filtro sólo descarta, no cambia lo que la genética busca).
+   Toda la dosis-respuesta (operaciones/año, PF, KER, Sharpe, Ret/DD, SQN, estabilidad, estancamiento,
+   % de aciertos, operación media contra el coste) sale gratis de las mismas poblaciones. **Control:** un
+   recorte al azar del mismo tamaño de la misma población (1.000 sorteos). **Control negativo:** la
+   columna de la métrica permutada — si «funciona», la tubería tiene una fuga. Las métricas que son el
+   mismo eje (Sharpe, Ret/DD, SQN, PF) se agrupan antes y se prueba una por grupo; corrección de Holm.
+   El A/B dentro/fuera del Build, sólo para el filtro que sobreviva, con 2 semillas.
+3. **R3 — dentro del estudio la línea es fija: B = 1 (2,326)**, más la z continua. La B del ledger
+   sigue sumando por Q7 = A (es contabilidad: esas celdas llegan a sus corridas reales con B ≥ 2).
+4. **R4 — fuera la prueba de 180 min llenando el databank** contra la de 6 min (una sola muestra no
+   contesta; lo que preguntaba, si el Ret/DD del IS selecciona para el OOS, sale de R2 gratis).
+5. **R5 — ~1/3 de las celdas en corto**, para que un mercado alcista no se lea como ventaja; cada filtro
+   se mide también contra comprar y mantener a la misma exposición, en todos los activos.
+6. **R6 — el riesgo flotante es veto, no eje:** un filtro que empeore en oos1 el percentil 95 del peor
+   MAE en R, el peor día sobre el neto anual o la parte que rompería un 5 % de pérdida diaria, se
+   rechaza aunque suba la z.
+7. **R7 — descubrimiento y confirmación se reparten por celdas antes del primer build** (~60 / 40 %);
+   las de confirmación se leen **una vez**. La unidad de inferencia es la celda (efecto aleatorio o
+   bootstrap por celdas, y por grupo de estructura dentro de la población): un filtro se recomienda si
+   sube la z en las celdas de confirmación con un intervalo que excluye 0, el mismo signo en ≥ 75 % de
+   las celdas, y su coste en estrategias al lado.
+
+**El presupuesto (~40 h, a confirmar con la primera población medida, D7).**
+
+| fase | qué | poblaciones |
+|---|---|---|
+| 0 | una celda, 3 semillas: duración de punta a punta y varianza entre builds (sin ella no se dimensiona lo demás) | 3 |
+| 1 | ~10 celdas × 1 semilla, ruptura y momentum, H1 y M30, ≥ 6 activos fuera de XAUUSD/USDJPY (DJ30, GBPJPY, EURJPY primero), ~1/3 en corto; reparto R7 fijado antes | ~10-14 |
+| 2 | gemelas aleatorias (`--random`) en 4-5 celdas de descubrimiento con rendimiento no nulo | 4-5 |
+| 3 | A/B dentro/fuera del Build del único filtro que sobreviva, 2 semillas | 2 |
+| — | reserva para el equipo rojo y el embudo por el camino real del código (de los datos guardados) | 1-2 |
+
+Antes de cada activo nuevo, cinco minutos de población de prueba (cuenta estrategias y operaciones); una
+celda con < 2.000 estrategias se cae. **Si nada pasa la vara, la receta es la mínima** (suelo de
+operaciones, beneficio > 0, operación media ≥ k × coste): quitar filtros es más barato que añadir falsos.
+**Fuera:** recetas por familia o por celda (Q6), el barrido de 20-50 operaciones/año como builds propios
+(el suelo 35/20 está decidido; se lee sobre las mismas poblaciones), el flotante como eje con builds propios.
 
 ### 5.3 Lo que entrega
 
@@ -191,6 +211,7 @@ capítulo del manual de cualquier comando que cambie (regla 8).
   vuelve a leer oos1.
 - 2026-10-15 (65 §5.4): P8-Z → α 0,01; P8-L → el Limbo sigue; P8-E → `edge_mean_oos` no se endurece.
 
+- 2026-10-16 (frente 5, «tus recomendaciones»): R1 z continua · R2 filtros después del build, sobre poblaciones sin filtrar · R3 línea fija B = 1 en el estudio · R4 fuera la prueba de 180 min · R5 ~1/3 en corto · R6 flotante como veto · R7 descubrimiento/confirmación por celdas — todas A (§5.2).
 - 2026-10-15 («todas las recomendaciones»): QV = A (V cuenta como hecha cuando el paso 8 está verificado, aunque no deje ninguna) · Q2 = A (las reglas se quedan y se firman como v1) · Q3 = A (sin tope en R5d) · Q4 = A (sin frente N: V corre en USATEC H1 largo ruptura) · Q7 = A (las poblaciones de la receta suman a la B de sus celdas).
 
 ## Lo que no tocas

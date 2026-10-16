@@ -93,4 +93,5 @@
 - `wfm-cells-are-not-independent` — How many independent curves are the 30 WFM cells worth?
 - `window-filters-are-ledger-searches` — Does a filter applied in the window count as a search in the ledger?
 - `xauusd-reopen-bar-drift` — Where does the XAUUSD Asian drift live relative to the 01:00 EET reopen?
+- `z-mono-population-spread` — Is a real population's z_mono distributed N(0, 1), so that its pass rate above the step-8 line means anything?
 - `zero-duration-trades` — Why print both the run's trade count and the count a bar-grid test could compare?
