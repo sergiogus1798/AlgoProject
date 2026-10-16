@@ -37,6 +37,7 @@
 - 2026-10-16 00:40 — gorilla con el arreglo del 19.5 de 18 (ca27380): `Trade_EURUSD_M30_reversionL_gorilla` FIN, sin superviviente (la lectura de oos2 del 19.5 la cortó: resultado). `Trade_XAUUSD_M15_momentumL_gorilla`: 10.000 → 2 (paso 8) → 1 (10, 12) → 19.5 pasa (1 → 1, guardada para fondeo en `kept/`), y **falla en el paso 20**: BlindJoint «la curva reconstruida de las madres no reproduce la de SQX (83 % de los días, hace falta 99 %)»; el 18.5 ya había saltado esa madre por descuadre 0,60 (oro, #120/#121). Diagnóstico en curso (Sonnet). Gorilla sigue con `Trade_GBPJPY_H1_momentumL_gorilla`.
 
 - 2026-10-16 02:30 — gorilla `Trade_GBPJPY_H1_momentumL_gorilla`: **FIN sin fallos, del build al 20** (10.000 → 4 en el paso 8 → 4 en el 19 → **1 tras el 19.5 y el 20**); collect hecho (`store/GBPJPY_H1_simple_long_gorilla`, ledger `_gorilla`), lista para el paso 26. XAUUSD M15: arreglado `closecurve.measured` (c85645c); el 20 sigue a 98,7 % en oos1 por la precisión del export → pregunta R4. Gorilla sigue con `Trade_USDJPY_H1_momentumL_gorilla` (simple, largo, `momentum_base_v3`, 10.000 / 30 min).
+- 2026-10-16 04:18 — gorilla `Trade_USDJPY_H1_momentumL_gorilla`: **FIN sin fallos, del build al 20**, 10.000 → 4 en el paso 8 → **4 tras el 19.5 y el 20**; collect hecho. Gorilla sigue con `Trade_EURUSD_H1_momentumL_gorilla` (simple, largo, `momentum_base_v3`).
 
 ## Reglas de la noche
 
