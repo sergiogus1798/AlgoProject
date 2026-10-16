@@ -27,8 +27,16 @@ def levels(plan: Plan, cfg: dict) -> np.ndarray:
 
     Returns:
         float64 [L], risk r as a fraction of the initial balance.
+
+    Raises:
+        SystemExit: The plan has no challenge stage (an instant-funding plan): nothing to pass.
     """
-    daily = min(s["daily_loss"] for s in plan["stages"] if s["stage"] != "funded")
+    rooms = [s["daily_loss"] for s in plan["stages"] if s["stage"] != "funded"]
+    if not rooms:
+        raise SystemExit(
+            "el plan no tiene fase de challenge (financiación directa): la etapa A no tiene nada que aprobar"
+        )
+    daily = min(rooms)
     return np.asarray(cfg["funded"]["risk_grid"], dtype=np.float64) * daily
 
 
