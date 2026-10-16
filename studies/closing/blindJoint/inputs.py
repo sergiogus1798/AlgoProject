@@ -3,6 +3,7 @@
 from typing import Any, cast
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from core.assetdata import load as load_asset, window as asset_window
@@ -141,6 +142,47 @@ def trades_door(batches: dict[str, Path]) -> str | None:
     )
 
 
+def tolerance(trades: pd.DataFrame, days: pd.Index, point_value: float) -> pd.Series:
+    """Each day's allowed gap (account currency) between the rebuilt and SQX's lowest equity.
+
+    The floor is TOLERANCE. The export prints prices to a few decimals while SQX filled at a
+    finer price (gold: half a cent, exported with 2 decimals), so each lot still open at the
+    day's low is off by up to half the last printed decimal x point value. Closed trades
+    carry SQX's own Profit/Loss, exact. The bound is therefore that half-tick x the MOST lots
+    open at once that day (not the sum over the day's trades: sequential ones never hold
+    the low together).
+
+    Args:
+        trades: One mother's trades (schema T).
+        days: The days of the comparison.
+        point_value: What `closecurve.measured` returned.
+
+    Returns:
+        One tolerance per day of `days`.
+    """
+    prices = np.concatenate([trades["Open price"], trades["Close price"]]).astype(float)
+    places = next(
+        (d for d in range(9) if np.allclose(prices * 10**d, np.round(prices * 10**d))),
+        8,
+    )
+    events = pd.concat(
+        [
+            pd.Series(trades["Size"].to_numpy(), index=trades["Open time"].to_numpy()),
+            pd.Series(
+                -trades["Size"].to_numpy(), index=trades["Close time"].to_numpy()
+            ),
+        ]
+    ).sort_index(kind="stable")
+    held = events.cumsum()
+    day = held.index.normalize()
+    top, last = held.groupby(day).max(), held.groupby(day).last()
+    # a day with no event still holds what the last event left open
+    carry = last.reindex(days.union(last.index)).ffill().shift().fillna(0.0)
+    lots = carry.reindex(days).fillna(0.0)
+    lots = lots.where(lots >= top.reindex(days).fillna(0.0), top.reindex(days))
+    return (0.5 * 10.0**-places * point_value * lots).clip(lower=TOLERANCE)
+
+
 def mother_trades(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.DataFrame:
     """One mother's own trades inside oos2, from its batch (schema T plus `variant_id`)."""
     origin = pd.read_parquet(
@@ -181,7 +223,18 @@ def panel(
     gap = (
         low - pd.DataFrame({m: mother_low(b, span) for m, b in batches.items()})
     ).abs()
-    exact = ((gap <= TOLERANCE).sum() / gap.notna().sum()).median()
+    point_value = closecurve.measured(trades)[0]
+    allowed = pd.DataFrame(
+        {
+            m: tolerance(
+                cast(pd.DataFrame, trades[trades["identity"] == m]),
+                gap.index,
+                point_value,
+            )
+            for m in gap
+        }
+    )
+    exact = ((gap <= allowed).sum() / gap.notna().sum()).median()
     if exact < RECONCILED:
         raise ValueError(
             f"la curva reconstruida de las madres no reproduce la de SQX "

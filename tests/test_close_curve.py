@@ -73,6 +73,26 @@ def batch(folder: Path, mother: str, with_trades: bool) -> Path:
     return folder
 
 
+def tolerance_failures() -> list[str]:
+    """Half a tick x lots open is licensed; a full tick is not."""
+    # Prices exported with 2 decimals, point value 100, 3 lots open on D2: half a tick is
+    # 0.5 x 0.01 x 100 x 3 = 1.5 per day; 1.4 passes, a full tick (3.0) still fails.
+    held = pd.DataFrame(
+        {
+            "Open price": [100.25, 100.5],
+            "Close price": [100.75, 101.0],
+            "Size": [3.0, 3.0],
+            "Open time": [D2 + pd.Timedelta(hours=1)] * 2,
+            "Close time": [D2 + pd.Timedelta(hours=2)] * 2,
+        }
+    ).iloc[:1]
+    allowed = joint.tolerance(held, pd.Index([D1, D2, D3]), 100.0)
+    if not np.allclose(allowed, [1.0, 1.5, 1.0]) or not (1.4 <= allowed[D2] < 3.0):
+        return [f"tolerancia por lotes abiertos: {allowed.tolist()}"]
+
+    return []
+
+
 def main() -> None:
     """Run every check and exit non-zero on any failure."""
     failures = []
@@ -144,6 +164,8 @@ def main() -> None:
             failures.append(
                 "blindJoint no se niega cuando al lote le faltan las operaciones"
             )
+
+    failures += tolerance_failures()
 
     for line in failures:
         print("FALLA:", line)

@@ -151,7 +151,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `engines/weekly/panel.py` | 169 | Trades into weeks x units of excess, gross and net: each trade whole in the week it closes in. | engines | numpy, pandas |
 | `ledger/backfill.py` | 172 | Rebuild a study's ledger backwards from the artefacts a run already left on disk. | core, ledger | numpy, pandas, yaml |
 | `ledger/blind.py` | 158 | The rows steps 17, 18 and 19 did not write, rebuilt from the results they left on disk. | core, ledger | pandas |
-| `ledger/cells.py` | 437 | The per-cell counter: how much was tried in each asset x timeframe x direction x idea family. | core, ledger, studies | pandas |
+| `ledger/cells.py` | 443 | The per-cell counter: how much was tried in each asset x timeframe x direction x idea family. | core, ledger, studies | pandas |
 | `ledger/gate.py` | 200 | The one-way door: who may look at a reserved segment, and when 17-19 may be read. | core | pandas, yaml |
 | `ledger/record.py` | 146 | Contract L1: one appended line per search that looked at data and reduced a population. | ledger | numpy, pandas |
 | `ledger/report.py` | 176 | The study's whole search, read back: the funnel, what was spent, and what it costs the Sharpe. | core, ledger, studies | numpy, pandas |
@@ -469,7 +469,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/inspect/template_check.py` | 239 | Check whether the strategies a project built really use the blocks its template declares. | core | — |
 | `sqx/inspect/vocabulary.py` | 280 | What one SQX install can express: its blocks, its random groups, and what each pools. | core | — |
 | `sqx/projects/acceptance.py` | 133 | Write a cross-check's acceptance element: the conditions it judges by, and their thresholds. | core | — |
-| `sqx/projects/buildcensus.py` | 194 | Count what a project's Build task will generate from: its shape, its blocks, its search and its acceptance. | core, sqx | — |
+| `sqx/projects/buildcensus.py` | 196 | Count what a project's Build task will generate from: its shape, its blocks, its search and its acceptance. | core, sqx | — |
 | `sqx/projects/builder.py` | 417 | Turn a template plus an asset into a Builder project installed and ready to run. | core, sqx | — |
 | `sqx/projects/buildingblocks.py` | 170 | Write a palette into a project's Build task: which blocks the builder may draw for the free holes, and at what weight. | core, sqx | — |
 | `sqx/projects/buildrules.py` | 313 | The shape of the strategy a task may generate: how complex, which orders, which exits. | core, sqx | — |
@@ -595,12 +595,12 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/breakage/spp/run.py` | 244 | One strategy's whole SPP reading: what moves it, what is dead, and whether it is worth more. | core, studies | pandas |
 | `studies/breakage/spp/tooltips.py` | 33 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/breakage/spp/verdict/noise.py` | 112 | Does the best point of this grid beat what searching pure noise would have produced? | core | pandas |
-| `studies/closing/blindJoint/inputs.py` | 272 | What step 20 reads: its knobs, the ledger's two doors, the mothers' oos2 days and their random traders'. | core, engines, ledger, portfolio | numpy, pandas |
+| `studies/closing/blindJoint/inputs.py` | 276 | What step 20 reads: its knobs, the ledger's two doors, the mothers' oos2 days and their random traders'. | core, engines, ledger, portfolio | numpy, pandas |
 | `studies/closing/blindJoint/many.py` | 269 | Every mother that reached step 20, read as one result: the three pieces, the readings, the SPA. | core, studies | pandas |
 | `studies/closing/blindJoint/measure.py` | 133 | The numbers of step 20: each mother against her random trader on oos2, the SPA, and the StepM per reading. | engines, studies | numpy, pandas |
 | `studies/closing/blindJoint/one.py` | 225 | One mother at step 20: her three withheld results side by side, and her call under each reading. | core, studies | pandas |
 | `studies/closing/blindJoint/pieces.py` | 133 | The three withheld results of each mother — 17, 18 and 19 — as their own studies said them. | core | pandas |
-| `studies/closing/blindJoint/readings.py` | 99 | The readings of "passes step 20" the spec leaves open, one entry each, for the owner to choose. | studies | pandas |
+| `studies/closing/blindJoint/readings.py` | 96 | The readings of "passes step 20" the spec leaves open, one entry each, for the owner to choose. | studies | pandas |
 | `studies/closing/blindJoint/report.py` | 218 | Step 20: the blind joint reading of 17, 18 and 19, with SPA and StepM on oos2, and its ledger row. | core, ledger, studies | numpy, pandas |
 | `studies/closing/blindJoint/tooltips.py` | 20 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/closing/blindJoint/words.py` | 46 | The words of another study's call, as the owner reads them: Spanish, sentence case, decimal comma. | — | — |
@@ -957,7 +957,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_autopilot_variants_order.py` | 93 | Step 16.5's order of work: live, every pilot first on the main market alone; restart, as it was. | pipeline | pytest |
 | `tests/test_autopilot_zero.py` | 232 | Zero survivors end the autopilot cleanly, a missing fact goes where its rule says, the judge | pipeline, sqx, tests | pandas |
 | `tests/test_batches.py` | 103 | Known answers for the batch check: a batch against itself, two fair draws, and a shifted funnel. | studies | numpy, pandas |
-| `tests/test_blindjoint.py` | 335 | Step 20 on mothers whose answer is known: noise and random traders name nobody, a planted edge is named, the pieces veto. | engines, ledger, studies | numpy, pandas |
+| `tests/test_blindjoint.py` | 330 | Step 20 on mothers whose answer is known: noise and random traders name nobody, a planted edge is named, the pieces veto. | engines, ledger, studies | numpy, pandas |
 | `tests/test_blindjoint_flat.py` | 29 | A mother whose excess is zero up to float noise is flat, not a huge Sharpe (encargo 68 D22). | studies, test_blindjoint | numpy, pytest |
 | `tests/test_blocks_shared.py` | 105 | Known answers for the shared drawing blocks: sign caption, band helper, scatter cap, red-green ramp. | core, ui | PySide6, numpy |
 | `tests/test_build_acceptance.py` | 140 | Golden and refusal tests for step 6: the Build's acceptance filters from a `_study.yaml`. | core, sqx | — |
@@ -974,7 +974,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_chain.py` | 280 | «Correr workflow» and the per-step ▶ SQX on a scratch install: the stop rule, one start per step. | core, sqx, tests, ui | fastapi |
 | `tests/test_chain_cancel.py` | 144 | Cancelling a launcher: its worker stopped by itself, or by the daemon only when it started it. | core, tests, ui | — |
 | `tests/test_charts.py` | 150 | The extra chart of a multi-timeframe template: inserted in all three places, once. | sqx | — |
-| `tests/test_close_curve.py` | 170 | The close-to-close rebuild on a hand-computed case: commission from the entry, and the joint study's panel. | portfolio, studies | numpy, pandas |
+| `tests/test_close_curve.py` | 177 | The close-to-close rebuild on a hand-computed case: commission from the entry, and the joint study's panel. | portfolio, studies | numpy, pandas |
 | `tests/test_cloud_map.py` | 156 | Known-answer tests of the parameter map: a planted quadratic is legible with the right ranking, noise is not. | studies | numpy, pandas, pytest |
 | `tests/test_columnhelp.py` | 276 | ui.text.columnhelp: every column the databank tables show today has its «?» sentence, every | ui | — |
 | `tests/test_commission_segments.py` | 142 | Known-answer test for the commission per segment: an asset with commission confirmed prices | core, sqx | — |
@@ -1061,7 +1061,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_launch.py` | 135 | «Lanzar en SQX» on a scratch install: its refusals, and the order of what it sends SQX. | sqx, tests, ui | fastapi |
 | `tests/test_ledger.py` | 165 | The ledger's two guarantees: the door refuses, and pooling widens what the DSR must clear. | core, ledger | numpy, pandas |
 | `tests/test_ledger_blind_cscv.py` | 38 | ledger.blind.from_batch reads the CSCV's contract envelope (estudios/cscv.json), not the old flat file. | ledger | pandas |
-| `tests/test_ledger_cells.py` | 171 | Known-answer tests: the per-cell counter and accumulated(extra=None). | ledger | pandas |
+| `tests/test_ledger_cells.py` | 176 | Known-answer tests: the per-cell counter and accumulated(extra=None). | ledger | pandas |
 | `tests/test_ledger_gate_195.py` | 23 | Step 19.5 (the single oos2 reading) passes the door as WFM's 19; any other unlisted step does not. | core, ledger | pytest |
 | `tests/test_ledger_ideas.py` | 109 | Known answer: the hypotheses the research memory counts raise the ledger's N and lower the DSR. | ledger, studies | numpy, pandas |
 | `tests/test_ledger_shards.py` | 73 | D27 phase 1: the union of shards counts a common row once, legacy rows dedup against the same | core, ledger | — |
