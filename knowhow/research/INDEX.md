@@ -72,6 +72,7 @@
 - `spp-decay-metrics-zero-edge-null` — Can the SPP's IS-vs-OOS1 decay metrics (median ratio, Vargha–Delaney A, W1/IQR) tell a zero-edge family from a real one?
 - `spp-noise-gate-centred-no-floor` — How does the SPP noise gate decide, and is there a minimum trade count?
 - `spp-origin-level-sampled-once` — What happens when an SPP step grid does not contain the original parameter value?
+- `stagea-zero-is-edge-per-worst-day` — Why does funded stage A give P(pass) = 0 for every combination and risk level — bug or result?
 - `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
 - `step14-rules-on-selected-and-unselected` — Do step 14's T1/T2/T3 rules separate good strategies from unselected ones, and which should move?
 - `step20-benchmark-random-trader-mean` — What does step 20 use as its benchmark, and how is it built from random traders?
