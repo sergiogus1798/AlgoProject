@@ -3,13 +3,14 @@
 
 from typing import Any
 import argparse
+import sys
 import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from core.study import blocks, draws, output, result as envelope
+from core.study import blocks, draws, output, result as envelope, verdicts
 from core.study.config import fingerprint
 from engines.variants import look
 from engines.variants.panel import SEGMENTS
@@ -199,6 +200,15 @@ def main() -> None:
             f"{facts['nulo']['pbo_p5']:.3f}, p95 {facts['nulo']['pbo_p95']:.3f})"
             if "pbo" in facts
             else "sin dato"
+        )
+        verdicts.write(
+            out,
+            pd.DataFrame(
+                [{"strategy": work.name, "identity": None, "verdict": facts["estado"]}]
+            ),
+            work,
+            " ".join(sys.argv),
+            a.overrides,
         )
         look.log(
             work,

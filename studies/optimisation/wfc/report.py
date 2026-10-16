@@ -4,12 +4,13 @@
 from typing import Any
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 
 import pandas as pd
 
-from core.study import blocks, draws, output, result as envelope
+from core.study import blocks, draws, output, result as envelope, verdicts
 from core.study.config import fingerprint
 from engines.variants import look, panel
 from studies.optimisation.wfc import one
@@ -107,6 +108,15 @@ def main() -> None:
         found,
         f"WFC — {a.work.name.replace('_', ' ')}",
         "¿Elegir por el pasado sirve fuera?",
+    )
+    verdicts.write(
+        out,
+        pd.DataFrame(
+            [{"strategy": a.work.name, "identity": None, "verdict": said["estado"]}]
+        ),
+        a.work,
+        " ".join(sys.argv),
+        a.overrides,
     )
     # The scalars the old pipeline's verdict read.
     comp = panel.columns(panel.KEYS[said["composicion"]])
