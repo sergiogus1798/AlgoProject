@@ -5,6 +5,8 @@ from types import ModuleType
 
 import pytest
 
+from core import proc
+
 
 def chain_fakes(monkeypatch: pytest.MonkeyPatch, free_gb: float) -> list:
     """`chain.floored` on a fake machine: `free_gb` free, and every command a recorded no-op."""
@@ -36,7 +38,7 @@ def test_floored_second_heavy_waits_and_light_ones_pack(
     heavy = jobs.weight({"study": "gate"}) * chain.GB_PER_WEIGHT
     chain_fakes(monkeypatch, jobs.FLOOR_GB + heavy + 0.1 + 3 * 3 * chain.GB_PER_WEIGHT)
     ran = []
-    monkeypatch.setattr(chain, "command", lambda argv: (ran.append(argv), (0, ""))[1])
+    monkeypatch.setattr(proc, "command", lambda argv: (ran.append(argv), (0, ""))[1])
     # nothing runs yet: a first heavy one always starts (and stays "running" for this test)
     chain._RUNNING.update(n=1, gb=heavy, cores=jobs.weight({"study": "gate"}))
     with pytest.raises(
@@ -66,7 +68,7 @@ def test_floored_reserves_cumulatively(monkeypatch: pytest.MonkeyPatch) -> None:
             chain.floored(["second"], "entryQuality")
         return 0, ""
 
-    monkeypatch.setattr(chain, "command", hold)
+    monkeypatch.setattr(proc, "command", hold)
     chain._RUNNING["n"] = 1  # something else of the chain runs
     assert chain.floored(["first"], "entryQuality") == (0, "")
     assert seen[0]["gb"] == pytest.approx(3 * chain.GB_PER_WEIGHT)
@@ -78,6 +80,7 @@ def test_python_step_runs_tests_together_with_monkey_excess_last(
     """Two independent tests overlap in time; monkeyExcess starts only once both have ended;
     the failures come back in the tests' order."""
     import threading
+
     from ui.daemon.launch import chain
 
     log, lock, both = [], threading.Lock(), threading.Barrier(2, timeout=5)
@@ -131,7 +134,7 @@ def run_threads(
         return 0, ""
 
     live: list[str] = []
-    monkeypatch.setattr(chain, "command", cmd)
+    monkeypatch.setattr(proc, "command", cmd)
     ts = [threading.Thread(target=chain.floored, args=([n], k)) for k, n in jobs_]
     [t.start() for t in ts]
     [t.join() for t in ts]

@@ -15,6 +15,7 @@ why resumability and disk hygiene are the requirement here rather than a quality
 |---|---|---|
 | `ledger/` | what is happening right now, and what happened | changing `state.json`; other modules read it |
 | `autopilot/` | one PROJECT's workflow, 7 → 16, unattended: the window's chain judging by `criteria.yaml` instead of stopping (owner, 2026-10-01) | running a workflow without stops, or writing criteria |
+| `sqxrun/` | one launch of SQX tasks, start to stop: rule 5, snapshot, configure, start, wait, stop, restore, compare | launching tasks from the window or the autopilot |
 | `campaign/` | the unattended loop over template × asset × timeframe: a ledger, pre-registered batches, one `workflow.sh template` per cell, each result kept with its strategies in the archive (owner, 2026-10-05) | running or planning the campaign |
 
 | file | what it does | run it | in → out |

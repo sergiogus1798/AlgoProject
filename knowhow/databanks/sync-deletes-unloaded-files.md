@@ -9,7 +9,7 @@ a `ClearDatabanks` task empties memory and the next sync deletes the files; a pa
 is pruned to that partial set; and **two syncs of one databank at once** (a periodic one when
 `-exit`'s shutdown sync starts) interrupt a strategy's lock — «Cannot process strategy 'X'»,
 InterruptedException — and the periodic one then deletes X's file. «Lanzar en SQX» restores such
-a file from its pre-run snapshot (`launch.run.restore`). Before running a project read its **Databank flow** table:
+a file from its pre-run snapshot (`sqx.projdisk.restore`). Before running a project read its **Databank flow** table:
 `sqx/inspect/dump_project.py <PROJECT>`. Not: "closing SQX deletes strategies" — misdiagnosis. Narrowing: a sync touches only **loaded** databanks — one nobody opened is not pruned (Evidence, 2026-09-23); not an all-clear.
 
 ## Evidence

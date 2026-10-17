@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from core import proc
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -120,7 +122,7 @@ def test_the_core_gate_takes_a_freed_slot_within_a_second(
         "virtual_memory",
         lambda: type("M", (), {"available": next(free)})(),
     )
-    monkeypatch.setattr(chain, "command", lambda argv: (0, "ok"))
+    monkeypatch.setattr(proc, "command", lambda argv: (0, "ok"))
     monkeypatch.setitem(chain._RUNNING, "n", 1)
     assert chain.floored(["x"], "") == (0, "ok") and sleeps == [1]
 

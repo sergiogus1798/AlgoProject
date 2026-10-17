@@ -15,7 +15,6 @@ watcher it reuses.
 | `chain.py` | «Correr workflow»: every pending step in WORKFLOW.md's order, SQX and Python, up to the next decision. | `python3 -m ui.daemon.launch.chain --project P` (the window queues it) | a project → steps run up to the next decision |
 | `chaincheck.py` | «Correr workflow», before the press: whether the chain may start, what it would run, the sentence to confirm. | imported by `api.py` and `chain.py` | project → ok, reasons, plan |
 | `liverun.py` | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | imported | preflight → `{title: (before, after)}` |
-| `run.py` | «Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop. | `python3 -m ui.daemon.launch.run --project P --task CONSTRUCCION` (repeatable) or `--step 13` (the window queues it) | a project → its tasks run, worker stopped |
 
 ## The chain's stop rule
 

@@ -153,7 +153,7 @@ def run(req: Launch) -> dict[str, object]:
     what = ["--step", req.step] if req.step else ["--task", req.task]
     job = jobs.start(
         LABEL,
-        ["-m", "ui.daemon.launch.run", "--project", req.project, *what],
+        ["-m", "pipeline.sqxrun.run", "--project", req.project, *what],
         {
             "project": req.project,
             "role": got["role"],

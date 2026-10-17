@@ -20,7 +20,7 @@ PHASE2 = "11.7"
 # like the studies `workflow.tests.SPENDS` names.
 OOS2 = {"19": "la Walk Forward Matrix lee el oos2: se lanza con su ▶ SQX, a mano"}
 # Preparations the next SQX step's run does itself, worker stopped, just before its start:
-# 10.5 fills CrossTF_Input for the 11 (`sqx.projects.crosstfload`, `launch.run.execute`).
+# 10.5 fills CrossTF_Input for the 11 (`sqx.projects.crosstfload`, `pipeline.sqxrun.run.execute`).
 FILLED_BY_NEXT = {"10.5"}
 # The steps no machine does: the chain only walks past them when they are done.
 BEFORE = {

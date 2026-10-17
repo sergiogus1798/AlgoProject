@@ -114,8 +114,8 @@ def test_the_tail_cuts_only_by_sign() -> None:
 
 def test_exit_3_goes_on_with_the_label(monkeypatch: pytest.MonkeyPatch) -> None:
     """A refused look (exit 3) does not raise: the step reports «solo vivo»; any other failure raises."""
-    monkeypatch.setattr(blind.chain, "command", lambda argv: (3, "x"))
+    monkeypatch.setattr(blind.proc, "command", lambda argv: (3, "x"))
     assert "solo vivo" in blind.oos2read("P")
-    monkeypatch.setattr(blind.chain, "command", lambda argv: (1, "boom"))
+    monkeypatch.setattr(blind.proc, "command", lambda argv: (1, "boom"))
     with pytest.raises(SystemExit):
         blind.oos2read("P")

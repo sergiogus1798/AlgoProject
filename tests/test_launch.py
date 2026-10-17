@@ -10,11 +10,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+from pipeline.sqxrun import run  # noqa: E402
 from sqx import projdisk  # noqa: E402
 from sqx.projects import stage  # noqa: E402
 from sqx.worker import preflight as advance  # noqa: E402
 from tests.test_advance import CALLS, P, fakes, tree  # noqa: E402
-from ui.daemon.launch import api, run  # noqa: E402
+from ui.daemon.launch import api  # noqa: E402
 
 
 def scratch(root: Path, install: str = "SQX_w1", role: str = "conductor") -> dict:

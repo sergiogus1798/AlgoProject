@@ -13,6 +13,8 @@ from core.datapaths import tmp_dir
 from core.paths import ROOT, bank_dir
 from core.phases import note, phase
 from ledger import steprows
+from pipeline.sqxrun import run as launcher
+from pipeline.sqxrun.run import record
 from sqx import progress
 from sqx.databank import find, state
 from sqx.export import membank
@@ -23,8 +25,6 @@ from sqx.worker.session import assets, say
 from sqx.workflow import launchcheck as preflight
 from sqx.workflow import launchconfigure as configure
 from sqx.workflow import launchsteps
-from ui.daemon.launch import run as launcher
-from ui.daemon.launch.run import record
 from ui.daemon.loader import afterrun
 
 # The tasks that run slow in a session hours old, and at their speed in one just opened
@@ -201,7 +201,7 @@ def close(role: str, project: str, failed: dict[str, Any] | None = None) -> None
 
 
 def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
-    """`run.execute` for a live session: same checks and records, SQX never stopped.
+    """`launcher.execute` for a live session: same checks and records, SQX never stopped.
 
     Args:
         pre: What `preflight.check` returned, ok.

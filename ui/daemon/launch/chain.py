@@ -16,6 +16,7 @@ from typing import Any
 import psutil
 
 from core import proc
+from pipeline.sqxrun import run as launcher
 from sqx import jobs
 from sqx.databank import state as loader
 from sqx.projects import stage
@@ -23,7 +24,6 @@ from sqx.worker.session import graceful, say
 from sqx.workflow import launchcheck as preflight
 from sqx.workflow.records import Context
 from ui.daemon.launch import chaincheck
-from ui.daemon.launch import run as launcher
 from ui.daemon.loader import afterrun
 from ui.daemon.runner import batch
 from ui.daemon.workflow import api as workflow

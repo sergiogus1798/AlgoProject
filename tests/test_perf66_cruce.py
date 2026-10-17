@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from core import fanout, identities, sqxfile, sqxview
+from core import fanout, identities, proc, sqxfile, sqxview
 from core.store import extra
 from sqx.variants import neighbourbatch, tuples
 from sqx.variants.build import fabricate, rewrite
@@ -146,7 +146,7 @@ def test_the_chain_loads_no_trades_of_an_unread_databank(
         },
     )
     monkeypatch.setattr(
-        chain, "command", lambda argv: asked.append(tuple(argv)) or (0, "")
+        proc, "command", lambda argv: asked.append(tuple(argv)) or (0, "")
     )
     banks = ["Results", *sorted(afterrun.UNREAD_TRADES)]
     for bank in banks:
@@ -331,7 +331,7 @@ def test_chain_load_over_the_real_commands_skips_the_trades_the_harvest_wrote(
             loader_world["exported"]("OOS")
         return 0, ""
 
-    monkeypatch.setattr(chain, "command", command)
+    monkeypatch.setattr(proc, "command", command)
     assert chain.load("Test_P", "Results") == []
     assert (
         asked[:2] == ["export_metrics", "harvest"]

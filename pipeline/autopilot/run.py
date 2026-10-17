@@ -27,6 +27,7 @@ from pipeline.autopilot import (
     variants,
 )
 from pipeline.autopilot.survivors import Done, about, mothers
+from pipeline.sqxrun import run as launcher
 from sqx import log as sqxlog
 from sqx.projects import live
 from sqx.worker import preflight as advance
@@ -35,9 +36,6 @@ from sqx.workflow import launchsteps
 from ui.daemon.launch import (
     chain,
     liverun,
-)
-from ui.daemon.launch import (
-    run as launcher,
 )
 from ui.daemon.workflow import api as workflow
 
