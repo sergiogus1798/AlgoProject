@@ -226,9 +226,11 @@ def value(
     got = (
         _stability(steps, metric)
         if family == "stability"
-        else _round2(
-            sqxstats.records(_tx(run.find("stats/SQStats")))[metric]
-            / (base[metric] / 100)
+        else _round2(  # 🔬 a zero main figure (EURJPY H1, 2026-10-17) scores 0, as SQX's safeDivide
+            _ratio(
+                sqxstats.records(_tx(run.find("stats/SQStats")))[metric],
+                base[metric] / 100,
+            )
         )
     )
     return float(math.trunc(got)) if metric in INTEGER else got

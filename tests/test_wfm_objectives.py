@@ -71,6 +71,14 @@ def check() -> None:
     periods = ET.SubElement(run, "Periods")
     periods.extend(steps)
     assert wfmobjectives.value(run, None, {}, "stability", "NumberOfTrades") == 127.0
+    ET.SubElement(ET.SubElement(run, "stats"), "SQStats").text = repr(s(50, 1.2, 9, 3))
+    assert (
+        wfmobjectives.value(run, None, {"NetProfit": 0.0}, "score", "NetProfit") == 0.0
+    )
+    assert (
+        wfmobjectives.value(run, None, {"NetProfit": 200.0}, "score", "NetProfit")
+        == 25.0
+    )
     assert wfmobjectives._special(steps, "WFPctOfProfitableRuns") == 50.0  # 1 of 2
     assert wfmobjectives._special(steps, "WFMaxProfitByRunInPct") == 150.0  # 300 of 200
     assert wfmobjectives._special(steps, "WFMinTradesInRun") == 21.0
