@@ -1,5 +1,5 @@
 ---
-q: Why do XAUUSD M15 step-26 checks fail on FTMO and Hantec while JPY crosses H1 pass (matched share 0.85, entries missed at server hours 00-04)?
+q: Why do XAUUSD M15 step-26 checks fail on FTMO and Hantec while JPY H1 crosses pass (missed entries at server 00-04)?
 kw: step 26 gold fails, XAUUSD M15 matched share 0.85, row 1 below 0.90, EhlersMAMA unmatched trades, session open feed gap, hour 1 bar open differs, rows 3b 4 5 fail one lot gold, MT5 FTMO vs Hantec disagree
 tag: 🔬  date: 2026-10-17  see: mt5/sqzscore-stale-previous-bar, mt5/mt5-verify-clock-zones
 ---
