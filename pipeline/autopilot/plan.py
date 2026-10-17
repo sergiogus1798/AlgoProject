@@ -2,14 +2,14 @@
 
 import re
 import sys
-from pathlib import Path
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any, cast
 
 from core.assetdata import load
 from core.paths import feed_quality_dir
 from pipeline.autopilot import tail
-from ui.daemon.launch import chainplan
+from sqx.workflow import chainplan
 from sqx.workflow.launchsteps import ELSEWHERE
 
 

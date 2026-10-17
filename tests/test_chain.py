@@ -14,14 +14,15 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from core import worker  # noqa: E402
+from sqx import jobs  # noqa: E402
 from sqx.projects import stage  # noqa: E402
+from sqx.worker import guard as workerguard  # noqa: E402
+from sqx.workflow import chainplan  # noqa: E402
+from sqx.workflow.steps import STEPS  # noqa: E402
 from tests.test_advance import CALLS, P  # noqa: E402
 from tests.test_launch import scratch  # noqa: E402
-from sqx import jobs  # noqa: E402
-from sqx.worker import guard as workerguard  # noqa: E402
-from ui.daemon.launch import api, chain, chaincheck, chainplan, run  # noqa: E402
+from ui.daemon.launch import api, chain, chaincheck, run  # noqa: E402
 from ui.daemon.launch import preflight as launch_preflight  # noqa: E402
-from sqx.workflow.steps import STEPS  # noqa: E402
 from ui.daemon.workflow.tests import SPENDS  # noqa: E402
 
 MCR = stage.titles("mcretest")

@@ -13,7 +13,7 @@ offer «rehacer las filas de 17-19» and the command.
 Each step also carries `stage`, `panel` (its tests read the databank the panel shows: 21-25) and
 `needs` (the steps to run before it, `needs.of`; the drawer paints the missing ones in red), and
 the payload `chain`: what «Correr workflow» would run now and where it would stop
-(`ui/daemon/launch/chainplan.plan`, painted beside its button).
+(`sqx/workflow/chainplan.plan`, painted beside its button).
 
 `POST /api/workflow/run {project, tests: [{n, key}], databank, strategies}` queues the ticked
 tests in `sqx/jobs.py` → `{jobs, refused: [{n, key, why}]}`. `POST /api/workflow/backfill
@@ -25,7 +25,7 @@ install**, not even `-project action=status`. The run routes start Python studie
 else: an SQX step's own task is never a test — the rail's ▶ SQX goes to `ui/daemon/launch/`.
 
 **Imports from:** `core/`, `ledger/`, `sqx/projects/{stage,registry}`,
-`ui/daemon/{progress,tasklog,jobs,runs,results,runner}`, `ui/daemon/launch/chainplan` ·
+`ui/daemon/{progress,tasklog,jobs,runs,results,runner}`, `sqx/workflow/chainplan` ·
 **Consumed by:** `ui/daemon/routers.py` (includes `ROUTER`), `ui/desktop/workspace/rail.py`,
 `ui/daemon/launch/chain.py` (the plan, the context, the tests' commands) ·
 **Checked by:** `tools/checks.py` («workflow table»):

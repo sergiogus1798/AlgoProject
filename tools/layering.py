@@ -20,7 +20,6 @@ ALLOW: set[tuple[str, str]] = {
     ),  # owner 2026-10-17: kept, its archive verb renders the window views
     ("pipeline/autopilot/blind.py", "ui.daemon"),
     ("pipeline/autopilot/call.py", "ui.daemon"),
-    ("pipeline/autopilot/plan.py", "ui.daemon"),
     ("pipeline/autopilot/run.py", "ui.daemon"),
 }
 

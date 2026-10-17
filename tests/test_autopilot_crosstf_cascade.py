@@ -14,14 +14,14 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.autopilot import criteria, judge, plan, selection, tffacts
-from sqx.projects import cfxio, workflow as wf
+from sqx.projects import cfxio
+from sqx.projects import workflow as wf
 from sqx.projects.workflow import CROSSTF_BUILD
+from sqx.workflow import chainplan, launchsteps
+from sqx.workflow.steps import STEPS
 from studies.transfer.crossTF.tf import inputs as tfinputs
-from sqx.workflow import launchsteps
-from ui.daemon.launch import chainplan
 from ui.daemon.results import tfrows
 from ui.daemon.workflow import derive
-from sqx.workflow.steps import STEPS
 
 TWINS = ["CrossTF M15 build", "CrossTF H1 build"]
 RULE = {"fact": "crossTF.tf.state", "pass": ">= 1", "limbo": ">= 0"}

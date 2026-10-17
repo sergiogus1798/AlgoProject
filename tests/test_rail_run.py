@@ -10,9 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton  # noqa: E402
 
+from sqx.workflow import chainplan  # noqa: E402
 from tests.test_chain import rail  # noqa: E402
 from ui.daemon.workflow.tests import SPENDS  # noqa: E402
-from ui.daemon.launch import chainplan  # noqa: E402
 from ui.desktop import client  # noqa: E402
 
 SENT: list[tuple[str, dict]] = []

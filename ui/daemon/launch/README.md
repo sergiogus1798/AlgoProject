@@ -14,7 +14,6 @@ watcher it reuses.
 | `api.py` | The routes of «Lanzar en SQX» and «Correr workflow»: tasks, steps, preflights and the jobs that run them. | imported | request → JSON |
 | `chain.py` | «Correr workflow»: every pending step in WORKFLOW.md's order, SQX and Python, up to the next decision. | `python3 -m ui.daemon.launch.chain --project P` (the window queues it) | a project → steps run up to the next decision |
 | `chaincheck.py` | «Correr workflow», before the press: whether the chain may start, what it would run, the sentence to confirm. | imported by `api.py` and `chain.py` | project → ok, reasons, plan |
-| `chainplan.py` | What «Correr workflow» runs, in WORKFLOW.md's order, and the step it stops before — from the rail. | imported | rail → plan |
 | `configure.py` | Run the configurator of every chosen task still unconfigured, as its skill does, with the worker stopped. | imported | preflight → configured tasks |
 | `liverun.py` | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | imported | preflight → `{title: (before, after)}` |
 | `preflight.py` | Whether «Lanzar en SQX» may start one task of a project now, and every reason it may not. | imported | project, task(s) or step → `{ok, reasons, chosen, off, …}` |
@@ -22,7 +21,7 @@ watcher it reuses.
 
 ## The chain's stop rule
 
-`chainplan.plan` walks the rail in WORKFLOW.md's order. 1-5 are walked past only when done (5,
+`sqx/workflow/chainplan.plan` walks the rail in WORKFLOW.md's order. 1-5 are walked past only when done (5,
 10.5 and 16.5 are chat work: a halt when pending); **any step running is a halt**, Python too. A
 Python step already done is skipped (its leftover tests run with their own ▶ PY) unless an SQX step
 ran earlier in this press, which makes everything after it rerun. A Python step runs the tests
