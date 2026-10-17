@@ -56,6 +56,7 @@ thresholds:
   daily_mad_max_pct: ledger:mt5verify.daily_mad_max_pct
   worst_day_gap_max_pp: ledger:mt5verify.worst_day_gap_max_pp
   dd_rel_gap_max: ledger:mt5verify.dd_rel_gap_max
+  dd_abs_gap_max_pp: ledger:mt5verify.dd_abs_gap_max_pp
   exit_same_min: ledger:mt5verify.exit_same_min
   trades_min: ledger:mt5verify.trades_min
   size_gap_max_pct: ledger:mt5verify.size_gap_max_pct

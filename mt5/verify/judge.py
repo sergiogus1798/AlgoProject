@@ -190,9 +190,14 @@ def rows(
             th["dd_rel_gap_max"],
             False,
             f"SQX {dd[0]:.3f} %, MT5 {dd[1]:.3f} % — sobre el balance al cerrar cada "
-            "operación; el flotante intradía con M1 está pendiente",
+            "operación; el flotante intradía con M1 está pendiente. Pasa también con "
+            f"≤ {th['dd_abs_gap_max_pp']} puntos de diferencia (P26h)",
         ),
     ]
+    # P26h (owner, 2026-10-17): on a 3 % drawdown 10 % relative is 0.3 points, the noise of
+    # a few trades; an absolute gap of at most dd_abs_gap_max_pp points passes too
+    if dd_gap is not None and abs(dd[0] - dd[1]) <= th["dd_abs_gap_max_pp"]:
+        out[-1]["state"] = "pass"
     if sized:
         out.append(
             one(

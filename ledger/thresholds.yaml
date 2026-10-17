@@ -1110,6 +1110,12 @@ thresholds:
     set_on: 2026-09-29
     why: valor de partida aceptado — diferencia relativa del drawdown máximo
 
+  - key: mt5verify.dd_abs_gap_max_pp
+    value: 1.0
+    source: mt5/verify/config.yaml#thresholds.dd_abs_gap_max_pp
+    set_by: dueño
+    set_on: 2026-10-17
+    why: P26h A — la fila 5 pasa también si el drawdown máximo de SQX y MT5 difiere en 1 punto o menos (suspendían 0,4-1,7 pp sobre drawdowns del 3-15 %)
   - key: mt5verify.size_gap_max_pct
     value: 0.10
     source: mt5/verify/config.yaml#thresholds.size_gap_max_pct

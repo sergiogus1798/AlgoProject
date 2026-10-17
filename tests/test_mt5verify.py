@@ -411,6 +411,12 @@ def risk_rows(failures: list[str]) -> None:
     got = judge.firm_result("ftmo", sqx, halved, *args, zone)["summary"]
     if not got["row_6"] > th["size_gap_max_pct"]:
         failures.append(f"un tamaño un 20 % distinto no sube la fila 6: {got}")
+    shrunk = sqx.assign(**{"Profit/Loss": sqx["Profit/Loss"] * 0.8})
+    for deposit, want in ((10000, "pass"), (1000, "fail")):  # P26h: 0.8 vs 3.1 points
+        got = judge.rows(sqx, shrunk, compare.pair(sqx, shrunk, 60), deposit, th)
+        five = next(r for r in got if r["row"] == "5")
+        if five["value"] <= th["dd_rel_gap_max"] or five["state"] != want:
+            failures.append(f"fila 5 con depósito {deposit}: {five}")
     pieces = {"ftmo": {}}
     summaries = {"ftmo": {"state": "pass"}}
     ticks.keep_risk(pieces, summaries, "ftmo", sizing.no_stop("ftmo"))
