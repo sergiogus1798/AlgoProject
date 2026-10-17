@@ -5,6 +5,7 @@ from typing import Any
 import pandas as pd
 
 from mt5 import guard, live
+from mt5.verify import months
 
 # MT5's ENUM_SYMBOL_SWAP_MODE → SQX's <Swap type>. The ones left out (swap in the base or the
 # margin currency, reopen modes) have no SQX equivalent: a firm quoting one is refused.
@@ -51,50 +52,40 @@ def read(symbol: str, account: dict) -> dict[str, Any]:
 
 
 GAP_SHARE = (
-    0.5  # a month with under this share of the firm's median month of H1 bars is a hole
+    0.5  # a month with under this share of the firm's median month of M1 bars is a hole
 )
 
 
-def holes(times: pd.Series, window: tuple[str, str]) -> list[str]:
-    """The whole months of the window where the firm's server has too few bars to trade.
+def holes(per_month: dict[str, int], window: tuple[str, str]) -> list[str]:
+    """The whole months of the window where the tester has too few M1 bars to trade.
 
     Args:
-        times: The H1 bar times the server gave for the window.
+        per_month: «YYYY-MM» → M1 bars the tester walks that month (`months.tester_months`).
         window: (first day, last day), YYYY-MM-DD.
 
     Returns:
-        «YYYY-MM» of each whole month inside the window with fewer H1 bars than `GAP_SHARE` of
+        «YYYY-MM» of each whole month inside the window with fewer M1 bars than `GAP_SHARE` of
         the median whole month. The yardstick is the firm's own median, not SQX's feed: no
-        second data path, and one hole in 24 months never moves a median (🔬 Hantec
-        USDJPY/GBPJPY: 2022-06 and 2023-01 with no bars; December still holds ~85 % of it).
-        The window's partial first and last months are never judged.
+        second data path, and one hole in 24 months never moves a median. The window's partial
+        first and last months are never judged. A month absent from `per_month` counts 0.
     """
     first, last = (pd.Timestamp(d) for d in window)
-    months = pd.period_range(first, last, freq="M")
-    months = [
-        m for m in months if m.start_time >= first and m.end_time.normalize() <= last
+    whole = [
+        m
+        for m in pd.period_range(first, last, freq="M")
+        if m.start_time >= first and m.end_time.normalize() <= last
     ]
-    if not months:
+    if not whole:
         return []
-    per = (
-        pd.Series(1, index=pd.to_datetime(times).dt.to_period("M"))
-        .groupby(level=0)
-        .sum()
-    )
-    per = per.reindex(months, fill_value=0)
+    per = pd.Series({m: per_month.get(str(m), 0) for m in whole})
     return [str(m) for m, n in per.items() if n < GAP_SHARE * per.median()]
 
 
 def gap_months(symbol: str, account: dict, window: tuple[str, str]) -> list[str]:
-    """`holes` of the H1 bars the firm's server gives for the window (one query)."""
-    got = live.series("bars", symbol, window[0], window[1], "H1", account)
-    if got.get(
-        "error"
-    ):  # 🔬 "Authorization failed" 2026-10-16: no bars is not "no gaps"
-        raise RuntimeError(f"MT5 no da las barras H1 de {symbol}: {got['error']}")
-    if not got["rows"]:
-        return []
-    return holes(pd.Series(pd.read_parquet(got["file"])["time"]), window)
+    """`holes` of the M1 bars the firm's tester walks for the window (🔬 2026-10-16: the terminal's
+    H1 series and its M1 history disagree — Hantec XAUUSD.h — so only the tester's own count will do).
+    """
+    return holes(months.tester_months(symbol, account, window), window)
 
 
 def for_sqx(

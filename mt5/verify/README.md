@@ -20,6 +20,7 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 | `display.py` | How a stored Verificar result reads in the window: capitals, percentages and one line per firm. | imported by `runs.result` | dict → dict |
 | `firms.py` | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | imported | asset → firms usable, or why not |
 | `judge.py` | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | imported | trade lists + costs → verdict, tables, chart |
+| `months.py` | The M1 bars per month the Strategy Tester walks for one firm's symbol, from a short probe pass. | — | — |
 | `mt5side.py` | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | imported | `.mq5` → trades per firm |
 | `pool.py` | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | `python3 -m mt5.verify.pool [--rebuild]` | `AlgoData/mt5/verify/<run>/` → `AlgoData/pool/pool.sqlite` |
 | `report.py` | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | imported | summaries + tabs → the two files |
@@ -94,8 +95,10 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 
 `earliest()` only cuts the window's start. Holes inside it (Hantec: no bars 2022-06 and
 2023-01 on USDJPY/GBPJPY) are read once per firm after the window is known
-(`conditions.gap_months`, H1 bars): a whole month with under half the firm's median month of
-bars is a hole (`conditions.holes`; the firm's own median, so no second data path). `judge.firm_result(gaps=)`
+(`conditions.gap_months`): `months.tester_months` runs a probe EA (`mql/AlgoProbeMonths.mq5`, M1,
+open_prices, the firm's account) that counts the M1 bars the tester walks per month, cached in
+`MT5_DATA/months/<server>_<symbol>.json` while it covers the window. A whole month with under
+half the firm's median month of M1 bars is a hole (`conditions.holes`; the firm's own median). `judge.firm_result(gaps=)`
 drops the trades of BOTH sides opened in those months before every row and curve (MT5 cannot trade
 there, SQX's trades there are no fault of the EA); row 1's note names the months and the count, and
 `summary.firms.<firm>` carries `gap_months` and `excluded_sqx`.

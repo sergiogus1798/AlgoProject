@@ -192,6 +192,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_mt5_ticks.py` | Step 26's optional real-ticks pass: three curves per firm on the merged chart, the verdicts named by model, and the firm's own state left to the first pass. | — |
 | `test_mt5bridge_render.py` | Known answers for the Verificar table's helpers: the state cell and the missing result. | — |
 | `test_mt5verify.py` | MT5 Bridge's step 26 on known answers: the clock, the five rows, a firm's costs and the project it writes. | `python3 tests/test_mt5verify.py` |
+| `test_mt5verify_drawdown.py` | Step 26's row 5: a relative drawdown gap over the limit passes when the points apart are few (P26h). | — |
 | `test_neighbours_autopilot.py` | Step 13's T1 chain in the autopilot: its order on both routes, and the refusal of a reserved leg. | — |
 | `test_neighbours_draw.py` | Step 14's T1 draw (`sqx.variants.neighbours`) and its batch: classes, bounds, determinism, de-dup. | — |
 | `test_neighbours_measure.py` | Step 14's T1 measure: excess per neighbour and window on a market whose drift is known, and its facts. | — |

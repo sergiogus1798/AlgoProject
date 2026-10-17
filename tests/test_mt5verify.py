@@ -145,7 +145,7 @@ def judged(failures: list[str]) -> None:
 
 def gapped(failures: list[str]) -> None:
     """MT5 has no trades in a month its server has no bars for: row 1 fails unless that month
-    is left out of both sides; `holes` finds it from the bar times."""
+    is left out of both sides; `holes` finds it from the tester's M1 bars per month."""
     cfg = firms.config()
     sqx = trades(60, 1)
     month = sqx["Open time"].dt.strftime("%Y-%m")
@@ -156,11 +156,10 @@ def gapped(failures: list[str]) -> None:
     got = judge.firm_result("ftmo", sqx, mt5, *args, gaps=[hole])["summary"]
     if bare["state"] != "fail" or got["row_1"] != 1.0 or got["excluded_sqx"] <= 0:
         failures.append(f"un mes sin barras no se excluye de la fila 1: {bare} {got}")
-    bars = pd.Series(pd.date_range("2024-01-01", "2024-12-31 23:00", freq="h"))
-    bars = bars[bars.dt.month != 6]
-    if conditions.holes(bars, ("2024-01-01", "2024-12-31")) != ["2024-06"]:
-        failures.append("holes no encuentra junio de 2024 sin barras")
-    if conditions.holes(bars, ("2024-01-15", "2024-06-10")) != []:
+    per = {f"2024-{m:02d}": 40000 for m in range(1, 13)} | {"2024-06": 1200}
+    if conditions.holes(per, ("2024-01-01", "2024-12-31")) != ["2024-06"]:
+        failures.append("holes no encuentra junio con casi sin barras M1")
+    if conditions.holes(per, ("2024-01-15", "2024-06-10")) != []:
         failures.append("holes juzga meses parciales o inventa huecos")
 
 
@@ -411,12 +410,6 @@ def risk_rows(failures: list[str]) -> None:
     got = judge.firm_result("ftmo", sqx, halved, *args, zone)["summary"]
     if not got["row_6"] > th["size_gap_max_pct"]:
         failures.append(f"un tamaño un 20 % distinto no sube la fila 6: {got}")
-    shrunk = sqx.assign(**{"Profit/Loss": sqx["Profit/Loss"] * 0.8})
-    for deposit, want in ((10000, "pass"), (1000, "fail")):  # P26h: 0.8 vs 3.1 points
-        got = judge.rows(sqx, shrunk, compare.pair(sqx, shrunk, 60), deposit, th)
-        five = next(r for r in got if r["row"] == "5")
-        if five["value"] <= th["dd_rel_gap_max"] or five["state"] != want:
-            failures.append(f"fila 5 con depósito {deposit}: {five}")
     pieces = {"ftmo": {}}
     summaries = {"ftmo": {"state": "pass"}}
     ticks.keep_risk(pieces, summaries, "ftmo", sizing.no_stop("ftmo"))
