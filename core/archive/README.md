@@ -20,7 +20,7 @@ daemon, so `core` must not hold them.
 | `cli.py` | The archive's command: list what is archived, archive one strategy, show one. | `python3 -m core.archive archive --project P --databank Results --identity <sha> --step 16 --family <template>` | args → printed |
 | `collect.py` | Find every report file of one identity across a project's databanks and freeze a copy of it. | imported | reports, harvest → frozen files |
 | `harvest.py` | The cosecha's three tables (metrics, equity, trades) cut to one identity and frozen. | imported | harvest day folder → `<version>/harvest/` |
-| `manifest.py` | What the archive freezes beside the results: the project's registry row, the asset card, the ledger count. | imported | project, symbol → dicts |
+| `manifest.py` | What the archive freezes beside the results: the project's registry row, the asset card, the member's clock and commission. | imported | project, symbol → dicts |
 | `read.py` | Read an archived strategy back in the shapes the daemon serves a live one — files only, nothing run. | imported | archive → the live shapes |
 
 ## One version on disk

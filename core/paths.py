@@ -31,6 +31,9 @@ BROWSER = Path(_CFG.get("browser", "")).expanduser()
 WORKER_PORT = _CFG["worker_port"]
 # The desktop app's local daemon: loopback only, so it carries a default.
 UI_PORT = _CFG.get("ui_port", 8765)
+UI_DAEMON = (
+    ROOT / "ui" / "daemon"
+)  # the code a window compares against the daemon it finds running
 # MetaTrader 5 under Wine: the prefix holding the terminal; its reports go under the data root.
 MT5_PREFIX = Path(_CFG.get("mt5_prefix", "~/Desktop/MT5")).expanduser()
 MT5_DATA = DATA / "mt5"

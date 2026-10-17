@@ -6,7 +6,7 @@ tag: 🔬  date: 2026-09-26  see: ui/qt-painting-traps
 # The ui daemon outlives its window, so after an update the shortcut met yesterday's code
 `bin/algoui` reused any daemon answering `/api/health`; one started the day before lacked the new
 routes and the window died on its first 404, silently (a shortcut has no terminal). Now `/api/health`
-carries `code` (`ui/daemon/version.py`, mtimes of `ui/daemon/**/*.py`), `pid` and `busy`, and
+carries `code` (`core.diskmemo.code_fingerprint(core.paths.UI_DAEMON)`, mtimes of `ui/daemon/**/*.py`), `pid` and `busy`, and
 `ui/desktop/launch.py` replaces a stale idle daemon, or explains in a dialog when it is busy.
 
 ## Evidence

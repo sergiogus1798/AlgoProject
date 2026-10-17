@@ -6,10 +6,9 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-from engines.market import reprice
+from engines.market import reprice, tradelevel
 from engines.weekly import panel
 from studies.optimisation.wfm.inputs.asset import Asset
-from studies.screening.analysis import tradelevel
 
 CLEAN = "oos2"
 

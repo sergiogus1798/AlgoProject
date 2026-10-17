@@ -4,14 +4,15 @@ This file holds the app, its gate (`gate.py`) and `/api/health`; every other rou
 `routers.py` (the library's own in `templates.py`).
 """
 
-from typing import Any
 import os
+from typing import Any
 
 from fastapi import FastAPI
 
-from ui.daemon import gate, version
-
+from core import diskmemo
+from core.paths import UI_DAEMON
 from sqx import jobs, progress
+from ui.daemon import gate
 from ui.daemon.routers import ROUTERS
 
 APP = FastAPI(title="AlgoDaemon", docs_url=None, redoc_url=None)
@@ -19,7 +20,7 @@ APP = FastAPI(title="AlgoDaemon", docs_url=None, redoc_url=None)
 # window is not a browser, and a browser page has no business here.
 gate.install(APP)
 # Taken once at import: the code this process is actually running, not what is on disk now.
-CODE = version.fingerprint()
+CODE = diskmemo.code_fingerprint(UI_DAEMON)
 for router in ROUTERS:
     APP.include_router(router)
 

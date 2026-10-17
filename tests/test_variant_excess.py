@@ -5,9 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from engines.market import reprice
+from engines.market import reprice, tradelevel
 from engines.variants import excess
-from studies.screening.analysis import tradelevel
 
 SPAN = ("2020-01-01", "2021-12-31")
 FREE = {

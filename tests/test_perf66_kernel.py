@@ -9,10 +9,10 @@ from numba import njit
 
 from core import fanout
 from core.paths import DATA
-from engines.market import reprice
+from engines.market import reprice, tradelevel
 from engines.market.feed.scale import WEEK
 from engines.nulls import lookup, pcg, windowed
-from studies.screening.analysis import resample, tradelevel
+from studies.screening.analysis import resample
 
 COSTS = {
     "point_value": 2.0,

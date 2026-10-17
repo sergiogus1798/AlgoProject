@@ -35,4 +35,4 @@ the squared term was 252× too large. Known answer: `tests/test_gate_measures.py
 where the old cap was 3.16).
 
 `drift_excess_t` = the toolkit's `t_ex_ar1_oos` to 4e-16 on 5,048 strategies (its t's were checked against
-statsmodels); definition in `studies/screening/analysis/tradelevel.py`.
+statsmodels); definition in `engines/market/tradelevel.py`.

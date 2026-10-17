@@ -8,18 +8,21 @@ from typing import Any
 
 import pandas as pd
 
+from engines.market import tradelevel
 from pipeline.autopilot import criteria
-from studies.screening.analysis import delay, tradelevel
+from studies.screening.analysis import delay
 from studies.screening.falsePositives import model
 from studies.screening.gate import (
     cascade,
-    inputs as gate_inputs,
     level0,
     level1a,
     level2,
     level3ab,
     level3c,
     measures,
+)
+from studies.screening.gate import (
+    inputs as gate_inputs,
 )
 from studies.screening.gate.levels import LEVELS
 

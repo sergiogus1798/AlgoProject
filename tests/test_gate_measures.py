@@ -12,7 +12,8 @@ from scipy import stats
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import metrics
-from studies.screening.analysis import decay, floating, tradelevel
+from engines.market import tradelevel
+from studies.screening.analysis import decay, floating
 from studies.screening.gate import inputs
 
 

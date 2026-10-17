@@ -13,8 +13,8 @@ from PySide6.QtCore import QLibraryInfo, QTimer, QTranslator
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from core.paths import ROOT, UI_PORT
-from ui.daemon import version
+from core import diskmemo
+from core.paths import ROOT, UI_DAEMON, UI_PORT
 from ui.desktop import client, combofix, helpmark
 from ui.desktop.shell import Shell
 from ui.desktop.theme import QSS
@@ -77,7 +77,7 @@ def ensure_daemon(port: int) -> subprocess.Popen | None:
         idle, is replaced (`replace_stale`).
     """
     info = client.health(port)
-    if info and info.get("code") == version.fingerprint():
+    if info and info.get("code") == diskmemo.code_fingerprint(UI_DAEMON):
         return None
     if info:
         replace_stale(port, info)

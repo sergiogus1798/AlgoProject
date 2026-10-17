@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import pandas as pd
 
-from studies.screening.analysis import tradelevel
+from engines.market import tradelevel
 
 
 def edge_mean(oos: pd.DataFrame) -> pd.Series:

@@ -8,9 +8,10 @@ import pandas as pd
 
 from core import fanout
 from core.study import draws
+from engines.market import tradelevel
 from engines.nulls import lookup, verdict, windowed
 from engines.nulls.model import RUNGS
-from studies.screening.analysis import resample, tradelevel
+from studies.screening.analysis import resample
 
 FACTS = ("z_mono", "mono_p", *(f"z_mono_{rung}" for rung in RUNGS), "mono_seed")
 DRAWS = "_draws"  # the key a worker hands its distributions back under; no fact

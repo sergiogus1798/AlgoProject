@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 from core import diskmemo, sqxfile
-from core.paths import report_dir
-from ui.daemon import version
+from core.paths import UI_DAEMON, report_dir
 from ui.daemon.results import tfrows
 
 # A study's own verdict words (verdict.csv, for /curate) on the contract's five-state scale,
@@ -53,7 +52,9 @@ WORDS = {
 # megabyte JSONs again, ~12 s of a 30-s first open.
 T = TypeVar("T")
 # The memo is valid for this daemon version and this `core/sqxfile.py`.
-_CODE = f"{version.fingerprint()}{Path(sqxfile.__file__).stat().st_mtime_ns}"
+_CODE = (
+    f"{diskmemo.code_fingerprint(UI_DAEMON)}{Path(sqxfile.__file__).stat().st_mtime_ns}"
+)
 _CACHE: dict[Any, Any] = diskmemo.load("results", _CODE)
 _KEPT = [len(_CACHE)]  # how many entries the memo on disk holds
 # One reader at a time: three tables built at once each parsed the same megabyte JSONs

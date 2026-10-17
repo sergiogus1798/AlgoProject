@@ -10,7 +10,7 @@ app ─▶ routers ─▶ templates ─▶ library ─▶ registry.csv · runs.c
  │                ├─ assetapi ─▶ assets ─▶ core.assetwrite
  │                ├─ jobsapi ─▶ sqx.jobs · sqx.progress ─▶ sqx.tasklog
  │                └─ one package per surface (the table below)
- └── /api/health ─▶ version · sqx.jobs · sqx.progress
+ └── /api/health ─▶ core.diskmemo.code_fingerprint · sqx.jobs · sqx.progress
 ```
 
 **Imports from:** `core/`, `sqx/templates/`, `ui/text` (labels and figures, pure Python), and
@@ -41,7 +41,6 @@ only, each one job on the conductor lane.
 | `runs.py` | What running one analysis module on one strategy means: the command, given what exists on disk. | imported | context → argv · reason |
 | `serve.py` | Run the daemon on loopback. The window starts it; this is also how to run it by hand. | `python3 -m ui.daemon.serve [--port P]` | — |
 | `templates.py` | The library's routes: the template catalogue, its coverage and writes, the palettes, the chat. | imported | request → JSON |
-| `version.py` | Which code a daemon serves: a fingerprint of `ui/daemon/`, so a window can spot a stale one. | imported | files → 16 hex |
 | `writes.py` | The three things the window may change: a template's status, its notes, a run's verdict. | imported | change → row |
 
 Retired by F13 of plan 24 (2026-09-28) with the zones that alone used them: `studyapi.py` (the

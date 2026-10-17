@@ -3,8 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from engines.market import reprice
-from studies.screening.analysis import tradelevel
+from engines.market import reprice, tradelevel
 
 # Bars the entry and the exit move by. A registry because the config picks from it.
 SHIFTS = {"E+1": (1, 0), "S+1": (0, 1), "ES+1": (1, 1), "E-1": (-1, 0)}

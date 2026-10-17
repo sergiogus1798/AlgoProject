@@ -1,4 +1,4 @@
-"""What the archive freezes beside the results: the project's registry row, the asset card, the ledger count."""
+"""What the archive freezes beside the results: the project's registry row, the asset card, the member's clock and commission."""
 
 import csv
 import hashlib
@@ -10,7 +10,6 @@ from typing import Any, TypedDict
 from core import assetdata, sqxfile
 from core.datapaths import project_registry
 from core.paths import ASSETS
-from ledger import spend, study, trials
 
 
 def sha256(path: Path) -> str:
@@ -25,16 +24,6 @@ class Asset(TypedDict):
     file: str
     sha256: str
     card: str
-
-
-class Ledger(TypedDict):
-    """The study's search count at archive time."""
-
-    study: str
-    searches: int
-    trials: trials.Accumulated
-    segments: dict[str, dict[str, Any]]
-    sha256: str | None
 
 
 class Frozen(TypedDict):
@@ -88,31 +77,6 @@ def asset(symbol: str, out: Path) -> Asset:
         "file": f"asset/{source.name}",
         "sha256": sha256(source),
         "card": "asset/card.json",
-    }
-
-
-def ledger(symbol: str, timeframe: str, family: str) -> Ledger:
-    """The study's search count at archive time: what deflates this strategy's Sharpe later.
-
-    Args:
-        symbol: The asset.
-        timeframe: The grid the strategies were built on.
-        family: The template family, the third part of the study's id.
-
-    Returns:
-        `study`, `searches` (ledger rows), `trials` (`trials.accumulated`: n, sigma, mean,
-        unit), `segments` (`spend.virgin`: reads per segment) and the ledger file's sha256,
-        None when the study has no ledger yet — which then counts nothing.
-    """
-    sid = study.study_id(symbol, timeframe, family)
-    frame = study.read(sid)
-    file = study.path(sid)
-    return {
-        "study": sid,
-        "searches": len(frame),
-        "trials": trials.accumulated(frame),
-        "segments": spend.virgin(frame, symbol),
-        "sha256": sha256(file) if file.exists() else None,
     }
 
 

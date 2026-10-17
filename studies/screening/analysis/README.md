@@ -16,7 +16,6 @@ Libraries, not commands. The entry points that use them live in `../reports/`.
 | `permuted.py` | numpy's `Generator.permuted` and its sums inside one numba kernel: the gate's Q under shuffles, no matrix held. | imported | centred trades, period starts/sizes, PCG64 rng → one value per shuffle |
 | `replication.py` | Does a conclusion drawn on one sample of strategies hold on another, independently generated one. | imported | two samples' columns → gaps and agreement |
 | `resample.py` | The gate's two resampling tests on a strategy's own trades: homogeneity across periods, and the drawdown its build makes expectable. | imported | per-trade arrays + rng → p, simulated drawdowns |
-| `tradelevel.py` | The t of a strategy's mean trade, plain or net of the market's own drift over each hold. | imported | trades + bars → t per strategy |
 
 The excess over chance and Benjamini-Hochberg moved to `engines/inference/` (2026-09-25): the
 gate and the monkey reading need them as much as these do.

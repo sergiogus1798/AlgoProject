@@ -2,8 +2,7 @@
 
 import pandas as pd
 
-from engines.market import reprice
-from studies.screening.analysis import tradelevel
+from engines.market import reprice, tradelevel
 
 FACTS = ("drift_excess_t",)
 

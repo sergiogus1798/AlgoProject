@@ -4,9 +4,9 @@ a seed replays bit for bit, and every drawn trade pays the declared spread and s
 import numpy as np
 import pandas as pd
 
+from engines.market import tradelevel
 from engines.market.feed.scale import WEEK
 from engines.nulls import windowed
-from studies.screening.analysis import tradelevel
 from studies.screening.gate import level3c
 
 SPAN = ("2020-01-01", "2021-12-31")

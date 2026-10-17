@@ -8,9 +8,9 @@ import pandas as pd
 import pytest
 
 from core import sqxretest
+from engines.market import tradelevel as tl
 from studies.optimisation.oos2Reading import inputs as oos2
 from studies.readings.entryQuality import eratio
-from studies.screening.analysis import tradelevel as tl
 
 FIXTURE = Path(__file__).parent / "fixtures" / "retest.sqx"
 

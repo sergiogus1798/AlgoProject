@@ -1,5 +1,6 @@
-"""What the daemon computed once, kept across restarts: one pickled dict per name in AlgoData/ui/memo/."""
+"""What the daemon computed once, kept across restarts (pickled dicts in AlgoData/ui/memo/), and the code fingerprint that keys them."""
 
+import hashlib
 import pickle
 from pathlib import Path
 from typing import Any
@@ -46,3 +47,16 @@ def save(name: str, memo: dict[Any, Any], code: str) -> None:
     scratch = path.with_suffix(".tmp")
     scratch.write_bytes(pickle.dumps(alive, protocol=pickle.HIGHEST_PROTOCOL))
     scratch.replace(path)
+
+
+def code_fingerprint(folder: Path) -> str:
+    """Hash of every `.py` under `folder`: its relative path and modification time.
+
+    Returns:
+        Sixteen hex characters. A daemon records it when it starts and a launcher computes it
+        from the checkout: when they differ, the daemon still running predates the code on disk.
+    """
+    stamps = sorted(
+        f"{p.relative_to(folder)}:{p.stat().st_mtime_ns}" for p in folder.rglob("*.py")
+    )
+    return hashlib.sha256("\n".join(stamps).encode()).hexdigest()[:16]

@@ -12,8 +12,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engines.market import tradelevel  # noqa: E402
 from engines.market.calibrate import atr  # noqa: E402
-from studies.screening.analysis import tradelevel  # noqa: E402
 from studies.screening.gate import level1a  # noqa: E402
 
 SPAN = ("2020-01-01", "2021-12-31")

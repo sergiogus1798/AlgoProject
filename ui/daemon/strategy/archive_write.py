@@ -12,6 +12,7 @@ from core import sqxfile
 from core.archive import collect, harvest, manifest
 from core.manifest import code_version
 from core.paths import archive_dir, project_dir
+from ledger import archived
 from sqx.databank import find
 from sqx.inspect import feeds
 from ui.daemon.strategy import archive_view as view
@@ -182,7 +183,7 @@ def _freeze(
         "loose": loose,
         "skipped": skipped,
         "asset": manifest.asset(row["symbol"], work / "asset"),
-        "ledger": manifest.ledger(row["symbol"], row["timeframe"], family),
+        "ledger": archived.ledger(row["symbol"], row["timeframe"], family),
         "meta": "meta.json" if meta is not None else None,
         **manifest.frozen(
             feeds.timezone(manifest.feed_of(work / "strategy.sqx")), row["symbol"]

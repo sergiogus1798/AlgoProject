@@ -8,7 +8,8 @@ import pandas as pd
 
 from core import fanout, metrics
 from core.study import draws
-from studies.screening.analysis import resample, tradelevel
+from engines.market import tradelevel
+from studies.screening.analysis import resample
 
 FACTS = ("q_p", "q_seed", "dd_p", "dd_esperado_r", "dd_seed")
 DRAWS = "_draws"  # the key a worker hands its distributions back under; no fact

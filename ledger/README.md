@@ -10,6 +10,7 @@ family: the unit the multiple-testing correction is owed to.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `archived.py` | The study's search count as the archive freezes it beside a strategy's results. | — | — |
 | `backfill.py` | Rebuild a study's ledger backwards from the artefacts a run already left on disk. | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` · `python3 -m ledger.backfill --blind <project> --symbol USDJPY --timeframe H1 --family <name>` | a gate report, or WFC/CSCV/WFM results → rows |
 | `blind.py` | The rows steps 17, 18 and 19 did not write, rebuilt from the results they left on disk. | imported by `backfill` | results → rows |
 | `cells.py` | The per-cell counter: how much was tried in each asset x timeframe x direction x idea family. | imported / `__main__` | project registry, campaign ledger, book, gate funnels → table |

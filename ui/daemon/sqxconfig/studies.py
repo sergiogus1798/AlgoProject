@@ -7,30 +7,38 @@ study's own knobs, and the CSCV's blocks, which live in the ledger's frozen thre
 stamped with who and when on every write (`studywrite.py`).
 """
 
-from typing import Any
 from functools import lru_cache
 from math import comb
 from pathlib import Path
+from typing import Any
 
 from core.assetyaml import leaves, read
 from core.paths import ROOT
+from engines.market.tradelevel import WINDOWS
 from engines.variants.panel import SHORTCUTS
 from sqx.variants.tooltips import TIPS as FACTORY_TIPS
 from studies.breakage.spp.tooltips import TIPS as SPP_TIPS
-from studies.optimisation.cscv.tooltips import TIPS as CSCV_TIPS
 from studies.optimisation.cloud.tooltips import TIPS as CLOUD_TIPS
+from studies.optimisation.cscv.tooltips import TIPS as CSCV_TIPS
 from studies.optimisation.marketSurfaces.tooltips import TIPS as SURF_TIPS
 from studies.optimisation.wfc.tooltips import TIPS as WFC_TIPS
 from studies.optimisation.wfm.tooltips import TIPS as WFM_TIPS
-from studies.screening.analysis.tradelevel import WINDOWS
 from studies.screening.falsePositives.tooltips import TIPS as FP_TIPS
 from studies.screening.gate.tooltips import TIPS as GATE_TIPS
 from ui.daemon.sqxconfig.options import choice
 from ui.daemon.sqxconfig.studyhelp import (
     CSCV_HELP as CSCV_HELP,
+)
+from ui.daemon.sqxconfig.studyhelp import (
     FP_HELP as FP_HELP,
+)
+from ui.daemon.sqxconfig.studyhelp import (
     GATE_HELP as GATE_HELP,
+)
+from ui.daemon.sqxconfig.studyhelp import (
     SURF_HELP as SURF_HELP,
+)
+from ui.daemon.sqxconfig.studyhelp import (
     WFM_HELP as WFM_HELP,
 )
 

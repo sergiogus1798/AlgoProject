@@ -9,7 +9,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.screening.analysis import onepass, tradelevel
+from engines.market import tradelevel
+from studies.screening.analysis import onepass
 from studies.screening.gate import level1b_onepass
 
 CFG = {
