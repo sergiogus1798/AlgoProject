@@ -1,11 +1,9 @@
 """One command of the tail run to its end: a study's as the window builds it, or one given."""
 
-import contextlib
 from collections.abc import Callable
 from typing import TypeVar
 
 from core import proc
-from sqx.projects import live
 from ui.daemon.runner import table
 
 # SQX's own transient crash (a fastutil NullPointerException right after «Task finished»,
@@ -14,43 +12,27 @@ T = TypeVar("T")
 ABORT = "SQX abortó"
 
 
-def keeper(pre: dict, restart: bool = True) -> Callable[[], None]:
-    """What undoes an SQX step that aborted: it takes out of the chosen tasks' output
-    databanks every strategy that was not there now.
+def keeper(pre: dict) -> Callable[[], None]:
+    """What undoes an SQX step of the restart route that aborted: it deletes from the chosen
+    tasks' output databanks every `.sqx` that was not there now (the worker is stopped by then).
 
     A retest does not clear its output, and the abort comes after «Task finished»: the
     rerun of an OOS retest left 2,000 strategies where 1,000 were built, each twice
-    (🔬 2026-10-05), and every later step ran on both copies. `restart`: the worker is
-    stopped by then and the `.sqx` are deleted; else the live session holds them and they are
-    cut through it (`live.cut`), after a stop sent to the project the abort left hung.
+    (🔬 2026-10-05), and every later step ran on both copies.
     """
-    role, project = pre["role"], pre["cfx"].parent.name
     banks = pre["cfx"].parent / "databanks"
 
     def names(bank: str) -> set[str]:
-        """The strategies of one output databank: on disk, or in the session's memory."""
-        if restart:
-            return {f.name for f in (banks / bank).glob("*.sqx")}
-        return set(
-            live.call(role, "listStrategies", projectName=project, databankName=bank)[
-                "strategies"
-            ]
-        )
+        """The strategies of one output databank on disk."""
+        return {f.name for f in (banks / bank).glob("*.sqx")}
 
     had = {t["output"]: names(t["output"]) for t in pre["chosen"] if t["output"]}
 
     def undo() -> None:
         """Remove what the aborted attempt added."""
-        if not restart:
-            with contextlib.suppress(Exception):  # hung or already idle: either way
-                live.call(role, "stop", projectName=project)
         for bank, before in had.items():
-            extra = sorted(names(bank) - before)
-            if restart:
-                for name in extra:
-                    (banks / bank / name).unlink()
-            elif extra:
-                live.cut(role, project, bank, extra)
+            for name in sorted(names(bank) - before):
+                (banks / bank / name).unlink()
 
     return undo
 

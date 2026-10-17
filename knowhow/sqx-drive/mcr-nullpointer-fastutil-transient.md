@@ -1,13 +1,13 @@
 ---
 q: Why does an MC Retest task crash SQX with a fastutil NullPointerException and leave the project hung?
 kw: MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; WFC 1 IS variants pilot aborted; project hangs after crash no Project finished; transient SQX engine bug
-tag: 🔬  date: 2026-10-05  see: sqx-drive/transient-abort-automatic-retry, authoring/cloned-custom-block-native-key
+tag: 🔬  date: 2026-10-17  see: sqx-drive/transient-abort-automatic-retry, authoring/cloned-custom-block-native-key
 ---
 # A retest task can crash SQX's own engine with a fastutil NullPointerException — transient, not the project, and the project hangs silently afterwards
 Right after `Task finished`, the log shows `Error while running project` with a `NullPointerException`
 in fastutil (`IntArrayList.getInt ... "this.wrapped" is null`) — SQX's own code, not the project.
 `action=status` then repeats frozen numbers forever: tell dead from slow by `ps` on the `sqcli` PID,
-whose CPU `TIME` stops climbing. `action=stop` then `action=start` reran clean. Seen on `MCR 1 Bar`
+whose CPU `TIME` stops climbing. A new JVM reran clean; the same session aborted again (🔬 2026-10-17, WFM). Seen on `MCR 1 Bar`
 (twice) and on the variants pilot's `WFC 1 IS`; the launchers now read «Error while running
 project» in the log and stop (`advance.run.watch`, `sqx.variants.banks.aborted`): rerun that step.
 Not specific to MC Retest; the autopilot reruns it once → `sqx-drive/transient-abort-automatic-retry`.

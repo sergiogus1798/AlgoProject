@@ -41,7 +41,6 @@ def test_the_undo_removes_only_what_the_aborted_run_added(tmp_path: Path) -> Non
     undo = call.keeper(
         {
             "cfx": tmp_path / "p.cfx",
-            "role": "custodian",
             "chosen": [{"output": "OOS"}, {"output": ""}],
         }
     )
@@ -54,3 +53,26 @@ def test_the_undo_removes_only_what_the_aborted_run_added(tmp_path: Path) -> Non
         "old.sqx",
         "r.sqx",
     ]
+
+
+def test_a_live_abort_reruns_in_a_new_jvm(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The live route's retry closes the session as a failed step and starts a new one first:
+    a rerun in the same JVM aborted again (🔬 2026-10-17)."""
+    from pipeline.autopilot import run
+
+    seen: list[tuple] = []
+    monkeypatch.setattr(
+        run.liverun,
+        "close",
+        lambda role, p, failed: seen.append(("close", role, p, failed)),
+    )
+    monkeypatch.setattr(
+        run.live, "start", lambda role, p: seen.append(("start", role, p))
+    )
+    actions = [{"n": "19", "kind": "sqx"}]
+    undo = run.fresh({"role": "custodian"}, "Test_P", actions)
+    calls: list[int] = []
+    assert call.again(lambda: _failing(1, call.ABORT, calls), undo) == "hecho"
+    assert [s[0] for s in seen] == ["close", "start"]
+    failed = seen[0][3]
+    assert failed["n"] == "19" and failed["steps"] is actions and failed["since"] > 0

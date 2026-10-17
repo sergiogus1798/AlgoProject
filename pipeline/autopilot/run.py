@@ -9,6 +9,7 @@ import signal
 import sys
 import time
 import traceback
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -128,12 +129,33 @@ def sqx_step(project: str, actions: list[dict], first: bool, filled: set[str]) -
             f"paso {'+'.join(a['n'] for a in actions)}: no se lanza:\n  "
             + "\n  ".join(pre["reasons"])
         )
-    route = liverun if live.mine(pre["role"]) else launcher
-    moved = call.again(
-        lambda: route.execute(pre, project), call.keeper(pre, route is launcher)
-    )
+    if live.mine(pre["role"]):
+        route, undo = liverun, fresh(pre, project, actions)
+    else:
+        route, undo = launcher, call.keeper(pre)
+    moved = call.again(lambda: route.execute(pre, project), undo)
     filled |= {t["output"] for t in pre["chosen"]}
     return " · ".join(f"{t}: {a} → {b}" for t, (a, b) in moved.items())
+
+
+def fresh(pre: dict, project: str, actions: list[dict]) -> Callable[[], None]:
+    """What undoes an SQX step of the live route that aborted: a new JVM. A rerun in the same
+    session aborts again — SQX's broken state stays in its memory (🔬 2026-10-17, step 19
+    twice, knowhow/sqx-drive/transient-abort-automatic-retry.md) — so the session is closed as
+    after any failed step (killed by PID, the step's outputs emptied on disk, its project log
+    set aside; `execute` synced every earlier step first) and started again."""
+    failed = {
+        "n": "+".join(a["n"] for a in actions),
+        "steps": actions,
+        "since": time.time(),
+    }
+
+    def undo() -> None:
+        """Close the aborted session, then start a new one."""
+        liverun.close(pre["role"], project, failed)
+        live.start(pre["role"], project)
+
+    return undo
 
 
 def merged(todo: list[dict]) -> list[dict]:

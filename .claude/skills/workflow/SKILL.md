@@ -148,6 +148,7 @@ symptom in this table on code that already carries the fix is a NEW bug: report 
 | step 8 «OSError: List index overflow» (pyarrow) on a 10,000-strategy build | `distribuciones.parquet` written as one row group with > 2**31 list elements; `facts.from_folder` read it whole | 2026-10-15: `core/study/draws.py` writes 1,000-row groups; `pipeline/autopilot/facts.py` reads a parquet's `strategy` column first (`knowhow/pipeline/distributions-parquet-list-overflow.md`) |
 | «FALLO en el arranque de la sesión GUI: [Errno 2] No such file or directory: …/log_<ayer>.log», the custodian left up half-loaded | the first start after midnight listed yesterday's SQX log as the newest and SQX deleted it while starting, before its `stat` | 2026-10-17, `sqx/projects/live.py` (`mark`, `wait`, `tail`) and `sqx/log.py` skip a log that vanished |
 | step 19 «la exportación falló (código 1)», SQX's log only «Setting 'TradingSetup.StrategyClass' is not set» (noise); `salida.txt`: `ZeroDivisionError` in `core/wfmobjectives.py` `value` | a WFM «score» objective divided by a main-backtest figure that was 0 | 2026-10-17: SQX's safeDivide (`_ratio`), a zero divisor scores 0 |
+| step 19 (or any SQX step of the live chain) «FALLO … SQX abortó la corrida … WFM : Error while running project», fastutil NPE in `ProjectGlobalLog.addAcceptedStats` twice, after «se repite una vez» | the retry reran in the same JVM, where SQX's broken state stays | 2026-10-17, `pipeline/autopilot/run.py` `fresh`: the live retry closes the session and starts a new JVM |
 
 ## Never
 

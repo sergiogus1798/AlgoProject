@@ -1,14 +1,15 @@
 ---
 q: What does the autopilot do when SQX aborts with «Error while running project», and why must the rerun undo first?
 kw: Error while running project rerun, autopilot retry once, call.again, call.keeper, Strategy X(1) duplicates, 2,000 strategies for 1,000 built, step 22 IndexError, paso-24-abortado, pass2/ran.json missing
-tag: 🔬  date: 2026-10-05  see: sqx-drive/mcr-nullpointer-fastutil-transient
+tag: 🔬  date: 2026-10-17  see: sqx-drive/mcr-nullpointer-fastutil-transient
 ---
 # The autopilot reruns SQX's transient abort once — and only after deleting what the aborted attempt added
 Trap: the abort comes AFTER «Task finished» and a retest does not clear its output, so a plain rerun doubles
 the databank (each strategy twice, the copy named `Strategy X(1)`). Rule: `pipeline/autopilot/call.py` `again`
 reruns the action ONCE (SQX step of the restart route, variants' make/execute, closing retests of 23-24);
 before a restart-route SQX step `call.keeper` deletes every .sqx the attempt added to the chosen tasks' output
-databanks. The live chain does not rerun: it ends the step. Step 24: a failed pass moves the half-done batch to
+databanks. The live chain reruns in a NEW JVM (`run.fresh`: closed as a failed step, started again) — in the same
+session it aborted again (🔬 2026-10-17). Step 24: a failed pass moves the half-done batch to
 `<run>/paso-24-abortado` (`closing.py`).
 
 ## Evidence
