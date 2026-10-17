@@ -4,8 +4,8 @@
 
 | paso | mueve | ficheros (aprox.) | estado | commit |
 |---|---|---|---|---|
-| 1 | `workerguard` → `sqx/worker/guard.py`; `advance/sqxlog` → `sqx/log.py`; `loader/fingerprint` → `sqx/databank/fingerprint.py`; además `daylog` → `sqx/daylog.py` (lo pedía `sqx/log.py`) | ~13 | hecho 2026-10-17 | (este) |
-| 2 | `jobs` → `core/jobs.py`; `progress`, `tasklog`, `projdisk`, `proof`, `winddown`, `diskmemo` → `sqx/` | ~45 | pendiente | |
+| 1 | `workerguard` → `sqx/worker/guard.py`; `advance/sqxlog` → `sqx/log.py`; `loader/fingerprint` → `sqx/databank/fingerprint.py`; además `daylog` → `sqx/daylog.py` (lo pedía `sqx/log.py`) | ~13 | hecho 2026-10-17 | `9c019fc` |
+| 2 | `jobs` → `sqx/jobs.py` (no `core/`: su cancelación para el worker con `winddown`); `progress`, `tasklog`, `projdisk`, `proof` → `sqx/`; `winddown` → `sqx/worker/`; `diskmemo` se queda (huella de las fuentes del demonio) | ~45 | hecho 2026-10-17 | `b83304f` |
 | 3 | `loader/find`, `loader/state`, `advance/preflight` → `sqx/databank/` y `sqx/worker/` | ~50 | pendiente | |
 | 4 | `launch/steps`, `workflow/steps`+`sources` → `sqx/workflow/` | ~30 | pendiente | |
 | 5 | `launch/*` y `advance/run`+`buildcap` → `sqx/run/`; `chainplan` se funde en el plan del autopiloto | ~25 | pendiente | |
@@ -19,6 +19,7 @@
 **Bitácora:** (cada sesión añade una línea: fecha, paso, qué pasó)
 
 - 2026-10-17, paso 1 (algoproject-df): movidos los tres más `daylog`, que `sqx/log.py` necesitaba para no importar `ui.daemon.progress`; fuera la fila `ALLOW` de `pipeline/autopilot/closing.py`, que ya no se usaba.
+- 2026-10-17, paso 2 (algoproject-df): `jobs` a `sqx/` y no a `core/`, porque `core` no puede importar `sqx.worker.winddown`; en `ui/daemon/portfolios/` (congelada) sólo cambian la línea de import y su README.
 
 ## Tu oficio
 
