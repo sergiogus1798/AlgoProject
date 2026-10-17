@@ -9,7 +9,7 @@ from sqx.projects import buildrules as rules, sessiondb, tasksettings as setting
 
 
 def apply_doctrine(
-    text: str, data: dict, segment: str, timeframe: str
+    text: str, data: dict, segment: str, timeframe: str, exit_required: bool = False
 ) -> tuple[str, dict]:
     """Rewrite one task so it generates and trades the way `_build.yaml` says.
 
@@ -18,6 +18,8 @@ def apply_doctrine(
         data: One asset as load() returned it.
         segment: Segment name, which fixes the spread the high-precision retest reruns at.
         timeframe: SQX timeframe name — the same one for every task of the project.
+        exit_required: Force `exits.condition_required` on for this project only — the IS
+            recipe's populations (encargo 50 §5.2, owner L1 B, 2026-10-16).
 
     Returns:
         The task and what was applied, as data for the caller to report.
@@ -33,6 +35,8 @@ def apply_doctrine(
     number that are actually left enabled.
     """
     d = doctrine()
+    if exit_required:
+        d = {**d, "exits": {**d["exits"], "condition_required": True}}
     # Only a Build task carries a generator, and that is also what decides its precision
     # and whether it runs the high-precision cross-check.
     generates = bool(rules.BLOCKS.search(text))

@@ -87,6 +87,7 @@ def build(
     acceptance: str = "study",
     side: str | None = None,
     generation: str = GENERATIONS[0],
+    exit_required: bool = False,
 ) -> dict[str, Any]:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
@@ -114,6 +115,7 @@ def build(
         acceptance: Which filters of `assets/_study.yaml` the Build accepts by (`rankings`).
         side: "long" or "short" — the one direction a Simple Strategy build generates.
         generation: One of `patch.GENERATIONS`; "random-generation" is a population's twin.
+        exit_required: Every strategy exits by a condition — the IS recipe only (encargo 50).
 
     Returns:
         What was done, as data: where the project and the template landed, the caps, the
@@ -207,7 +209,7 @@ def build(
             for member, blob in members.items():
                 z.writestr(member, blob)
 
-        costs = configure(staged, symbol, segment, timeframe)
+        costs = configure(staged, symbol, segment, timeframe, exit_required)
         accepted = rankings.apply(staged, symbol, timeframe, acceptance)
         mid = {
             "project_asset": symbol,
@@ -233,6 +235,7 @@ def build(
             "feed_replaced": replaced,
             "template": str(installed_template or f"Simple Strategy, {side}"),
             "generation": generation,
+            "exit_required": exit_required,
             "tasks": kept["kept"],
             "added": added,
             "databanks": kept["databanks"],
@@ -291,6 +294,11 @@ def main() -> None:
     )
     ap.add_argument(
         "--random", action="store_true", help="random generation, not genetic"
+    )
+    ap.add_argument(
+        "--exit-required",
+        action="store_true",
+        help="every strategy exits by a condition — only the IS recipe's projects (encargo 50)",
     )
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--role", default="custodian")
@@ -398,6 +406,7 @@ def main() -> None:
         a.acceptance,
         a.simple,
         GENERATIONS[a.random],
+        a.exit_required,
     )
 
     registry.record(

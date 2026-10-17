@@ -32,7 +32,11 @@ DEFAULT_SEGMENT = "oos1"
 
 
 def apply(
-    text: str, data: dict, segment: str, timeframe: str | None = None
+    text: str,
+    data: dict,
+    segment: str,
+    timeframe: str | None = None,
+    exit_required: bool = False,
 ) -> tuple[str, dict[str, int]]:
     """Put one segment's window and costs into one task XML.
 
@@ -42,6 +46,7 @@ def apply(
         segment: Segment name.
         timeframe: When given, the build doctrine is applied too and every task of the
             project is put on this timeframe.
+        exit_required: Passed to `apply_doctrine`.
 
     Returns:
         The patched text and a count per attribute touched.
@@ -54,7 +59,7 @@ def apply(
     text, setups = set_costs(text, data, segment)
     counts = {"setups": setups}
     if timeframe:
-        text, applied = apply_doctrine(text, data, segment, timeframe)
+        text, applied = apply_doctrine(text, data, segment, timeframe, exit_required)
         counts.update(applied)
     text, ranges = set_ranges(text, data)
     counts.update({f"mc_{k}": v for k, v in ranges.items()})
@@ -109,7 +114,11 @@ def segment_of(members: dict[str, bytes]) -> dict[str, str]:
 
 
 def configure(
-    cfx: Path, symbol: str, segment: str | None = None, timeframe: str | None = None
+    cfx: Path,
+    symbol: str,
+    segment: str | None = None,
+    timeframe: str | None = None,
+    exit_required: bool = False,
 ) -> dict[str, tuple]:
     """Rewrite every task of a project so it prices and dates this asset as assets/ says.
 
@@ -120,6 +129,7 @@ def configure(
             type, which is what a chain wants: the build on `build`, the retests on `oos1`.
         timeframe: When given, `_build.yaml`'s doctrine is written into every task and
             they are all put on this timeframe. Omit only to reprice an existing project.
+        exit_required: Every Build must exit by a condition (`apply_doctrine`).
 
     Returns:
         Task member name to (segment, what changed). The donor a project is cloned from
@@ -138,7 +148,7 @@ def configure(
         if not name.endswith(".xml") or name == "config.xml":
             continue
         seg = segment or per_task.get(name, DEFAULT_SEGMENT)
-        text, counts = apply(blob.decode("utf-8"), data, seg, timeframe)
+        text, counts = apply(blob.decode("utf-8"), data, seg, timeframe, exit_required)
         # After apply, because set_timeframe rewrites the timeframe of every chart it finds
         # and would flatten the extra one onto the main timeframe. Every task, not only the
         # one that names the template: a retest tests the same two-chart strategies.
