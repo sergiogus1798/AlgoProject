@@ -51,20 +51,18 @@ def read(symbol: str, account: dict) -> dict[str, Any]:
     }
 
 
-GAP_SHARE = (
-    0.5  # a month with under this share of the firm's median month of M1 bars is a hole
-)
+GAP_SHARE = 0.5  # a month with under this share of the firm's median month of tester bars is a hole
 
 
 def holes(per_month: dict[str, int], window: tuple[str, str]) -> list[str]:
-    """The whole months of the window where the tester has too few M1 bars to trade.
+    """The whole months of the window where the tester has too few bars to trade.
 
     Args:
-        per_month: «YYYY-MM» → M1 bars the tester walks that month (`months.tester_months`).
+        per_month: «YYYY-MM» → bars the tester walks that month (`months.tester_months`).
         window: (first day, last day), YYYY-MM-DD.
 
     Returns:
-        «YYYY-MM» of each whole month inside the window with fewer M1 bars than `GAP_SHARE` of
+        «YYYY-MM» of each whole month inside the window with fewer bars than `GAP_SHARE` of
         the median whole month. The yardstick is the firm's own median, not SQX's feed: no
         second data path, and one hole in 24 months never moves a median. The window's partial
         first and last months are never judged. A month absent from `per_month` counts 0.
@@ -81,11 +79,14 @@ def holes(per_month: dict[str, int], window: tuple[str, str]) -> list[str]:
     return [str(m) for m, n in per.items() if n < GAP_SHARE * per.median()]
 
 
-def gap_months(symbol: str, account: dict, window: tuple[str, str]) -> list[str]:
-    """`holes` of the M1 bars the firm's tester walks for the window (🔬 2026-10-16: the terminal's
-    H1 series and its M1 history disagree — Hantec XAUUSD.h — so only the tester's own count will do).
+def gap_months(
+    symbol: str, account: dict, window: tuple[str, str], timeframe: str
+) -> list[str]:
+    """`holes` of the `timeframe` bars the firm's tester walks for the window (🔬 2026-10-16: the
+    terminal's H1 series and the tester's history disagree — Hantec XAUUSD.h — so only the
+    tester's own count will do; 2026-10-17: on the strategy's timeframe, `months`).
     """
-    return holes(months.tester_months(symbol, account, window), window)
+    return holes(months.tester_months(symbol, account, window, timeframe), window)
 
 
 def for_sqx(

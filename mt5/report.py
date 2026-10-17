@@ -157,7 +157,8 @@ def start_check(
             actual = "-".join(found.groups())
             break
     return {
-        "history_quality_pct": float(quality) if quality else None,
+        # 🔬 open_prices reports «n/a» (the months probe, 2026-10-17)
+        "history_quality_pct": float(quality) if quality and quality != "n/a" else None,
         "first_trade": str(trades["Open time"].min().date()) if len(trades) else None,
         "start_asked": asked,
         "start_actual": actual,

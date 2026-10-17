@@ -1,5 +1,5 @@
-// Counts the M1 bars the Strategy Tester walks, per month, and writes `YYYY-MM,count` lines to
-// Common\Files\AlgoProbeMonths.csv. Run it on M1 with the open_prices model: the tester then
+// Counts the bars of the chart's timeframe the Strategy Tester walks, per month, and writes `YYYY-MM,count` lines to
+// Common\Files\AlgoProbeMonths.csv. Run it on the strategy's timeframe with the open_prices model: the tester then
 // fires one tick per bar, so the tick count is the bar count. Trades nothing.
 #property strict
 
@@ -14,7 +14,7 @@ int    key_of(datetime t)
 
 void OnTick()
 {
-   int k = key_of(iTime(_Symbol, PERIOD_M1, 0));
+   int k = key_of(iTime(_Symbol, _Period, 0));
    if(ArraySize(counts) == 0)
       first_key = k;
    int i = k - first_key;

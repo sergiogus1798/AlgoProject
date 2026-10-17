@@ -220,19 +220,19 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/reconcile/run.py` | 142 | weeklyReconciler: one ISO week of the live accounts against the SQX backtest of the same strategies. | core, mt5, sqx | pandas |
 | `mt5/reconcile/sqxside.py` | 175 | The SQX side: the live strategies retested over one week in a Test_Reconcile project on the conductor. UNRUN. | core, mt5, sqx, ui | pandas |
 | `mt5/reconcile/week.py` | 28 | One ISO week on the server's clock: its bounds, and the trades that belong to it. | — | pandas |
-| `mt5/report.py` | 165 | Read a Strategy Tester HTML report: its summary figures, its deals, and the trades they make. | — | lxml, pandas |
+| `mt5/report.py` | 166 | Read a Strategy Tester HTML report: its summary figures, its deals, and the trades they make. | — | lxml, pandas |
 | `mt5/server.py` | 224 | MCP server over MetaTrader 5 under Wine: compile, backtest, compare with SQX, and read-only data. | core, mt5 | mcp, pandas |
 | `mt5/tester.py` | 217 | Run one Strategy Tester pass: write its ini, start the terminal detached, and collect the report. | core, mt5 | — |
 | `mt5/verify/autopilot.py` | 268 | Step 26 as an autopilot action: the window's preflight over a list of finalists, one check each, the pool filled. | core, mt5 | pandas |
-| `mt5/verify/conditions.py` | 164 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | pandas |
+| `mt5/verify/conditions.py` | 165 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | pandas |
 | `mt5/verify/display.py` | 66 | How a stored Verificar result reads in the window: capitals, percentages and one line per firm. | — | — |
 | `mt5/verify/firms.py` | 65 | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | core, ledger, mt5 | yaml |
 | `mt5/verify/judge.py` | 475 | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | core, mt5 | numpy, pandas |
-| `mt5/verify/months.py` | 76 | The M1 bars per month the Strategy Tester walks for one firm's symbol, from a short probe pass. | core, mt5 | — |
+| `mt5/verify/months.py` | 84 | The bars per month the Strategy Tester walks for one firm's symbol on the strategy's timeframe, | core, mt5 | — |
 | `mt5/verify/mt5side.py` | 174 | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | mt5 | pandas |
 | `mt5/verify/pool.py` | 241 | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | core, ledger | pandas |
 | `mt5/verify/report.py` | 172 | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | core, mt5 | pandas |
-| `mt5/verify/run.py` | 470 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
+| `mt5/verify/run.py` | 472 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
 | `mt5/verify/runs.py` | 232 | What MT5 Bridge › Verificar reads and checks: past checks, the strategy's file, and whether one may start now. | core, mt5, sqx | — |
 | `mt5/verify/sidebyside.py` | 65 | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | core, mt5 | pandas |
 | `mt5/verify/sizing.py` | 65 | The fixed-risk mode's own pieces of the judge (encargo 61): the real-loss cap and the no-stop verdict. | core, mt5 | pandas |
@@ -484,7 +484,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/inspect/template_check.py` | 239 | Check whether the strategies a project built really use the blocks its template declares. | core | — |
 | `sqx/inspect/vocabulary.py` | 280 | What one SQX install can express: its blocks, its random groups, and what each pools. | core | — |
 | `sqx/jobs.py` | 309 | The daemon's job list: analysis commands started from the window, queued, and how each one ended. | core, sqx | psutil |
-| `sqx/log.py` | 150 | SQX's own log from the moment of a launch on, across midnight: only the lines written since. | sqx | — |
+| `sqx/log.py` | 162 | SQX's own log from the moment of a launch on, across midnight: only the lines written since. | sqx | — |
 | `sqx/progress.py` | 229 | Where a running SQX project is: its tasks, which one runs, how far, read from disk only. | core, sqx | — |
 | `sqx/projdisk.py` | 123 | What a project's folder on disk says: the installs, their projects, a project's tasks, databank counts, genetic settings. | core, sqx | — |
 | `sqx/projects/acceptance.py` | 133 | Write a cross-check's acceptance element: the conditions it judges by, and their thresholds. | core | — |
@@ -505,7 +505,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/projects/doctrine.py` | 209 | Apply the owner's build doctrine to every task of a project, identically. | core, sqx | — |
 | `sqx/projects/exiting.py` | 98 | Stop a GUI session with a task still running: ask it to exit, let every other project save, then kill by PID. | core, sqx | — |
 | `sqx/projects/forget.py` | 116 | Erase one named project everywhere: its live SQX project and every AlgoData folder it filled. | core, sqx | — |
-| `sqx/projects/live.py` | 402 | Drive one headless GUI-mode SQX session (`bin/sqx-worker.sh --gui`) through the window's own /project servlet. | core, sqx | — |
+| `sqx/projects/live.py` | 415 | Drive one headless GUI-mode SQX session (`bin/sqx-worker.sh --gui`) through the window's own /project servlet. | core, sqx | — |
 | `sqx/projects/liveapi.py` | 63 | One POST to a GUI session's `/project` servlet, with the port and token SQX wrote to settings.xml. | core | — |
 | `sqx/projects/loadwait.py` | 42 | The signals that SQX has finished something, from its own log: «Strategies loaded» after a `-databank action=load`, «APP LOADED» after a start. | sqx | — |
 | `sqx/projects/mcretest.py` | 174 | Write the eight MC Retest tasks of a custom project: one perturbation each, as evidence. | core, sqx | — |
@@ -1259,7 +1259,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_spread.py` | 155 | The tick-file reader on a file written by hand, and a trade repriced at a spread worked out by hand. | core, studies | numpy, pandas |
 | `tests/test_spread_method.py` | 60 | The funded-firms spread method on toy ticks and a toy card. | studies | pandas, pytest |
 | `tests/test_sqx_bridge.py` | 229 | `core.worker` and `sqx.variants.execute` waiting for and talking to SQX, on fakes: no HTTP, no install. | core, sqx | — |
-| `tests/test_sqx_live.py` | 166 | `sqx.projects.live` and `livexec` waiting for a GUI-mode run, on fakes: no HTTP, no install. | core, sqx | — |
+| `tests/test_sqx_live.py` | 181 | `sqx.projects.live` and `livexec` waiting for a GUI-mode run, on fakes: no HTTP, no install. | core, sqx | — |
 | `tests/test_sqx_problems.py` | 20 | core.sqxfile.strategy_problems decodes SQX's «Strategy Problems» bitmask on a real strategy (value 8). | core, live_only | — |
 | `tests/test_sqx_wait.py` | 124 | `.claude/skills/sqx-wait/wait.sh` on a scratch log folder and a scratch port: never a real install. | — | — |
 | `tests/test_sqxfile.py` | 80 | Golden-file test for core.sqxfile: a parser that breaks silently poisons every analysis. | core | — |

@@ -1,4 +1,9 @@
-"""The M1 bars per month the Strategy Tester walks for one firm's symbol, from a short probe pass."""
+"""The bars per month the Strategy Tester walks for one firm's symbol on the strategy's timeframe,
+from a short probe pass.
+
+🔬 2026-10-17: the timeframe's own bars, not M1's. Hantec's 2022-06..2023-04 holds about one M1
+bar an hour: an H1 strategy still trades there as SQX does (USDJPY/GBPJPY matched 95 %), an M15
+one cannot (XAUUSD: every SQX trade unmatched)."""
 
 import json
 import time
@@ -14,13 +19,15 @@ OUT = "AlgoProbeMonths.csv"  # in Common\Files, where the EA writes it
 MAX_MINUTES = 30
 
 
-def _cache(account: dict, symbol: str) -> Path:
-    """The cache file of one server and symbol."""
-    return CACHE / f"{account['server']}_{symbol}.json"
+def _cache(account: dict, symbol: str, timeframe: str) -> Path:
+    """The cache file of one server, symbol and timeframe."""
+    return CACHE / f"{account['server']}_{symbol}_{timeframe}.json"
 
 
-def _probe(symbol: str, account: dict, window: tuple[str, str]) -> dict[str, int]:
-    """Compile the probe and run it on M1, open_prices, on the firm's account; read its file."""
+def _probe(
+    symbol: str, account: dict, window: tuple[str, str], timeframe: str
+) -> dict[str, int]:
+    """Compile the probe and run it on `timeframe`, open_prices, on the firm's account; read its file."""
     if not wine.close_terminal():
         raise RuntimeError(
             "el terminal de MT5 sigue abierto y el tester no arranca con él"
@@ -33,7 +40,7 @@ def _probe(symbol: str, account: dict, window: tuple[str, str]) -> dict[str, int
     started = tester.start(
         built["expert"],
         symbol,
-        "M1",
+        timeframe,
         *window,
         "open_prices",
         10000,
@@ -58,19 +65,20 @@ def _probe(symbol: str, account: dict, window: tuple[str, str]) -> dict[str, int
 
 
 def tester_months(
-    symbol: str, account: dict, window: tuple[str, str]
+    symbol: str, account: dict, window: tuple[str, str], timeframe: str
 ) -> dict[str, int]:
-    """«YYYY-MM» → M1 bars the tester walks, cached by server and symbol while it covers the window.
+    """«YYYY-MM» → `timeframe` bars the tester walks, cached per server, symbol and timeframe
+    while the cache covers the window.
 
     Raises:
         RuntimeError: The probe did not run or wrote nothing — no bars is not «no gaps».
     """
-    file = _cache(account, symbol)
+    file = _cache(account, symbol, timeframe)
     if file.exists():
         got = json.loads(file.read_text())
         if got["from"] <= window[0] and got["to"] >= window[1]:
             return got["counts"]
-    counts = _probe(symbol, account, window)
+    counts = _probe(symbol, account, window, timeframe)
     CACHE.mkdir(parents=True, exist_ok=True)
     file.write_text(json.dumps({"from": window[0], "to": window[1], "counts": counts}))
     return counts

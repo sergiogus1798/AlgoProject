@@ -346,7 +346,9 @@ def main() -> None:
     try:
         for firm in costs:
             row = firms.usable(asset)[firm]
-            gaps[firm] = conditions.gap_months(row["symbol"], row["account"], window)
+            gaps[firm] = conditions.gap_months(
+                row["symbol"], row["account"], window, timeframe
+            )
             if gaps[firm]:
                 print(
                     f"{firms.label(firm)}: sin barras en {', '.join(gaps[firm])}: "
