@@ -138,7 +138,7 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
         """One mother's design, pilot and batch of `.sqx`; its seconds."""
         began = time.monotonic()
         call.again(
-            lambda: _py(
+            lambda work=work: _py(
                 "sqx.variants.make", *brief, "--project", project, "--out", str(work)
             )
         )
@@ -157,11 +157,11 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
     for strategy, work, brief in todo:
         began = time.monotonic() - (spent[strategy] if apart else make(work, brief))
         call.again(
-            lambda: _py(
+            lambda work=work: _py(
                 "sqx.variants.execute",
                 "--work",
                 str(work),
-                "--project",  # noqa: B023 retry runs within iteration
+                "--project",
                 project,
             )
         )

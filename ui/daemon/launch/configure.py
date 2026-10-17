@@ -1,12 +1,12 @@
 """Run the configurator of every chosen task still unconfigured, as its skill does, with the worker stopped."""
 
-import subprocess
-from pathlib import Path
 import sys
 import zipfile
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
+from core import proc
 from core.paths import ROOT
 from sqx.projects import stage
 from sqx.workflow.launchsteps import silenced
@@ -43,7 +43,7 @@ def run(pre: dict[str, Any], say: Callable[[int, str], None]) -> list[str]:
             )  # (🔬 2026-10-06: it saw none, kept Exits)
             extra += ["--databank-dir", str(Path(banks) / inputs[titles[0]])]
         say(8, f"configurando {', '.join(titles)} ({module})")
-        got = subprocess.run(
+        got = proc.run(
             [
                 sys.executable,
                 "-m",
@@ -56,6 +56,8 @@ def run(pre: dict[str, Any], say: Callable[[int, str], None]) -> list[str]:
             capture_output=True,
             text=True,
             cwd=ROOT,
+            timeout=120,
+            check=False,
         )
         print(got.stdout[-3000:], flush=True)
         if got.returncode:

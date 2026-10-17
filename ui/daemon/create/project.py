@@ -9,6 +9,7 @@ import argparse
 import subprocess
 import sys
 
+from core import proc
 from core.datapaths import template_dir
 from core.paths import ROOT
 
@@ -26,7 +27,12 @@ def main() -> None:
     ap.add_argument("--minutes", required=True)
     ap.add_argument("--purpose", required=True)
     a = ap.parse_args()
-    got = subprocess.run([sys.executable, "-m", "core.assets", a.symbol], cwd=ROOT)
+    got = proc.run(
+        [sys.executable, "-m", "core.assets", a.symbol],
+        cwd=ROOT,
+        timeout=120,
+        check=False,
+    )
     if got.returncode:
         sys.exit(
             f"core.assets {a.symbol} salió con {got.returncode}: no se crea nada (regla 5)"

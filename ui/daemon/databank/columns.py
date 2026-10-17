@@ -1,10 +1,10 @@
 """The owner's column choice per databank table: `AlgoData/filters/<P>/<D>/columns.json`."""
 
 import json
-import os
 import threading
 from pathlib import Path
 
+from core.fsio import atomic_write
 from sqx.databank import discards
 
 # FastAPI runs these routes on a thread pool: two saves at once must not interleave their
@@ -53,8 +53,5 @@ def save(project: str, databank: str, table: str, view: dict | None) -> dict[str
         else:
             kept[table] = view
         path = file(project, databank)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(kept, ensure_ascii=False, indent=1), encoding="utf-8")
-        os.replace(tmp, path)
+        atomic_write(path, json.dumps(kept, ensure_ascii=False, indent=1))
     return kept

@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 import signal
-import subprocess
 import sys
 import time
 from collections.abc import Sequence
@@ -14,7 +13,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from core import worker
+from core import proc, worker
 from core.datapaths import template_runs
 from core.phases import phase
 from ledger import steprows
@@ -33,8 +32,12 @@ SNAPSHOTS = advance.DISCARDS.parent / "snapshots"
 
 def assets(symbol: str) -> None:
     """Hard rule 5: `python3 -m core.assets <SYMBOL>` before touching a project; stop on non-zero."""
-    got = subprocess.run(
-        [sys.executable, "-m", "core.assets", symbol], capture_output=True, text=True
+    got = proc.run(
+        [sys.executable, "-m", "core.assets", symbol],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
     )
     print(got.stdout.strip(), flush=True)
     if got.returncode:
