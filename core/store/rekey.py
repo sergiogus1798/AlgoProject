@@ -10,7 +10,8 @@ from pathlib import Path
 
 from core import sqxfile
 from core.paths import DATA, store_dir
-from core.store.write import MANIFEST, SQX, atomic, locked
+from core.fsio import atomic_write
+from core.store.write import MANIFEST, SQX, locked
 
 # The loose tables that name a strategy by identity and are matched later against a fresh one
 # (verdict.csv, identity.csv, lineage.csv, tf_mothers.csv…): their identity columns follow the map.
@@ -66,12 +67,12 @@ def apply(rows: list[tuple[Path, str, str]], backup: Path, out: Path) -> None:
             there = _target(here, new)
             here.rename(there)
             doc = json.loads((there / MANIFEST).read_text(encoding="utf-8"))
-            atomic(
+            atomic_write(
                 there / MANIFEST,
                 json.dumps(
                     {**doc, "identity": new}, ensure_ascii=False, indent=1, default=str
                 ).encode(),
-                seal=False,
+                durable=True,
             )
             with out.open("a", newline="", encoding="utf-8") as fh:
                 w = csv.writer(fh)
@@ -127,7 +128,12 @@ def tables(m: dict[str, str], dry_run: bool) -> tuple[int, int]:
         if not dry_run:
             buf = io.StringIO()
             csv.writer(buf, lineterminator="\n").writerows(rows)
-            atomic(path, buf.getvalue().encode(), seal=not os.access(path, os.W_OK))
+            atomic_write(
+                path,
+                buf.getvalue().encode(),
+                seal=not os.access(path, os.W_OK),
+                durable=True,
+            )
     return files, cells
 
 

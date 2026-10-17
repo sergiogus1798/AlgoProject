@@ -11,6 +11,7 @@ import pandas as pd
 import yaml
 
 from core import assetdata
+from core.fsio import atomic_write
 from core.paths import databank_dir, export_dir, harvest_dir, metrics_export
 from ledger import cells, record
 from pipeline.autopilot import criteria, facts, selection, survivors, trim
@@ -196,7 +197,7 @@ def _seal(project: str) -> Callable[[], None]:
         }
         for piece in fresh:
             done, sources = marks[piece]
-            (done.parent / f"{done.name}.sources.sig").write_text(fingerprint(sources))
+            atomic_write(done.parent / f"{done.name}.sources.sig", fingerprint(sources))
 
     return resign
 

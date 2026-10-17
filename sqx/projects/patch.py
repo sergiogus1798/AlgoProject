@@ -6,7 +6,7 @@ import re
 import zipfile
 from pathlib import Path
 
-from core.store.write import atomic
+from core.fsio import atomic_write
 from core.symbols import current
 from sqx.projects import cfxio
 
@@ -35,7 +35,7 @@ def install_template(template: Path, target: Path) -> None:
                 if n.endswith(".xml")
                 else blob,
             )
-    atomic(target, whole.getvalue(), seal=False)
+    atomic_write(target, whole.getvalue(), durable=True)
 
 
 def set_template(text: str, path: Path) -> str:

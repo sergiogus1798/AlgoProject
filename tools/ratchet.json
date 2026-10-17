@@ -5,7 +5,7 @@
   "broad_except": 35,
   "layering_allow": 19,
   "legacy_np_random": 0,
-  "os_replace": 12,
+  "os_replace": 11,
   "pyright.core": 0,
   "pyright.engines": 0,
   "pyright.ledger": 0,

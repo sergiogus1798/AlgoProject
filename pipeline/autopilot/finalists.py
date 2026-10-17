@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 
+from core.fsio import atomic_write
 from core.study import identity
 from pipeline.autopilot import survivors
 
@@ -42,9 +43,7 @@ def write(project: str, mothers: pd.DataFrame, out: Path) -> str:
         }
         for m in found
     ]
-    (out / FILE).write_text(
-        json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8"
-    )
+    atomic_write(out / FILE, json.dumps(rows, indent=1, ensure_ascii=False))
     if not rows:
         raise survivors.Done("ningún finalista para el paso 26")
     return f"{len(rows)} finalista(s) en {out / FILE}"

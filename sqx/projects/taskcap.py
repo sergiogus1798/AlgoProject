@@ -5,7 +5,7 @@ import re
 import time
 from pathlib import Path
 
-from core.store.write import atomic
+from core.fsio import atomic_write
 from core.paths import WORKERS
 from core.researchpaths import autopilot_runs
 from sqx.projects import stage
@@ -60,10 +60,10 @@ def note(cap: Cap, line: str) -> None:
     for title, longest in _longest().items():
         known[title] = max(known.get(title, 0), longest)
     cap.update(task=None, longest=known)
-    atomic(
+    atomic_write(
         _history(),
         json.dumps(known, indent=1, sort_keys=True).encode("utf-8"),
-        seal=False,
+        durable=True,
     )
 
 

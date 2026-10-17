@@ -1,5 +1,6 @@
 """What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's."""
 
+import io
 import json
 import shutil
 from collections.abc import Callable
@@ -11,6 +12,7 @@ import pandas as pd
 from pandas.core.util.hashing import hash_pandas_object
 
 from core import sqxfile
+from core.fsio import atomic_write
 from core.paths import DATA
 from core.study import identity as identities
 
@@ -112,10 +114,12 @@ def _cut(path: Path, name: str, out: Path, sisters_only: bool = False) -> int:
         rows = rows[rows["strategy"].astype(str) != name]
     if len(rows):
         out.mkdir(parents=True, exist_ok=True)
+        buf = io.BytesIO()
         if path.suffix == ".parquet":
-            rows.to_parquet(out / path.name, index=False)
+            rows.to_parquet(buf, index=False)
         else:
-            rows.to_csv(out / path.name, index=False)
+            rows.to_csv(buf, index=False)
+        atomic_write(out / path.name, buf.getvalue())
     return len(rows)
 
 

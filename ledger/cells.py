@@ -21,7 +21,8 @@ import pandas as pd
 
 from core.datapaths import campaign_dir
 from core.paths import DATA, ROOT
-from core.store.write import atomic, locked
+from core.fsio import atomic_write
+from core.store.write import locked
 from ledger import study as studymod
 from studies.research.memory import sources
 
@@ -93,8 +94,8 @@ def _save(rows: dict[str, dict]) -> None:
     w = csv.DictWriter(buf, FIELDS)
     w.writeheader()
     w.writerows(rows.values())
-    atomic(
-        PROJECTS, buf.getvalue().encode(), seal=False
+    atomic_write(
+        PROJECTS, buf.getvalue().encode(), durable=True
     )  # a reader never sees it half-written
 
 
@@ -269,7 +270,7 @@ def look_oos2(project: str, max_looks: int) -> int:
                 )
             now, seen = now + 1, [*seen, project]
             extras[cell] = {**extras.get(cell, {}), "oos2": now, "oos2_projects": seen}
-            atomic(EXTRAS, json.dumps(extras).encode(), seal=False)
+            atomic_write(EXTRAS, json.dumps(extras).encode(), durable=True)
     return now
 
 

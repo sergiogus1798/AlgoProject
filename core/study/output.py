@@ -13,7 +13,7 @@ from core.study.render import markdown, page
 def _write(path: Path, text: str) -> None:
     """Whole file or nothing: a temporary beside it, renamed over it, so the window never reads half.
 
-    No fsync, unlike `core.store.write.atomic`: a population writes one pair of files per strategy.
+    No fsync (`durable` off): a population writes one pair of files per strategy.
     """
     atomic_write(path, text)
 

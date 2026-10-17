@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from core import sqxfile
+from core.fsio import atomic_write
 from core.paths import store_dir
 
 SQX, MANIFEST, RUNS = "strategy.sqx", "manifest.json", "runs.json"
@@ -91,26 +92,6 @@ def _held() -> dict[str, Path]:
     return _SEEN[root][1]
 
 
-def atomic(path: Path, data: bytes, seal: bool = True) -> None:
-    """Write a whole file or nothing: a hidden temporary beside it, flushed to disk, then renamed.
-
-    Args:
-        path: The final name.
-        data: Its bytes.
-        seal: Read-only once written; only the manifest is ever rewritten.
-    """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    tmp.unlink(missing_ok=True)  # a sealed leftover of a cut write cannot be reopened
-    with tmp.open("wb") as fh:
-        fh.write(data)
-        fh.flush()
-        os.fsync(fh.fileno())
-    if seal:  # before the rename: a cut never leaves a final name writable
-        tmp.chmod(0o444)
-    os.replace(tmp, path)
-
-
 @contextmanager
 def locked(cell: Path) -> Iterator[None]:
     """One writer at a time per cell: every manifest and `runs.json` is read, changed, rewritten.
@@ -140,10 +121,10 @@ def manifest(identity: str) -> dict[str, Any]:
 
 def record(identity: str, doc: dict) -> None:
     """Rewrite the manifest whole — the one file of a folder that changes."""
-    atomic(
+    atomic_write(
         folder(identity) / MANIFEST,
         json.dumps(doc, ensure_ascii=False, indent=1, default=str).encode(),
-        seal=False,
+        durable=True,
     )
 
 
@@ -165,7 +146,7 @@ def put_sqx(sqx: Path, cell: str, origin: dict) -> str:
         if not target.exists() or not _carries(
             target, identity
         ):  # a damaged copy is replaced
-            atomic(target, sqx.read_bytes())
+            atomic_write(target, sqx.read_bytes(), seal=True, durable=True)
             _SEEN.clear()
         if not _carries(target, identity):
             raise OSError(
@@ -218,7 +199,7 @@ def pooled(path: Path, data: bytes, digest: str) -> None:
     blob = path.parent.parent / POOL / f"{digest}.zip"
     blob.parent.mkdir(exist_ok=True)
     if not blob.exists() or hashlib.sha256(blob.read_bytes()).hexdigest() != digest:
-        atomic(blob, data)
+        atomic_write(blob, data, seal=True, durable=True)
     os.link(blob, path)
 
 
@@ -284,8 +265,8 @@ def run(cell: str, project: str, about: dict) -> None:
         runs = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
         if runs.get(project) != about:
             runs[project] = about
-            atomic(
+            atomic_write(
                 path,
                 json.dumps(runs, ensure_ascii=False, indent=1).encode(),
-                seal=False,
+                durable=True,
             )

@@ -61,12 +61,12 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/store/audit.py` | 137 | Whether everything a project left on disk is in the store: each folder in some zip, or ignored by name. | core | — |
 | `core/store/cli.py` | 163 | The store's command: save a project's survivors, verify what is stored, list it, open one. | core | — |
 | `core/store/collect.py` | 261 | Bring a gorilla project's survivors to leaseWeb for step 26 (owner, 2026-10-15, D-1 = A). | core | — |
-| `core/store/extra.py` | 292 | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | core | pandas |
+| `core/store/extra.py` | 296 | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | core | pandas |
 | `core/store/late.py` | 259 | What steps 13 to 20 leave outside the report folders: the rest of each export, and the variant batch. | core | — |
-| `core/store/rekey.py` | 154 | Re-key the store after `core.sqxfile.identity` changed: each folder and manifest to the identity its own .sqx has now. | core | — |
+| `core/store/rekey.py` | 160 | Re-key the store after `core.sqxfile.identity` changed: each folder and manifest to the identity its own .sqx has now. | core | — |
 | `core/store/save.py` | 338 | Save a project's gate survivors into the store: the .sqx once, then one file per set of tests. | core | — |
 | `core/store/verify.py` | 70 | Whether a stored strategy is whole: its file carries its identity and every file its recorded hash. | core | — |
-| `core/store/write.py` | 291 | Write into a strategy's folder so that a cut leaves it as it was or as it will be, never half. | core | — |
+| `core/store/write.py` | 272 | Write into a strategy's folder so that a cut leaves it as it was or as it will be, never half. | core | — |
 | `core/study/__init__.py` | 1 | The contract every study module speaks: its config, its blocks, its result and its page. | — | — |
 | `core/study/bands.py` | 35 | N curves drawn as percentile bands (5-95, 25-75), the median and the original — a `cone` block. | core | numpy |
 | `core/study/blockcheck.py` | 30 | The optional keys of a block: a distribution's series and shift, a grid's mark and scale. | — | numpy |
@@ -152,7 +152,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `engines/weekly/panel.py` | 170 | Trades into weeks x units of excess, gross and net: each trade whole in the week it closes in. | core, engines | numpy, pandas |
 | `ledger/backfill.py` | 172 | Rebuild a study's ledger backwards from the artefacts a run already left on disk. | core, ledger | numpy, pandas, yaml |
 | `ledger/blind.py` | 158 | The rows steps 17, 18 and 19 did not write, rebuilt from the results they left on disk. | core, ledger | pandas |
-| `ledger/cells.py` | 443 | The per-cell counter: how much was tried in each asset x timeframe x direction x idea family. | core, ledger, studies | pandas |
+| `ledger/cells.py` | 444 | The per-cell counter: how much was tried in each asset x timeframe x direction x idea family. | core, ledger, studies | pandas |
 | `ledger/gate.py` | 200 | The one-way door: who may look at a reserved segment, and when 17-19 may be read. | core | pandas, yaml |
 | `ledger/record.py` | 146 | Contract L1: one appended line per search that looked at data and reduced a population. | ledger | numpy, pandas |
 | `ledger/report.py` | 176 | The study's whole search, read back: the funnel, what was spent, and what it costs the Sharpe. | core, ledger, studies | numpy, pandas |
@@ -195,7 +195,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/fleet/remote.py` | 40 | The two calls to the VPS over `ssh vps`: pull the beacon's files, run the health probe. | — | — |
 | `mt5/fleet/rows.py` | 65 | The collector's pure parts: a beat's history row, the skip test, and the floating MAE/MFE ledger. | — | — |
 | `mt5/guard.py` | 26 | Keep the verification terminal off the owner's real accounts (funded, in a phase, live). | core | — |
-| `mt5/live.py` | 92 | Ask the running MT5 terminal read-only questions through the Windows Python in its Wine prefix. | core, mt5 | pandas |
+| `mt5/live.py` | 103 | Ask the running MT5 terminal read-only questions through the Windows Python in its Wine prefix. | core, mt5 | pandas |
 | `mt5/metaeditor.py` | 115 | Compile MQL5 sources with MetaEditor under Wine, and install the Sq* indicators SQX's EAs call. | mt5 | — |
 | `mt5/newsfilter/cross.py` | 155 | Cross the two calendar histories: Forex Factory's red folder against MT5's HIGH releases, minute by minute. | mt5 | numpy, pandas |
 | `mt5/newsfilter/firms.py` | 146 | Each prop firm's news rule as the EA filter needs it: window, calendars, and what moves each symbol. | — | — |
@@ -220,7 +220,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/server.py` | 224 | MCP server over MetaTrader 5 under Wine: compile, backtest, compare with SQX, and read-only data. | core, mt5 | mcp, pandas |
 | `mt5/tester.py` | 217 | Run one Strategy Tester pass: write its ini, start the terminal detached, and collect the report. | core, mt5 | — |
 | `mt5/verify/autopilot.py` | 269 | Step 26 as an autopilot action: the window's preflight over a list of finalists, one check each, the pool filled. | core, mt5, ui | pandas |
-| `mt5/verify/conditions.py` | 169 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | pandas |
+| `mt5/verify/conditions.py` | 173 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | pandas |
 | `mt5/verify/firms.py` | 65 | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | core, ledger, mt5 | yaml |
 | `mt5/verify/judge.py` | 470 | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | core, mt5 | numpy, pandas |
 | `mt5/verify/mt5side.py` | 174 | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | mt5 | pandas |
@@ -261,8 +261,8 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/autopilot/criteria.py` | 206 | Pass, limbo or fail for each strategy of a population, from its facts and a step's rules. | — | pandas |
 | `pipeline/autopilot/entry.py` | 68 | What a new autopilot run settles before it starts: alone on its worker, on a session of its own. | core, sqx | — |
 | `pipeline/autopilot/facts.py` | 342 | Every number a judging step's studies wrote, one row per strategy and key. | pipeline, studies, ui | pandas, pyarrow |
-| `pipeline/autopilot/finalists.py` | 75 | The list step 26 verifies: each survivor's own file, written for its agent and handed to it. | core, mt5, pipeline | pandas |
-| `pipeline/autopilot/judge.py` | 358 | One judging step: its facts, the criteria, the medoid cut, the verdict.csv and the cut in SQX. | core, ledger, pipeline, sqx, ui | pandas, yaml |
+| `pipeline/autopilot/finalists.py` | 74 | The list step 26 verifies: each survivor's own file, written for its agent and handed to it. | core, mt5, pipeline | pandas |
+| `pipeline/autopilot/judge.py` | 359 | One judging step: its facts, the criteria, the medoid cut, the verdict.csv and the cut in SQX. | core, ledger, pipeline, sqx, ui | pandas, yaml |
 | `pipeline/autopilot/kept.py` | 84 | What the funding module keeps of each strategy that passed the WFM: its oos1 floating curve and risk numbers. | core, pipeline, studies | pandas |
 | `pipeline/autopilot/neighbours.py` | 166 | Step 13's T1 batch for the autopilot: wire two WFC legs, then make → retest → export trades → measure → clear. | core, pipeline, sqx, ui | pandas |
 | `pipeline/autopilot/plan.py` | 190 | What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps. | core, pipeline, ui | — |
