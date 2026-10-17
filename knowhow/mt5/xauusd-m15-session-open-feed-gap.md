@@ -6,7 +6,6 @@ tag: 🔬  date: 2026-10-17  see: mt5/sqzscore-stale-previous-bar, mt5/mt5-verif
 # Gold M15 fails step 26 on a feed gap at the session open, amplified by marginal rising-chains and by 1-lot dollars
 - 🔬 Not spread: SQX's entry times are identical across the FTMO and Hantec runs (same data, different cost), so the median-spread change cannot move an entry.
 - 🔬 Not a clock shift or a one-bar lag: 92-97 % of matched pairs enter at the same minute; unmatched entries are ~1 day from any entry of the other side. 25-40 % of them are position-blocking cascades (the other side was already in a trade).
-- 🔬 Not a history-start seed: miss rate is flat by year (10-20 %), months without bars are already excluded.
 - 🔬 MT5 FTMO vs MT5 Hantec agree on only 77-94 % of entry minutes, no better than either against SQX: the residue is feed-noise-driven, not one deterministic MT5 indicator bug.
 - 🔬 SQX's XAUUSD feed (Dukascopy) vs FTMO's H1 bars (2024-26): mid (H+L)/2 differs 0.11-0.14 USD at most hours but **hour 01 (first bar after the daily break) 0.85 and hour 23 0.36** (open differs by median 1.6 USD, p90 8.5 at 01:00; SQX low lower by 1.7 on average). Strategies whose entry is a rising-chain of 8-9 bars of a (H+L)/2 filter (SqEhlersMotherOfAdaptiveMovingAverages, three of the five) miss **32 %** of entries at server hours 00-04 against 7-12 % at other hours; strategies on SqZScore / SqBHErgodic miss 4-7 % at any hour.
 - 🔬 Rows 3b/4/5 are in % of a 100k account at 1 lot of gold (1 USD = 100 USD of P&L, a trade is ~1.5-2 % of the account): one unmatched trade moves the worst day by ~2 pp, so they fail with any residue, while row 2 (R) passes.
@@ -16,3 +15,4 @@ tag: 🔬  date: 2026-10-17  see: mt5/sqzscore-stale-previous-bar, mt5/mt5-verif
 ## Evidence
 Runs `AlgoData/mt5/verify/20261017-{130618,131845,132607,133226,133825}_strategy`, trades in `sqx/<firm>/trades.parquet` and `AlgoData/mt5/tests/V<run>lot_strategy_<firm>_*/trades.parquet`; bars `AlgoData/bars/XAUUSD_M1/M1.parquet` vs `AlgoData/mt5/bars/XAUUSD/H1_2022-06-01_2026-10-08.parquet`.
 MAMA probe 2026-10-17 14:40 UTC: EA `MamaProbe.mq5` (scratchpad, not kept), run `AlgoData/mt5/tests/MamaProbe_mama_XAUUSD_M15_2025-01-02_2025-03-31_every_tick`, CSV `Common/Files/mamaprobe.csv`.
+- 🔬 (moved from the header) Not a history-start seed: miss rate is flat by year (10-20 %), months without bars are already excluded.

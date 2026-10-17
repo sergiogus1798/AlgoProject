@@ -1,0 +1,14 @@
+---
+q: Why do AUDUSD M30 and AUDJPY H1 fail step 26 on FTMO (share 0.85): an Sq* port or the feed?
+kw: step 26 AUD fails, AUDUSD M30 row 1 0.85, unmatched SQX entries hour 01, SqSessionOHLC SqSRPercentRank boilerplate not used, BBands only strategy fails, rollover bar 00:00 feed gap, SqSmoothedRSI SqCSSARegime SqRVI SqStochastic
+tag: 🔬  date: 2026-10-17  see: mt5/xauusd-m15-session-open-feed-gap, mt5/sqzscore-stale-previous-bar
+---
+# AUD step-26 misses are the rollover-bar feed gap again, not an indicator port
+- 🔬 `SqSessionOHLC` and `SqSRPercentRank` are NOT used by the AUD EAs: every generated EA carries `#property tester_indicator` lines and the include definitions (`SessionOpen/High/Low/Close`, `sqSRPercRank*XBars`) as boilerplate, but nothing calls them (only the definitions match in all 5 AUDUSD/AUDJPY EAs checked). The indicators actually created: SqROC, SqWaveTrend, SqRVI+SqStochastic (AUDJPY H1); SqSmoothedRSI, SqCSSARegime, and two strategies with only native `iBands`/`iMomentum` (AUDUSD M30).
+- 🔬 The two AUDUSD M30 strategies that use only native MT5 indicators (`20261017-142427`, `-142806`) fail exactly like the Sq* ones (unmatched 16 % and 22 %; 41 % and 29 % of their unmatched entries at hour 01 vs 2-3 % of matched). A port bug in an Sq* indicator cannot explain them, so the Sq* indicators were not probed one by one.
+- 🔬 Characterisation, FTMO, 7 AUD runs (unmatched = SQX entry minute with no MT5 entry the same minute): unmatched 9-35 % of SQX entries; AUDUSD M30 entries at hour 01: 29-41 % of the unmatched against 2-3 % of the matched (hours 01-04: 38-52 % vs 14-15 %); AUDJPY H1 21 % at hour 01 in one run, 0-4 % in the other two (hours 00-04 18-38 % vs 16-18 %). Unmatched entries sit a median 37-66 h from any MT5 entry (not a one-bar shift, not a clock offset).
+- 🔬 Feed, FTMO AUDUSD M30 bars (2025-01-02..09-30, ohlc_m1 probe) vs SQX's AUDUSD_M1 resampled to M30: bars match to 0.2-0.3 pip at every hour EXCEPT the bars at server 00:00 (median (H+L)/2 gap 0.65 pip, 30 % of bars over 1 pip, open 1.1 pip) and 23:00 (11 % over 1 pip). Entries at 01:00 read the 00:30 and 00:00 bars, so a marginal condition flips there. Same mechanism as gold (`mt5/xauusd-m15-session-open-feed-gap`), smaller in size.
+- Decision: the AUD fails are the feed at the daily rollover plus marginal signals; no `.mq5` to fix. Not measured: which Sq* indicator ports are exact (SqSmoothedRSI, SqCSSARegime, SqRVI, SqStochastic, SqROC, SqWaveTrend) — only MAMA/Hilbert (gold) is proven exact.
+
+## Evidence
+Runs `AlgoData/mt5/verify/20261017-{134603,135613,140335,141100,142047,142427,142806}_strategy` (FTMO trades `sqx/ftmo/trades.parquet` vs `AlgoData/mt5/tests/V<run>lot_strategy_ftmo_*/trades.parquet`); bar probe run `AlgoData/mt5/tests/BarProbe_bars_AUDUSD_M30_2025-01-02_2025-09-30_ohlc_m1`, SQX bars `AlgoData/bars/AUDUSD_M1/M1.parquet`.
