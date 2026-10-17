@@ -34,7 +34,16 @@ def mark(top: Path) -> dict[Path, int]:
     Returns:
         File → size. Everything before these offsets is an earlier run's, however it ended.
     """
-    return {f: f.stat().st_size for f in (path(top, d) for d in days()) if f.exists()}
+    return {f: n for f in (path(top, d) for d in days()) if (n := _size(f)) is not None}
+
+
+def _size(f: Path) -> int | None:
+    """A log's size, None when absent: SQX deletes old logs while it starts, so a file seen a
+    moment ago can be gone by its `stat` (🔬 gorilla 2026-10-17, yesterday's at 08:32)."""
+    try:
+        return f.stat().st_size
+    except FileNotFoundError:
+        return None
 
 
 def grow(
@@ -53,11 +62,14 @@ def grow(
     """
     for f in (path(top, d) for d in days()):
         start = offsets.get(f, 0)
-        if not f.exists() or f.stat().st_size <= start:
+        if (_size(f) or 0) <= start:
             continue
-        with f.open("rb") as fh:
-            fh.seek(start)
-            data = fh.read()
+        try:
+            with f.open("rb") as fh:
+                fh.seek(start)
+                data = fh.read()
+        except FileNotFoundError:
+            continue
         whole = data[: data.rfind(b"\n") + 1]
         offsets[f] = start + len(whole)
         lines = whole.decode("utf-8", errors="replace").splitlines()

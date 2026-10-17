@@ -124,8 +124,17 @@ def _files(project: str, role: str, bank: str) -> int:
 
 
 def mark(role: str) -> tuple[Path, int]:
-    """Where SQX's log ends now: `wait` reads only what is written after it."""
-    return (log := _log(role)), log.stat().st_size
+    """Where SQX's log ends now: `wait` reads only what is written after it.
+
+    🔬 gorilla 2026-10-17 08:32: the first start after midnight listed yesterday's log as the
+    newest and SQX deleted it before the `stat`; the next listing has today's.
+    """
+    for _ in range(10):
+        log = _log(role)
+        with contextlib.suppress(FileNotFoundError):
+            return log, log.stat().st_size
+        time.sleep(1)
+    return log, log.stat().st_size
 
 
 def wait(role: str, since: tuple[Path, int]) -> str:
@@ -138,9 +147,13 @@ def wait(role: str, since: tuple[Path, int]) -> str:
         down = (
             0 if _up(role) else down + 1
         )  # asked before the read: the last line counts
-        with open(log, "rb") as f:
-            f.seek(offset)
-            chunk = f.read()
+        try:
+            with open(log, "rb") as f:
+                f.seek(offset)
+                chunk = f.read()
+        except FileNotFoundError:  # SQX deleted yesterday's log while it started
+            log, offset = _log(role), 0
+            continue
         whole = chunk[: chunk.rfind(b"\n") + 1]  # a half-written line waits for its end
         offset += len(whole)
         for line in whole.decode("utf-8", "replace").splitlines():
@@ -227,7 +240,7 @@ def tail(role: str, since: tuple[Path, int]) -> str:
     """SQX's log past `since`, and the next day's whole past midnight."""
     parts = []
     for log, offset in dict([(_log(role), 0), since]).items():
-        with open(log, "rb") as f:
+        with contextlib.suppress(FileNotFoundError), open(log, "rb") as f:
             f.seek(offset)
             parts.append(f.read().decode("utf-8", "replace"))
     return "".join(parts)

@@ -158,6 +158,21 @@ def test_a_stopped_project_is_not_a_finished_batch() -> None:
         )
 
 
+def test_mark_and_wait_survive_yesterdays_log_deleted_at_start() -> None:
+    """SQX deletes old logs while it starts: the vanished one is skipped, today's is read."""
+    logs = install() / "user/log/StrategyQuant"
+    gone, today = logs / "log_2026_01_01.log", logs / "log_2026_01_02.log"
+    today.write_text("00:01 ProgressEngine - Project finished\n")
+    answers = iter([gone, today])
+    with patched(
+        (time, "sleep", lambda seconds: None),
+        (live, "_log", lambda role: next(answers, today)),
+        (live, "_up", lambda role: True),
+    ):
+        assert live.mark("custodian") == (today, today.stat().st_size)
+        assert live.wait("custodian", (gone, 0)).endswith("Project finished")
+
+
 if __name__ == "__main__":
     for name, test in sorted(globals().items()):
         if name.startswith("test_"):
