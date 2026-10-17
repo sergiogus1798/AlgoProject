@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 
+from core.datapaths import tmp_dir
 from engines.market import tradelevel
 from pipeline.autopilot import criteria
 from studies.screening.analysis import delay
@@ -223,7 +224,9 @@ def facts_edges(
     """
     everyone = cascade.population(data).index
     cache = {"edges": edges, "moved": {}}
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(
+        dir=tmp_dir()
+    ) as tmp:  # off the 3.9 GB /tmp: a 10,000 build filled it (2026-10-17)
         data = {
             **data,
             "out": Path(tmp),

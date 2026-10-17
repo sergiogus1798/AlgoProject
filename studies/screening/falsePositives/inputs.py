@@ -6,6 +6,7 @@ from typing import Any, TypedDict
 
 import yaml
 
+from core.datapaths import tmp_dir
 from core.paths import latest_harvest
 from core.study import config as study_config
 from engines.nulls import inputs as null_inputs
@@ -65,7 +66,9 @@ def load(
     folder = harvest or latest_harvest(project, databank)
     real = gate_inputs.load(folder)
     timeframe = gate_inputs.timeframe(real["metrics"], gate_cfg, [])
-    with tempfile.TemporaryDirectory() as tmp:  # `out` is chain.facts8's, one per call
+    with tempfile.TemporaryDirectory(
+        dir=tmp_dir()
+    ) as tmp:  # `out` is chain.facts8's, one per call
         real = gate_inputs.staged(real, feed, timeframe, Path(tmp))
     nullcfg = null_inputs.config(null_inputs.seeded(seed))
     root = nullcfg["nulls"]["seed"]
