@@ -22,4 +22,4 @@
 - `news-calendars-mt5-vs-forexfactory` — How much of Forex Factory's red folder does MT5's HIGH importance cover, and is either calendar enough for Hantec?
 - `reconcile-mae-both-sides-rebuilt` — How should live MAE be compared with the backtest's so the two are comparable?
 - `sqzscore-stale-previous-bar` — Why did MT5 trade a ZScore strategy 20-30x less than SQX (a handle-wrapping Sq indicator reading stale values)?
-- `xauusd-m15-session-open-feed-gap` — Why do XAUUSD M15 step-26 checks fail on FTMO and Hantec while JPY crosses H1 pass (matched share 0.85, entries missed at server hours 00-04)?
+- `xauusd-m15-session-open-feed-gap` — Why do XAUUSD M15 step-26 checks fail on FTMO and Hantec while JPY H1 crosses pass (missed entries at server 00-04)?
