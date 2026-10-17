@@ -7,7 +7,7 @@ from core.paths import WORKERS
 from sqx.projects import live
 from ui.daemon import tasklog
 from ui.daemon.projdisk import counts, genetic, installs, projects, tasks  # noqa: F401
-from ui.daemon.daylog import PERCENT, PROGRESS, STARTING, log_lines, trim  # noqa: F401
+from sqx.daylog import PERCENT, PROGRESS, STARTING, log_lines, trim  # noqa: F401
 
 TAIL_LINES = 14
 

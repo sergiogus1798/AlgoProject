@@ -27,7 +27,8 @@ from pipeline.autopilot import (
     variants,
 )
 from pipeline.autopilot.survivors import Done, about, mothers
-from ui.daemon.advance import preflight as advance, sqxlog
+from sqx import log as sqxlog
+from ui.daemon.advance import preflight as advance
 from sqx.projects import live
 from ui.daemon.launch import (
     chain,

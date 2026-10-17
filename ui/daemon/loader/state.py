@@ -6,7 +6,7 @@ from pathlib import Path
 from core.paths import export_dir, harvest_dir, metrics_export
 from ui.daemon import jobs
 from ui.daemon.loader import find
-from ui.daemon.loader.fingerprint import fingerprint
+from sqx.databank.fingerprint import fingerprint
 
 # The three products a databank's page reads, by what they unlock on screen.
 PIECES = {

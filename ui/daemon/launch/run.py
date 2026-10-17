@@ -20,8 +20,9 @@ from core.phases import phase
 from sqx.projects import crosstfload, stage
 from sqx.templates.registry import RUN_COLUMNS, append
 from ledger import steprows
-from ui.daemon import workerguard
-from ui.daemon.advance import preflight as advance, sqxlog
+from sqx.worker import guard as workerguard
+from sqx import log as sqxlog
+from ui.daemon.advance import preflight as advance
 from ui.daemon.advance.run import ready, say, watch
 from ui.daemon.launch import configure, preflight
 from ui.daemon.projdisk import counts

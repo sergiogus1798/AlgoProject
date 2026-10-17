@@ -20,7 +20,7 @@ from sqx.projects import registry
 from sqx.projects.crosstfload import SIBLING
 from ui.daemon.advance.preflight import by_identity
 from ui.daemon.loader import find, state
-from ui.daemon.loader.fingerprint import fingerprint
+from sqx.databank.fingerprint import fingerprint
 
 CRITERIA = Path(__file__).with_name("criteria.yaml")
 KEEP = "MANTENER"  # anything but DESCARTAR keeps a strategy (sqx/curate/README.md)

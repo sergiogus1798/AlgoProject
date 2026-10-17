@@ -113,7 +113,8 @@ def test_the_harvest_exports_are_the_export_trades_ones_to_the_byte(
 @pytest.fixture
 def export_world(monkeypatch: pytest.MonkeyPatch) -> tuple[dict, Any]:
     """afterrun with the install, the loader and the pieces stubbed: it records what ran and what it asked about."""
-    from ui.daemon import progress, workerguard
+    from ui.daemon import progress
+    from sqx.worker import guard as workerguard
     from ui.daemon.loader import afterrun, find, state
 
     world = {"ran": [], "asked": [], "needs": {}}
@@ -251,7 +252,8 @@ def test_step_names_in_the_folder_spelling_run_every_extra_in_scope(
         pytest.skip("the real project with extras databanks is not on this machine")
     world, _ = export_world
     monkeypatch.undo()  # the fixture's stubs go; re-install only what a read-only run needs
-    from ui.daemon import progress, workerguard
+    from ui.daemon import progress
+    from sqx.worker import guard as workerguard
     from ui.daemon.loader import state
 
     ran: list[str] = []

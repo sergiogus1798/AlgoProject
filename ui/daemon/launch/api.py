@@ -9,7 +9,8 @@ from xml.etree.ElementTree import ParseError
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ui.daemon import jobs, proof, winddown, workerguard
+from ui.daemon import jobs, proof, winddown
+from sqx.worker import guard as workerguard
 from ui.daemon.advance import preflight as advance
 from ui.daemon.launch import chaincheck, preflight
 from ui.daemon.launch.preflight import Listing

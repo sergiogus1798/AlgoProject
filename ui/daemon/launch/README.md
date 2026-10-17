@@ -54,10 +54,10 @@ the SQX steps it already ran) and that the step's titles are the confirmed ones.
 - **The chain runs the loader's exports itself**, not through `jobs.py`: they belong on the
   conductor lane, which the chain holds until it ends — queued there, they would wait for it.
 - **`sqx-worker.sh start` answers 0 on «already running», `stop` 0 on «STILL RUNNING after 5
-  min».** `run.execute` and `advance/run.advance` call `workerguard.refuse_if_up` before any copy
+  min».** `run.execute` and `advance/run.advance` call `sqx.worker.guard.refuse_if_up` before any copy
   and again right before the start — up, they exit without touching or stopping it — then
-  `workerguard.mark` right after the start (`AlgoData/logs/ui/workers/<role>.json`, the job's
-  PID) and `workerguard.stopped` after the stop: still up, the marker stays and the run fails
+  `sqx.worker.guard.mark` right after the start (`AlgoData/logs/ui/workers/<role>.json`, the job's
+  PID) and `sqx.worker.guard.stopped` after the stop: still up, the marker stays and the run fails
   before any databank is read, so the chain halts.
 - **Cancelling** from «En marcha»: a `launch`/`advance` job gets SIGTERM (`run.graceful`;
   `chain.cancelled`, which also kills the running tests and starts no queued one; advance's own

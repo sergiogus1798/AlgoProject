@@ -24,7 +24,6 @@ ALLOW: set[tuple[str, str]] = {
     ("perf/inputs/workloads.py", "ui.daemon"),
     ("pipeline/autopilot/blind.py", "ui.daemon"),
     ("pipeline/autopilot/call.py", "ui.daemon"),
-    ("pipeline/autopilot/closing.py", "ui.daemon"),
     ("pipeline/autopilot/facts.py", "ui.daemon"),
     ("pipeline/autopilot/judge.py", "ui.daemon"),
     (

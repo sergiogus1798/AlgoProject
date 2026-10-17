@@ -10,7 +10,8 @@ from core.datapaths import project_registry
 from core.paths import MASTER, WORKERS, databank_dir, project_dir
 from sqx.projects import crosstfload, live, registry, stage
 from sqx.projects.configure import BY_TASK, DEFAULT_SEGMENT
-from ui.daemon import progress, workerguard
+from ui.daemon import progress
+from sqx.worker import guard as workerguard
 from ui.daemon.filters import discards
 from ui.daemon.launch.steps import Refusal, unconfigured
 from ui.daemon.workflow.steps import STEPS

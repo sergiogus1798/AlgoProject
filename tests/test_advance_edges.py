@@ -17,7 +17,8 @@ from fastapi.testclient import TestClient  # noqa: E402
 from tests.test_advance import CALLS, P, fakes, tree, write  # noqa: E402
 from sqx.projects import taskcap  # noqa: E402
 from ui.daemon import progress  # noqa: E402
-from ui.daemon.advance import api, preflight, run, sqxlog  # noqa: E402
+from ui.daemon.advance import api, preflight, run  # noqa: E402
+from sqx import log as sqxlog  # noqa: E402
 
 
 def fails(built: dict, **how: object) -> str:
@@ -194,7 +195,7 @@ def test_busy_names_the_lock_holder(root: Path) -> None:
 def test_own_release(root: Path) -> None:
     """The 15-min quiet guard skips a log the window's own job last wrote (owner,
     2026-09-29), and only that: a write after the release is anyone's again."""
-    from ui.daemon import workerguard
+    from sqx.worker import guard as workerguard
 
     workerguard.MARKS = root / "marks"
     assert not workerguard.own_last_write("custodian", time.time()), "no release yet"

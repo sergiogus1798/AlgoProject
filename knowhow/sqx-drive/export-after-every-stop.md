@@ -5,7 +5,7 @@ tag: 🔬  date: 2026-10-01  see: ui/window-advances-workflow, sqx-drive/owner-l
 ---
 # Every worker stop exports the install's stale databanks; the 24 h guard is gone, the lock decides busy now
 `bin/sqx-worker.sh stop` runs `ui.daemon.loader.afterrun --role R`: per databank of the project the
-launcher marked (`workerguard.mark`; no mark → every Test_/Trade_/Research_ project) the
+launcher marked (`sqx.worker.guard.mark`; no mark → every Test_/Trade_/Research_ project) the
 pieces (metrics → trades → harvest; no trades for the 8 MCR databanks), then `afterrun.EXTRA` (MC
 ingest `MCR_All` `<day>-N`, `export_spp`, `export_wfm`). Stale is by content: `.sources.sig` reads
 every XML entry order-free (SQX's resave reshuffles SQStats in settings.xml and the MC results).

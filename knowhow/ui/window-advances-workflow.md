@@ -21,7 +21,7 @@ Refuse, never stop, a worker that is up; the master first. Follow SQX's log from
 - 📓 `progress.run_state` returns `finished=True` for the last start in the day's log; a project
   run earlier today reads finished before this start is even logged. And `progress.log_lines`
   reads only today's `log_YYYY_MM_DD.log`: a run launched before midnight never shows its start
-  in the new file. `ui/daemon/advance/sqxlog.py` reads both days from marked offsets
+  in the new file. `sqx/log.py` reads both days from marked offsets
   (`tests/test_advance_edges.py::test_across_midnight`).
 - 📓 `jobs.cancel` kills the job's tree with SIGKILL (`psutil.kill`): the `finally` that stops
   the worker never runs. A cancelled «Continuar» leaves the worker up; stop it by hand.

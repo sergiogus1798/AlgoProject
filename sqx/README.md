@@ -25,6 +25,10 @@ Rules for anyone (human or agent) editing here: [`CLAUDE.md`](CLAUDE.md). Facts 
 | `inspect/` | Read-only tools: render a project as a Markdown pipeline map, check its health, read instruments and feeds, index `.sqx` files. Safe while SQX is running |
 | `data/` | Runs the GUI's "Update all" data download on the master and reconciles `assets/_policy.yaml` with what SQX now holds |
 | `views/` | The SQX "Export Data View" column set the exports read |
+| `worker/` | `guard.py`: whether a worker is up, and the marker a launcher job leaves while the worker it started runs |
+| `databank/` | `fingerprint.py`: a databank's strategies reduced to one signature, so an export can tell a resave from a change |
+| `daylog.py` | Today's SQX log of an install, as the lines that say which project runs and how far. | imported | log → lines |
+| `log.py` | SQX's own log from the moment of a launch on, across midnight: only the lines written since |
 | `groups/` | Empty directory (no tracked files) |
 
 Each folder with code has its own `README.md` listing its files, commands and inputs/outputs.

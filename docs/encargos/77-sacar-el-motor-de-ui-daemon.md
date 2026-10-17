@@ -4,7 +4,7 @@
 
 | paso | mueve | ficheros (aprox.) | estado | commit |
 |---|---|---|---|---|
-| 1 | `workerguard` → `sqx/worker/guard.py`; `advance/sqxlog` → `sqx/log.py`; `loader/fingerprint` → `sqx/databank/fingerprint.py` | ~13 | pendiente | |
+| 1 | `workerguard` → `sqx/worker/guard.py`; `advance/sqxlog` → `sqx/log.py`; `loader/fingerprint` → `sqx/databank/fingerprint.py`; además `daylog` → `sqx/daylog.py` (lo pedía `sqx/log.py`) | ~13 | hecho 2026-10-17 | (este) |
 | 2 | `jobs` → `core/jobs.py`; `progress`, `tasklog`, `projdisk`, `proof`, `winddown`, `diskmemo` → `sqx/` | ~45 | pendiente | |
 | 3 | `loader/find`, `loader/state`, `advance/preflight` → `sqx/databank/` y `sqx/worker/` | ~50 | pendiente | |
 | 4 | `launch/steps`, `workflow/steps`+`sources` → `sqx/workflow/` | ~30 | pendiente | |
@@ -17,6 +17,8 @@
 | — | `ALLOW` vacío; `ui.daemon` en `MAY_IMPORT` sin excepciones | — | pendiente | |
 
 **Bitácora:** (cada sesión añade una línea: fecha, paso, qué pasó)
+
+- 2026-10-17, paso 1 (algoproject-df): movidos los tres más `daylog`, que `sqx/log.py` necesitaba para no importar `ui.daemon.progress`; fuera la fila `ALLOW` de `pipeline/autopilot/closing.py`, que ya no se usaba.
 
 ## Tu oficio
 

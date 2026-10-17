@@ -23,5 +23,4 @@ nothing of it is read or queued.
 | `api.py` | The routes that load a databank's data when the window selects it. | imported | request → JSON |
 | `extrasdef.py` | The exports an analysis reads that are not loader pieces: which databanks feed each, and the command. | imported by `afterrun.py` | — |
 | `find.py` | Where a databank's files live, which retest pairs with it, and whether SQX is writing it now. | imported | project, databank → paths, facts |
-| `fingerprint.py` | A databank's strategies reduced to one signature, so an export can tell a resave from a change. | imported by `state.py` | .sqx files → hex digest |
 | `state.py` | What of a databank is loaded, what is stale, and the commands that bring it up to date. | imported | project, databank → status, jobs |

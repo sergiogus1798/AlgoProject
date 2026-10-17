@@ -18,7 +18,7 @@ keep the «Starting project» line (`progress.trim`) or it reads «did not start
 strategies to retest», 11:52:47 «Loaded 21 strategies to databank SPP OOS», 11:53:21 sync done.
 The 11:24 run, whose own status triggered the sync, started after it and retested. Earlier, at
 11:44, the same run was stopped 20 min in: `sqxlog.grow` kept the last 20,000 lines and lost
-the start. Fixed in `advance/run.ready`, `progress.trim`, `advance/sqxlog.grow`.
+the start. Fixed in `advance/run.ready`, `progress.trim`, `sqx/log.grow`.
 2026-09-29 15:40: «WFC 1 IS» (500 variants) finished, then SQX logged «Error while running
 project» (NullPointerException in ProjectGlobalLog.addAcceptedStats, two statuses in flight) and
 never wrote «Project finished»; `variants.execute.run` polled 53 min. Now `banks.aborted` stops

@@ -17,8 +17,10 @@ from core import worker
 from ledger import record
 from sqx.curate import apply_verdict
 from sqx.projects import crosstfload, stage, taskcap
-from ui.daemon import progress, workerguard
-from ui.daemon.advance import buildcap, preflight, sqxlog
+from ui.daemon import progress
+from sqx import log as sqxlog
+from sqx.worker import guard as workerguard
+from ui.daemon.advance import buildcap, preflight
 from ui.daemon.filters import discards, ledgerrow
 from ui.daemon.launch import configure
 

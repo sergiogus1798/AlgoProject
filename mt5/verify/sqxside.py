@@ -12,9 +12,9 @@ import pandas as pd
 from core import exportdrv, proc, trades, worker
 from core.paths import ROOT, WORKERS, databank_dir, worker_dir
 from sqx.projects import live, loadwait
-from ui.daemon import workerguard
+from sqx.worker import guard as workerguard
 from ui.daemon.advance import run as advance_run
-from ui.daemon.advance import sqxlog
+from sqx import log as sqxlog
 
 
 def say(pct: int, line: str) -> None:

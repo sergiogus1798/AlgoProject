@@ -26,7 +26,8 @@ from core.phases import phase
 from studies.breakage.mcRetest.inputs.tasks import DATABANK as MCR
 from sqx.projects import live
 from sqx.projects.workflow import CROSSTF
-from ui.daemon import progress, workerguard
+from ui.daemon import progress
+from sqx.worker import guard as workerguard
 from ui.daemon.loader import find, state
 from ui.daemon.loader.extrasdef import EXTRA, SMOKE_SHARE
 
@@ -138,7 +139,7 @@ def piece(argv: list[str]) -> int:
     """Run one loader command (`-m module args…`) in this process; its return code.
 
     One process for the whole export: ~50 interpreters each paid their imports and a cold
-    fingerprint (`fingerprint.SEEN`), which the pieces now share. A piece that raises or exits with
+    fingerprint (`sqx.databank.fingerprint.SEEN`), which the pieces now share. A piece that raises or exits with
     a message is a failure, as its non-zero exit was.
     """
     mod, saved = argv[1], sys.argv

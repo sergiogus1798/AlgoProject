@@ -10,7 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core import worker  # noqa: E402
 from tests.test_advance import P  # noqa: E402
-from ui.daemon import jobs, winddown, workerguard  # noqa: E402
+from ui.daemon import jobs, winddown  # noqa: E402
+from sqx.worker import guard as workerguard  # noqa: E402
 from ui.daemon.launch import chain, run  # noqa: E402
 
 
@@ -22,7 +23,7 @@ def record(job: dict) -> dict:
 def deaf_job(marks: Path, marked: bool) -> dict:
     """A `launch` job deaf to SIGTERM; `marked`: it wrote the marker of a worker it started."""
     mark = (
-        f"from ui.daemon import workerguard\nworkerguard.MARKS = pathlib.Path({str(marks)!r})"
+        f"from sqx.worker import guard as workerguard\nworkerguard.MARKS = pathlib.Path({str(marks)!r})"
         f"\nworkerguard.mark('custodian', {P!r})\n"
         if marked
         else ""

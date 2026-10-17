@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from sqx.projects import live, taskcap
-from ui.daemon import progress
+from sqx import daylog
 
 KEEP = (
     20_000  # lines held; run_state needs the start, the task lines and the last percent
@@ -66,11 +66,11 @@ def grow(
         kept.extend(
             line
             for line in lines
-            if progress.STARTING.search(line)
-            or progress.PROGRESS.search(line)
-            or progress.PERCENT.search(line)
+            if daylog.STARTING.search(line)
+            or daylog.PROGRESS.search(line)
+            or daylog.PERCENT.search(line)
         )
-    kept[:] = progress.trim(kept, KEEP)  # the start line stays, whatever the volume
+    kept[:] = daylog.trim(kept, KEEP)  # the start line stays, whatever the volume
     return kept
 
 

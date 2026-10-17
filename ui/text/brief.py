@@ -3,7 +3,7 @@
 import re
 
 # What SQX being busy with a run looks like in the daemon's refusals (advance/preflight,
-# launch, workerguard, workflow/derive): the port answering, its processes, its log, a
+# launch, sqx/worker/guard, workflow/derive): the port answering, its processes, its log, a
 # launcher still running, a step «en marcha».
 BUSY = (
     "install ocupado",

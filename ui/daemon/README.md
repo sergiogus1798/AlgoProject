@@ -31,7 +31,6 @@ only, each one job on the conductor lane.
 | `assets.py` | What the window needs to draw assets/, and the writes it may make on it. | imported | disk → JSON |
 | `brief.py` | Turn a finished interview into a draft brief on disk and the command that authors it. | imported | answers → files |
 | `coverage.py` | The coverage matrix: what has been tried, where, and what came of it. | imported | catalogue → grid |
-| `daylog.py` | Today's SQX log of an install, as the lines that say which project runs and how far. | imported | log → lines |
 | `diskmemo.py` | What the daemon computed once, kept across restarts: one pickled dict per name in AlgoData/ui/memo/. | imported | dict ↔ AlgoData/ui/memo/ |
 | `gate.py` | The gate every request to the daemon passes: its own Host, no foreign Origin, the session token. | imported by `app.py` | request → 403 · the route |
 | `gateview.py` | A gate report read off disk — its funnel and scorecard, one strategy's paired metrics and curve — for the databank panel's funnel and the archive (`ui.daemon.strategy.archive_view`). | imported | disk → JSON |
@@ -50,7 +49,6 @@ only, each one job on the conductor lane.
 | `templates.py` | The library's routes: the template catalogue, its coverage and writes, the palettes, the chat. | imported | request → JSON |
 | `version.py` | Which code a daemon serves: a fingerprint of `ui/daemon/`, so a window can spot a stale one. | imported | files → 16 hex |
 | `winddown.py` | Cancelling a launcher job: let it stop the worker it started, and stop only that worker. | imported by `jobs.py` | job → worker stopped |
-| `workerguard.py` | Whether a worker is up, and the marker a launcher job leaves while the worker it started runs. | imported by `launch/run.py`, `advance/run.py`, `winddown.py`, `launch/api.py` | install → sign, marker |
 | `writes.py` | The three things the window may change: a template's status, its notes, a run's verdict. | imported | change → row |
 
 Retired by F13 of plan 24 (2026-09-28) with the zones that alone used them: `studyapi.py` (the

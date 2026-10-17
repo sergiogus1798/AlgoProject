@@ -12,7 +12,6 @@ a confirmation. Sequence and evidence: `knowhow/ui/window-advances-workflow.md`.
 | `confirm.py` | The confirmation «Continuar workflow» shows before it deletes anything (encargo 22 §7.2). | imported | preflight → text |
 | `preflight.py` | Whether «Continuar workflow» may touch a project's install now, and every reason it may not. | imported | project, databank → `{ok, reasons, …}` |
 | `run.py` | «Continuar workflow»: copy the discards aside, cut the databank, start the next task and wait. | `python3 -m ui.daemon.advance.run --project P --databank D` (the window queues it) | discards → databank cut, next task run, worker stopped |
-| `sqxlog.py` | SQX's own log from the moment of a launch on, across midnight: only the lines written since. | imported | install → log lines |
 
 ## Traps
 
@@ -30,7 +29,7 @@ a confirmation. Sequence and evidence: `knowhow/ui/window-advances-workflow.md`.
   reads that databank**, and only that task is switched on — for `Results` it is `OOS`, not
   the MC Retest or the SPP, which read it too.
 - **SQX's log is per day.** `progress.log_lines` reads today's file only; a run launched at
-  23:59 would never show its «Starting project» there. `sqxlog` reads both days from offsets
+  23:59 would never show its «Starting project» there. `sqx/log.py` reads both days from offsets
   marked before the launch.
 - **The confirmation counts identities, the cut counts files.** SQX can hold one strategy under
   two names; both go, and the sentence says so when files outnumber identities. Identities are

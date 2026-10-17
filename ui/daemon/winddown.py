@@ -7,7 +7,7 @@ import psutil
 
 from core import worker
 from core.paths import WORKERS
-from ui.daemon import workerguard
+from sqx.worker import guard as workerguard
 
 # Jobs that stop their worker in a `finally`: a cancel sends SIGTERM (their SystemExit) and
 # waits GRACE_S — `sqx-worker.sh stop` waits up to 5 min — before SIGKILL; a worker still up
