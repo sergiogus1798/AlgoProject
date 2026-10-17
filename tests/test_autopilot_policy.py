@@ -44,12 +44,13 @@ def test_missing_is_fail_in_exactly_the_sanity_rules_and_the_z() -> None:
     }
 
 
-def test_steps_8_to_16_declare_oos1() -> None:
-    """R4: no step relies on the judge's default segment."""
+def test_steps_8_to_16_declare_their_segment() -> None:
+    """R4: no step relies on the judge's default segment; 8-14 read oos1 and 16 the build
+    (SPP is measured on the build: #93, owner 2026-10-15)."""
     steps = judge.settings()["steps"]
-    assert {
-        n for n in steps if 8 <= float(n) <= 16 and steps[n].get("segment") != "oos1"
-    } == set()
+    declared = {n: steps[n].get("segment") for n in steps if 8 <= float(n) <= 16}
+    assert declared.pop("16") == "build"
+    assert set(declared.values()) == {"oos1"}
 
 
 def test_the_autopilot_entry_shuts_the_oos2_door(
