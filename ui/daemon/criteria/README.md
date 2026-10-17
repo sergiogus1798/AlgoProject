@@ -21,6 +21,7 @@ Reaches no install and launches nothing.
 | `__init__.py` | The Criterios zone: the pass criteria of every workflow step, read and written. | imported | — |
 | `api.py` | The routes of the Criterios zone: the state, one rule written, and the freeze. | imported by `routers.py` | HTTP → the two above |
 | `read.py` | What the Criterios zone shows: criteria.yaml step by step, the Build filters, the freeze. | imported | `criteria.yaml`, `_study.yaml`, `hechos.parquet`, the history → dict |
-| `write.py` | One rule of criteria.yaml added, changed or deleted from the window, stamped; and the freeze. | imported | a rule → `criteria.yaml`, one history line |
+
+The writer is `pipeline/autopilot/criteria_write.py` (next to the reader of the rules; it also holds `FILES`).
 
 Tests: `tests/test_ui_criteria.py` (on a copy of `criteria.yaml`), `tests/test_autopilot_criteria.py` (the rule shapes).

@@ -11,7 +11,7 @@
 | 5 | `launch/*` y `advance/run`+`buildcap` → `sqx/run/`; `chainplan` se funde en el plan del autopiloto | ~25 | pendiente | |
 | 6 | `runner/where` → `studies/run/where.py` (`table` se queda: importa `ui.daemon.runs` y los cuatro `runner/*` de estudios, que no son hojas) | ~20 | parcial 2026-10-17: `where` hecho, `table` pendiente | (este) |
 | 7 | `mt5bridge/runs` → `mt5/verify/`; fuera los `ui → mt5.*` directos | ~6 | hecho 2026-10-17 (más `display` y `strategy/locate`) | (este) |
-| 8 | `strategy/archive_write` → `core/archive/`; `pipeline.ledger.state.work_dir` → `core`; el escritor de `criteria` | ~10 | pendiente | |
+| 8 | `strategy/archive_write` → `core/archive/`; `pipeline.ledger.state.work_dir` → `core`; el escritor de `criteria` | ~10 | parcial 2026-10-17: `work_dir` y el escritor de `criteria` hechos; `archive_write` parado (importa `sqx` y `ui`) | (este) |
 | 9 | `sqxconfig/{write,studywrite,sections,options}` y `projects/sources` → `sqx/projects/`; el lector de campaña → `pipeline/campaign/` | ~25 | pendiente | |
 | 10 | Sueltos: `engines/variants/excess` (mover `tradelevel`), `core/archive/manifest` → `ledger/`, `ui/desktop/launch` | ~8 | pendiente | |
 | — | `ALLOW` vacío; `ui.daemon` en `MAY_IMPORT` sin excepciones | — | pendiente | |
@@ -24,6 +24,7 @@
 - 2026-10-17, paso 4 (algoproject-df): `launch/steps` se llama `launchsteps.py` en `sqx/workflow/` porque ya hay un `steps.py`; fuera las filas `ALLOW` de `perf/inputs/workloads.py` y `pipeline/autopilot/facts.py`.
 - 2026-10-17, paso 3 (algoproject-df): la memoria `identities` ya no lleva la huella del demonio, sólo la de `core/sqxfile.py`: se recalcula una vez y el pkl viejo se borra. Fuera la fila `ALLOW` de `pipeline/autopilot/judge.py` (quedan 15).
 - 2026-10-17, paso 7 (algoproject-df): `runs` y su hoja `display` a `mt5/verify/`; `strategy/locate` (hoja de `core`+`sqx`) a `sqx/databank/locate.py` porque `runs` lo importaba. Fuera la fila `ALLOW` de `mt5/verify/autopilot.py` (`layering_allow` 13). Quedan `mt5/verify/{run,sqxside}.py` y `mt5/reconcile/sqxside.py` -> `ui.daemon.launch.run`/`advance.run` (paso 5). Los `ui → mt5.*` (`mt5bridge/api.py`, `archive/shelf.py`) no están marcados por `layering.py` (`ui` no está en `MAY_IMPORT`) y no se tocan: son rutas que llaman a la lógica.
+- 2026-10-17, paso 8 (algoproject-df): `work_dir` a `core/datapaths.py` (con `safe` en línea, que sólo usaba él; fuera de `state.py`). `criteria/write` a `pipeline/autopilot/criteria_write.py`, junto a su lector, y con él las hojas `FILES`, `plain` y `sha` que `read.py` ahora importa de allí (`pipeline` no puede importar `ui`); la ruta sigue en `ui/daemon/criteria/api.py`. `criteria.yaml` intacto (sha 7d347e58). **`archive_write` parado:** importa `sqx.databank.find`, `sqx.inspect.feeds` y `ui.daemon.strategy.archive_view`, y `core` sólo puede importar `core`; necesita decidir dónde vive (¿`sqx/databank/`?, y `archive_view` que lo acompañe) antes de moverlo. Sigue la fila `ALLOW` de `core/archive/cli.py` (`layering_allow` 13).
 
 ## Tu oficio
 

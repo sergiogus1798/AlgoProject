@@ -6,6 +6,7 @@ import hashlib
 import shutil
 from pathlib import Path
 
+from core.datapaths import work_dir
 from core.paths import DATA
 from perf.disk import retention
 from pipeline.ledger import state
@@ -126,7 +127,7 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    rows = sweep(state.work_dir(args.project, args.strategy), args.apply)
+    rows = sweep(work_dir(args.project, args.strategy), args.apply)
     for row in rows:
         print(
             f"{'borrado ' if args.apply else 'liberaría'} {row['bytes']:>12,d} B  {row['path']}"

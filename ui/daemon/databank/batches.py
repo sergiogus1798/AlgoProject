@@ -5,8 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import cast
 
-from core.datapaths import variants_dir
-from pipeline.ledger.state import work_dir
+from core.datapaths import variants_dir, work_dir
 from ui.daemon.databank.cells import norm
 from ui.daemon.results import store
 

@@ -6,9 +6,8 @@ from typing import Any
 
 import pyarrow.parquet as pq
 
-from core.datapaths import variants_dir
+from core.datapaths import variants_dir, work_dir
 from ledger import gate
-from pipeline.ledger.state import work_dir
 from studies.run import where
 
 # The one-way door, shut only for an autonomous agent (`ledger.gate.enforced`; owner,

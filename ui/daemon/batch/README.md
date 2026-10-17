@@ -4,7 +4,7 @@ What «Lote» draws: every variant of one mother's batch with its `param_*` valu
 `NetProfit (build)` and `NetProfit (oos1)`. Reads `metrics.parquet` of the batch folder the
 optimisation runner would pick (`studies/run/where.batch`), nothing else.
 
-**Imports from:** `core/datapaths`, `pipeline/ledger/state`, `studies/run/where` ·
+**Imports from:** `core/datapaths`, `studies/run/where` ·
 **Consumed by:** `ui/daemon/routers.py` (`ROUTER`) → `ui/desktop/batchview/`
 
 | file | what it does | run it | in → out |

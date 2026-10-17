@@ -4,7 +4,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ui.daemon.criteria import read, write
+from pipeline.autopilot import criteria_write as write
+from ui.daemon.criteria import read
 
 ROUTER = APIRouter()
 

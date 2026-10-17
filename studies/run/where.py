@@ -8,9 +8,8 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-from core.datapaths import variants_dir
+from core.datapaths import variants_dir, work_dir
 from core.paths import DATA
-from pipeline.ledger.state import work_dir
 from sqx.projects import registry
 
 

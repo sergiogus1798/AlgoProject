@@ -7,7 +7,7 @@ equity (SQX's), the population's funnel, and
 nothing here sends a command to SQX.
 
 **Imports from:** `core.paths`, `core.datapaths`, `core.cfx`, `engines.variants.look`,
-`sqx.projects.stage`, `pipeline.ledger.state`, `ui.daemon.{loader, results, workflow, gateview}`
+`sqx.projects.stage`, `ui.daemon.{loader, results, workflow, gateview}`
 · **Consumed by:** `ui/daemon/routers.py` (`ROUTER`) → `ui/desktop/workspace/`
 
 | file | what it does | run it | in → out |

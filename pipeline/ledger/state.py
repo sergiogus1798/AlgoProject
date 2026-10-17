@@ -5,39 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from core.datapaths import pipeline_dir
 from core.fsio import atomic_write
 
 BRANCH = "pipeline"
 FILE = "state.json"
-
-
-def safe(strategy: str) -> str:
-    """The strategy name as it is spelled inside a path.
-
-    Args:
-        strategy: Name as SQX shows it, e.g. "Strategy 17.9.39".
-
-    Returns:
-        Spaces as underscores and dots as hyphens, the same spelling sppUltra already uses
-        for its brief filenames, so the two spellings agree without either module importing the other.
-    """
-    return strategy.replace(" ", "_").replace(".", "-")
-
-
-def work_dir(project: str, strategy: str) -> Path:
-    """Where one mother strategy's ledger and stage outputs live.
-
-    Args:
-        project: Project name on the master.
-        strategy: Name as SQX shows it.
-
-    Returns:
-        Path under the data root. It holds kilobytes of ledger next to gigabytes of
-        variant data, and outlives the data: the ledger is what makes the deletion
-        auditable instead of a loss.
-    """
-    return pipeline_dir(project, safe(strategy))
 
 
 def now() -> str:

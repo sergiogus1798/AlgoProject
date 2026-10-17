@@ -71,12 +71,28 @@ def vocabulary_snapshot(install: str, day: str) -> Path:
     return DATA / "templates" / "vocabulary" / f"{install}-{day}.json"
 
 
+def work_dir(project: str, strategy: str) -> Path:
+    """Where one mother strategy's ledger and stage outputs live.
+
+    Args:
+        project: Project name on the master.
+        strategy: Name as SQX shows it, e.g. "Strategy 17.9.39"; spaces become underscores
+            and dots hyphens, the spelling sppUltra uses for its brief filenames.
+
+    Returns:
+        Path under the data root. It holds kilobytes of ledger next to gigabytes of
+        variant data, and outlives the data: the ledger is what makes the deletion
+        auditable instead of a loss.
+    """
+    return pipeline_dir(project, strategy.replace(" ", "_").replace(".", "-"))
+
+
 def pipeline_dir(project: str, strategy_slug: str) -> Path:
     """One mother strategy's pipeline ledger and stage outputs.
 
     Args:
         project: Project name on the master.
-        strategy_slug: The strategy name as `pipeline.ledger.state.safe` spells it.
+        strategy_slug: The strategy name as `work_dir` spells it.
 
     Returns:
         Path under the data root. The ledger outlives the data `pipeline.cleanup` sweeps.

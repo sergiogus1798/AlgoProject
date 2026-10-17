@@ -1,7 +1,6 @@
 """What the Criterios zone shows: criteria.yaml step by step, the Build filters, the freeze."""
 
 from typing import Any
-import hashlib
 import json
 
 import pyarrow.parquet as pq
@@ -9,33 +8,15 @@ import yaml
 
 from core import buildfilters
 from core.assetyaml import hint, read
-from core.paths import ROOT
 from core.researchpaths import autopilot_runs
+from pipeline.autopilot.criteria_write import FILES, plain, sha
 from ui.daemon.results.catalogue import STUDIES
 from sqx.workflow.steps import STEPS
 from ui.text.glossary import label
 
-# The file the autopilot judges with and the history of what the window changed in it. A dict
-# so a test points both at copies.
-FILES = {
-    "criteria": ROOT / "pipeline" / "autopilot" / "criteria.yaml",
-    "history": ROOT / "ledger" / "criteria-history.jsonl",
-    "offered": ROOT / "pipeline" / "autopilot" / "offered.yaml",
-}
 WORDS = {"pass": "Aprobado", "fail": "Suspenso"}
 GROUPS = {"all": "Todas", "any": "Alguna"}
 SHOWN = 30  # history rows sent to the window, newest first
-
-
-def plain(node: object) -> Any:
-    """A document read with its comments, as plain dicts, lists and scalars."""
-    return json.loads(json.dumps(node, default=str))
-
-
-def sha(steps: dict) -> str:
-    """What the rules and cuts are, in twelve characters: a freeze records it, so a file edited
-    by hand afterwards shows."""
-    return hashlib.sha256(json.dumps(steps, sort_keys=True).encode()).hexdigest()[:12]
 
 
 def name(fact: str) -> str:

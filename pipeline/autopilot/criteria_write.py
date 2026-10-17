@@ -1,6 +1,7 @@
-"""One rule of criteria.yaml added, changed or deleted from the window, stamped; and the freeze."""
+"""Where criteria.yaml and its history are, and the writer of one rule, stamped, and of the freeze."""
 
 from typing import Any
+import hashlib
 import json
 from datetime import datetime
 
@@ -8,11 +9,30 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from core.assetyaml import read, write
+from core.paths import ROOT
 from pipeline.autopilot import criteria
-from ui.daemon.criteria.read import FILES, plain, sha
+
+# The file the autopilot judges with and the history of what the window changed in it. A dict
+# so a test points both at copies.
+FILES = {
+    "criteria": ROOT / "pipeline" / "autopilot" / "criteria.yaml",
+    "history": ROOT / "ledger" / "criteria-history.jsonl",
+    "offered": ROOT / "pipeline" / "autopilot" / "offered.yaml",
+}
 
 OWNER = "dueño"  # who a write from the window is, in the words the ledger already uses
 HOW = "«>= 0.5»: un comparador (" + " ".join(criteria.OPS) + "), un espacio y un número"
+
+
+def plain(node: object) -> Any:
+    """A document read with its comments, as plain dicts, lists and scalars."""
+    return json.loads(json.dumps(node, default=str))
+
+
+def sha(steps: dict) -> str:
+    """What the rules and cuts are, in twelve characters: a freeze records it, so a file edited
+    by hand afterwards shows."""
+    return hashlib.sha256(json.dumps(steps, sort_keys=True).encode()).hexdigest()[:12]
 
 
 def check(rule: dict) -> None:
