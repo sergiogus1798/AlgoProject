@@ -14,7 +14,7 @@ ONLY_FROM = {"ui": {"tests", "tools"}, "tools": {"tests"}, "tests": set()}
 # one is fixed; the check fails on any pair that is NOT in it, so a new violation cannot join.
 ALLOW: set[tuple[str, str]] = {
     (".claude/skills/dossier-pdf/render.py", "tools"),
-    ("core/archive/cli.py", "ui.daemon"),
+    ("core/archive/cli.py", "ui.daemon"),  # owner 2026-10-17: kept, its archive verb renders the window views
     ("mt5/reconcile/sqxside.py", "ui.daemon"),
     ("mt5/verify/run.py", "ui.daemon"),
     ("mt5/verify/sqxside.py", "ui.daemon"),
