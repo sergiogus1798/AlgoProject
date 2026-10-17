@@ -33,7 +33,8 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 | `level3c.py` | Level 3c of the gate: the strategy against monkeys drawn inside R3's drift window. | imported | oos trades + bars → facts |
 | `levels.py` | The gate's levels in the order they run, and which level produces each fact. | imported | — → `LEVELS`, fact → level |
 | `many.py` | The gate over one harvest: every level in order, and the population read as one result. | imported | harvest → results |
-| `measures.py` | The scorecard's measured columns: numbers every paired strategy gets and no rule judges. | imported | trades + equity + bars → 14 columns |
+| `measures.py` | The scorecard's measured columns: numbers every paired strategy gets and no screen judges. | imported | trades + equity + bars → 14 columns |
+| `monoall.py` | The monkey's z for EVERY strategy of a harvest, not only those the cascade lets reach 3c. | — | — |
 | `one.py` | One strategy through the gate, as the contract's data: where it fell, and every fact of every level. | imported — the window calls it | scorecard row → result |
 | `pairing.py` | Pair two databanks by strategy identity: the build's file and the retest's file of the same strategy. | imported | two indexes → pairs, aliases, unpaired |
 | `redundancy.py` | The soft screen: are these N strategies, or one strategy repeated N times? | imported | equity → groups |

@@ -139,6 +139,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_gate_measures.py` | Known answers for the gate's significance and floating-risk numbers: Lo's t on the daily curve, the trade-level t and its drift-excess twin, and the losses in R. | `python3 tests/test_gate_measures.py` |
 | `test_gate_medoid.py` | Known answers for `redundancy.medoides`: the medoid of each of the largest structure groups. | `python3 -m pytest tests/test_gate_medoid.py` |
 | `test_gate_mono.py` | Known answers of the gate's monkey (level 3c): a draw scores z ~ 0, foresight scores high, a seed replays bit for bit, and every drawn trade pays the declared spread and slippage. | `python3 -m pytest tests/test_gate_mono.py` |
+| `test_gate_monoall.py` | L5 A: monoall hands EVERY harvested strategy to levels 1a and 3c, not the cascade's survivors. | — |
 | `test_gate_onepass.py` | Known answers for level 1b's one-pass facts: R5c, R8, R9b. | `python3 tests/test_gate_onepass.py` |
 | `test_gate_pairing.py` | Known answers for the gate's pairing: by identity, never by file name. | `python3 -m pytest tests/test_gate_pairing.py` |
 | `test_gate_r3.py` | R3 of the gate (level 1a): a trader with no timing has no excess under the drift term that fits how it trades, a window under a quarter is refused, and the skewness-kurtosis t reduces to its closed form. | `python3 tests/test_gate_r3.py` |
