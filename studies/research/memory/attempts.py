@@ -110,17 +110,22 @@ def one(
     stages = dict(pilot["stages"])
     if not stages and runs.get("strategies_built"):
         stages["built"] = int(runs["strategies_built"])
+    # a Simple Strategy has no library template: its side is the registry's `simple:<side>` and its
+    # family the registry's `family`, spelled as an archetype (`breakout`, `trendFollowing`)
+    archetype = info.get("archetype", "") or reg.get("family", "")
+    path = reg.get("template", "")
+    simple_side = path.removeprefix("simple:") if path.startswith("simple:") else ""
     row = {c: "" for c in COLUMNS}
     row |= {
         "project": project,
         "template": name,
         "archetype": info.get("archetype", ""),
-        "family": CONFIG["archetype_family"].get(info.get("archetype", ""), ""),
+        "family": CONFIG["archetype_family"].get(archetype, ""),
         "symbol": symbol,
         "timeframe": reg.get("timeframe")
         or runs.get("timeframe")
         or (parts[2] if parts else ""),
-        "direction": DIRECTION.get(info.get("shape"), ""),
+        "direction": DIRECTION.get(info.get("shape"), "") or simple_side,
         "asset_class": CONFIG["asset_class"].get(symbol, ""),
         "idea": name if name in ideas else "",
         "date": (reg.get("created") or runs.get("date") or pilot["first"])[:10],
@@ -153,7 +158,7 @@ def table(ideas: AbstractSet = frozenset()) -> list[dict]:
         ideas: Names of the ideas in the ideas index; a template of the same name links to it.
 
     Returns:
-        One dict per project that has a library template (registry) or a runs.csv row or an
+        One dict per project that has a library template or a Simple Strategy family (registry) or a runs.csv row or an
         autopilot folder. Projects of other kinds (MT5 verification, hand-made) carry no
         template and are left out.
     """
@@ -163,6 +168,10 @@ def table(ideas: AbstractSet = frozenset()) -> list[dict]:
         sources.templates(),
     )
     folders = {p.name for p in sources.autopilot_runs().glob("*") if p.is_dir()}
-    names = {n for n, r in reg.items() if sources.template_of(r)} | set(runs) | folders
+    names = (
+        {n for n, r in reg.items() if sources.template_of(r) or r.get("family")}
+        | set(runs)
+        | folders
+    )
     rows = [one(n, reg.get(n, {}), runs.get(n, {}), tpl, ideas) for n in names]
     return sorted(rows, key=lambda r: (r["date"], r["project"]))

@@ -101,3 +101,18 @@ the register, or appended twice by two branches, raises on read. `ledger.report
 --check-thresholds` says of each row whether its module reads it from here (`ledger`) or still
 keeps a copy (`copia`), and fails on a copy that diverges; `tests/test_thresholds.py` swaps every
 value for a sentinel and fails if a migrated module does not see it.
+
+## Servers: shards and the union (D27, phase 2)
+
+- **Layout.** Each server appends only to its own shard, `<file>.<server>.<ext>` beside the legacy
+  file (`record`, `tried`, `cells.note`, `campaign.ledger.mark`); a jsonl row carries a nonce `id` and
+  its `host`. `projects.csv` is rewritten whole, per shard; its reader takes the highest `screened`
+  per project of the union.
+- **Reading.** `shards.read_all(path)` is the union of the legacy file, this machine's shard and
+  everything under `AlgoData/ledger/_remote/<server>/`: a row counts once by `id` (legacy rows without
+  one, once by content), each file keeps its append order, files are merged by time only when every
+  row has one. `study.read`, `studies()`, `tried.read`, `cells` and the campaign read through it.
+- **Pulling.** `bin/ledger-pull.sh <server>` rsyncs the other server's files down (read-only there);
+  `bin/remote.sh <server> collect` does it first.
+- **Name of this server.** `server:` in `config/machine.yaml`; absent, `leaseWeb` when the file lists
+  `mirrors:` and `gorilla` when it does not.

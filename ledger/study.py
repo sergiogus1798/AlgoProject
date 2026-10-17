@@ -1,12 +1,12 @@
 """What a study is, and where its ledger lives."""
 
-import json
 import re
 from pathlib import Path
 
 import pandas as pd
 
 from core.paths import ledger_file
+from ledger import shards
 
 SAFE = re.compile(r"[^A-Za-z0-9]+")
 
@@ -66,25 +66,19 @@ def path(study: str) -> Path:
 
 
 def read(study: str) -> pd.DataFrame:
-    """Every search ever recorded for one study, oldest first.
+    """Every search ever recorded for one study, oldest first, whichever server ran it
+    (`shards.read_all`: this machine's files and the ones `bin/ledger-pull.sh` brought).
 
     Args:
         study: What `study_id` returned.
 
     Returns:
-        One row per search, in the order they were appended. An empty frame with the
+        One row per search, by time. An empty frame with the
         contract's columns when the study has no ledger yet -- a study nobody has searched
         is not an error, it is a study about to start.
     """
-    file = path(study)
-    if not file.exists():
-        return pd.DataFrame(columns=pd.Index(COLUMNS))
-    rows = [
-        json.loads(line)
-        for line in file.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
-    return pd.DataFrame(rows)
+    rows = shards.read_all(path(study))
+    return pd.DataFrame(rows) if rows else pd.DataFrame(columns=pd.Index(COLUMNS))
 
 
 def studies() -> list[str]:
@@ -93,5 +87,4 @@ def studies() -> list[str]:
     Returns:
         Their ids, sorted.
     """
-    folder = path("x").parent
-    return sorted(f.stem for f in folder.glob("*.jsonl")) if folder.exists() else []
+    return shards.stems(path("x").parent)

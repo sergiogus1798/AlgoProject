@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import pandas as pd
 
-from ledger import gate, spend
+from ledger import gate, shards, spend
 from ledger import study as studymod
 from sqx.workflow.records import Door, Oos2Gauge
 from studies.run import where
@@ -27,7 +27,10 @@ def studies_of(project: str) -> list[str]:
         s
         for s in studymod.studies()
         if s.endswith(f"_{project}")
-        or project in studymod.path(s).read_text(encoding="utf-8")
+        or any(
+            project in f.read_text(encoding="utf-8")
+            for f in shards.files(studymod.path(s))
+        )
     ]
 
 

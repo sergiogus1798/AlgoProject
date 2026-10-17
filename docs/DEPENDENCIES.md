@@ -160,7 +160,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ledger/gate.py` | 200 | The one-way door: who may look at a reserved segment, and when 17-19 may be read. | core | pandas, yaml |
 | `ledger/record.py` | 145 | Contract L1: one appended line per search that looked at data and reduced a population. | ledger | numpy, pandas |
 | `ledger/report.py` | 176 | The study's whole search, read back: the funnel, what was spent, and what it costs the Sharpe. | core, ledger, studies | numpy, pandas |
-| `ledger/shards.py` | 143 | Ledger shards (D27, option A): one writer per file, the union read back deduplicated. | core | yaml |
+| `ledger/shards.py` | 187 | Ledger shards (D27, option A): one writer per file, the union read back deduplicated. | core | yaml |
 | `ledger/spend.py` | 63 | The map of spent data: which stretches of history a search has already looked at. | core | pandas |
 | `ledger/steprows.py` | 155 | The rows a finished build (step 6) and a WFM reading (step 19) write themselves, live. | core, ledger, sqx | — |
 | `ledger/study.py` | 90 | What a study is, and where its ledger lives. | core, ledger | pandas |
@@ -1105,7 +1105,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_ledger_cells.py` | 176 | Known-answer tests: the per-cell counter and accumulated(extra=None). | ledger | pandas |
 | `tests/test_ledger_gate_195.py` | 23 | Step 19.5 (the single oos2 reading) passes the door as WFM's 19; any other unlisted step does not. | core, ledger | pytest |
 | `tests/test_ledger_ideas.py` | 109 | Known answer: the hypotheses the research memory counts raise the ledger's N and lower the DSR. | ledger, studies | numpy, pandas |
-| `tests/test_ledger_shards.py` | 119 | D27 phase 1: the union of shards counts a common row once, legacy rows dedup against the same | ledger, studies | — |
+| `tests/test_ledger_shards.py` | 133 | D27 phase 1: the union of shards counts a common row once, legacy rows dedup against the same | ledger, studies | — |
 | `tests/test_ledger_steprows.py` | 82 | A recorded build leaves a step-6 row, and the report prints the study's N and the global N. | ledger | pytest |
 | `tests/test_ledger_tried.py` | 85 | L2: a sweep leaves one line per value, a rerun with another config joins the first, and N moves. | ledger | pandas, pytest |
 | `tests/test_literature.py` | 433 | Literature scout: the anchors, the validator's refusals, the two dedupes, the build overlap, the | studies | — |
@@ -1512,7 +1512,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/templates.py` | 207 | The library's routes: the template catalogue, its coverage and writes, the palettes, the chat. | ui | fastapi, pydantic |
 | `ui/daemon/workflow/api.py` | 151 | The workflow rail's routes: every step of one project with its tests and tab, and its run buttons. | sqx, studies, ui | fastapi, pydantic |
 | `ui/daemon/workflow/derive.py` | 323 | Each step's state, funnel and Spanish why, from what the disk and the ledger hold. | core, sqx | — |
-| `ui/daemon/workflow/ledgerview.py` | 213 | The ledger as the rail reads it: which studies are this project's, the oos2 budget, the blind door. | ledger, sqx, studies, ui | pandas |
+| `ui/daemon/workflow/ledgerview.py` | 215 | The ledger as the rail reads it: which studies are this project's, the oos2 budget, the blind door. | ledger, sqx, studies, ui | pandas |
 | `ui/daemon/workflow/needs.py` | 91 | Which earlier steps each step needs first: the producer of its input, the judge of that input, the row before. | sqx, ui | — |
 | `ui/daemon/workflow/run.py` | 267 | The rail's run buttons: ticked tests into the runner's jobs, and the backfill of the blind steps' rows. | core, sqx, studies, ui | pandas |
 | `ui/daemon/workflow/tests.py` | 179 | The tests of each step: which studies, their state on this project, their configuration in one line. | sqx, studies, ui | — |

@@ -3,7 +3,7 @@
 from typing import Any
 import pandas as pd
 
-from ledger import gate, record, spend, study as studymod, trials
+from ledger import gate, record, shards, spend, study as studymod, trials
 
 
 def plain(frame: pd.DataFrame) -> list[dict]:
@@ -21,7 +21,7 @@ def plain(frame: pd.DataFrame) -> list[dict]:
 def newest() -> str | None:
     """The study whose ledger was written last, or None when there is none."""
     ids = studymod.studies()
-    return max(ids, key=lambda s: studymod.path(s).stat().st_mtime) if ids else None
+    return max(ids, key=lambda s: shards.mtime(studymod.path(s))) if ids else None
 
 
 def spent_block(frame: pd.DataFrame) -> dict[str, Any]:

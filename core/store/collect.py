@@ -1,14 +1,16 @@
 """Bring a gorilla project's survivors to leaseWeb for step 26 (owner, 2026-10-15, D-1 = A).
 
 Only what step 26 needs, never the whole store: each survivor's folder (its `strategy.sqx` and
-the zips beside it), the ledger rows of its asset × timeframe, and what `core.archive` reads of the
+the zips beside it), and what `core.archive` reads of the
 project: its `registry.csv` row (appended, install marked `_gorilla`, only if absent) and its
 `reports/<P>/` folder and its `harvest/<P>/` (the cosecha the archive freezes as `harvest/`; gorilla keeps
 no archive of its own, `_aparte` left out). All come from `source` alone, so `listing` is unchanged. Every name lands with the
 `_gorilla` suffix (rule 12) and nothing local is overwritten.
 
+The search ledger is not copied here: `bin/ledger-pull.sh gorilla` brings it (D27).
+
 Everything runs here and only reads gorilla over the ssh alias (rsync): `fetch_plans` copies the
-manifests and ledger names, `listing` turns them into a plan, `collect` pulls what the plan names.
+manifests, `listing` turns them into a plan, `collect` pulls what the plan names.
 `portfolio.common.construct.adopt` is the command; it archives what this lands.
 """
 
@@ -36,27 +38,21 @@ os.environ.setdefault(
 )
 RSYNC = ("rsync", "-a", "--timeout=50")
 SUFFIX = "_gorilla"
-LEDGER = "ledger"
 
 
 def listing(project: str, data: Path = DATA) -> dict[str, Any]:
-    """What gorilla holds for one project: its survivors' folders and the ledger files of their cells."""
+    """What gorilla holds for one project: its survivors' folders."""
     store = data / "store"
-    found, ledgers = [], set()
+    found = []
     for manifest in store.glob("*/*/manifest.json"):
         origin = json.loads(manifest.read_text(encoding="utf-8")).get("origin", {})
         if origin.get("project") != project:
             continue
         found.append(f"{manifest.parent.parent.name}/{manifest.parent.name}")
-        sym, tf = origin["symbol"], origin["timeframe"]
-        for f in (data / LEDGER).glob(f"{sym}_{tf}*.jsonl"):
-            if f.name.startswith(f"{sym}_{tf}.") or f.name.startswith(f"{sym}_{tf}_"):
-                ledgers.add(f.name)
     return {
         "data": str(data),
         "project": project,
         "folders": sorted(found),
-        "ledgers": sorted(ledgers),
     }
 
 
@@ -124,7 +120,7 @@ def _registry(project: str, source: str, dest: Path, dry: bool) -> str:
 def collect(
     plan: dict[str, Any], source: str, dest: Path | None = None, dry: bool = False
 ) -> list[str]:
-    """Pull the plan's folders and ledger rows; returns one line per item.
+    """Pull the plan's folders; returns one line per item.
 
     Args:
         plan: `listing`'s JSON.
@@ -175,35 +171,6 @@ def collect(
     out.append(
         f"{'traería  ' if dry else 'traídos  '} reports/ y harvest/ de {plan['project']}"
     )
-    for name in plan["ledgers"]:
-        tmp = dest / "store" / f".collect-{os.getpid()}-{name}"
-        mine = dest / LEDGER / (Path(name).stem + SUFFIX + ".jsonl")
-        have = (
-            set(mine.read_text(encoding="utf-8").splitlines())
-            if mine.exists()
-            else set()
-        )
-        if dry:
-            out.append(f"traería   ledger {name} -> ledger/{mine.name}")
-            continue
-        try:
-            proc.run(
-                [*RSYNC, f"{source}{LEDGER}/{name}", str(tmp)],
-                check=True,
-                capture_output=True,
-                timeout=600,
-            )
-            new = [
-                r
-                for r in tmp.read_text(encoding="utf-8").splitlines()
-                if r and r not in have
-            ]
-        finally:
-            tmp.unlink(missing_ok=True)
-        mine.parent.mkdir(parents=True, exist_ok=True)
-        with mine.open("a", encoding="utf-8") as fh:
-            fh.writelines(r + "\n" for r in new)
-        out.append(f"ledger    {mine.name}: {len(new)} filas nuevas")
     return out
 
 
@@ -224,8 +191,6 @@ def fetch_plans(
         "store/*/",
         "store/*/*/",
         "store/*/*/manifest.json",
-        "ledger/",
-        "ledger/*.jsonl",
     ):
         cmd += ["--include", rule]
     r = proc.run(

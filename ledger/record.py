@@ -1,13 +1,12 @@
 """Contract L1: one appended line per search that looked at data and reduced a population."""
 
-import json
 from typing import Any
 from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
 
-from ledger import gate, study as studymod
+from ledger import gate, shards, study as studymod
 
 REQUIRED = (
     "step",
@@ -101,10 +100,10 @@ def append(study: str, row: dict[str, Any]) -> dict[str, Any]:
         half a record. **Nothing here rewrites or deletes a line.** A ledger that can be
         edited after the fact answers a different question from the one it was built for.
     """
-    file = studymod.path(study)
+    file = shards.shard_path(studymod.path(study))  # one writer per file (D27)
     file.parent.mkdir(parents=True, exist_ok=True)
     with file.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(row, default=str) + "\n")
+        handle.write(shards.stamp(row) + "\n")
     return row
 
 

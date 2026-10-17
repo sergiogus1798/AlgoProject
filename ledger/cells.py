@@ -23,7 +23,7 @@ from core.datapaths import campaign_dir
 from core.paths import DATA, ROOT
 from core.fsio import atomic_write
 from core.store.write import locked
-from ledger import study as studymod
+from ledger import shards, study as studymod
 from studies.research.memory import sources
 
 FOLDER = DATA / "ledger" / "cells"
@@ -84,18 +84,25 @@ def built() -> dict[str, int]:
 
 
 def _judged() -> dict[str, dict]:
-    """step-8 judgements by project."""
-    return {r["project"]: r for r in sources.read_csv(PROJECTS)}
+    """step-8 judgements by project: per project the highest `screened` of every server's table
+    (it never decreases, so the highest is the newest)."""
+    out: dict[str, dict] = {}
+    for r in shards.read_all(PROJECTS):
+        if int(r["screened"] or 0) >= int(
+            out.get(r["project"], {}).get("screened") or 0
+        ):
+            out[r["project"]] = r
+    return out
 
 
 def _save(rows: dict[str, dict]) -> None:
-    """Write `projects.csv`."""
+    """Write this server's `projects.csv` shard: whole, atomic, only the rows it holds."""
     buf = io.StringIO(newline="")
     w = csv.DictWriter(buf, FIELDS)
     w.writeheader()
     w.writerows(rows.values())
     atomic_write(
-        PROJECTS, buf.getvalue().encode(), durable=True
+        shards.shard_path(PROJECTS), buf.getvalue().encode(), durable=True
     )  # a reader never sees it half-written
 
 
@@ -109,13 +116,14 @@ def note(project: str, screened: int) -> bool:
         which signs no second ledger row.
     """
     with locked(FOLDER):  # read-change-write: two processes at once lost an update
-        rows = _judged()
-        before = int(rows.get(project, {}).get("screened") or 0)
-        _save(rows | {project: {"project": project, "screened": max(before, screened)}})
+        before = int(_judged().get(project, {}).get("screened") or 0)
+        mine = {r["project"]: r for r in sources.read_csv(shards.shard_path(PROJECTS))}
+        _save(mine | {project: {"project": project, "screened": max(before, screened)}})
+        judgements = shards.shard_path(JUDGEMENTS)
         new = (
-            not JUDGEMENTS.exists()
+            not judgements.exists()
         )  # the same sha256 `judge.ledger_row` signs its ledger row with
-        with JUDGEMENTS.open("a", newline="", encoding="utf-8") as f:
+        with judgements.open("a", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             if new:
                 w.writerow(("project", "date", "sha256"))
@@ -165,7 +173,7 @@ def _edits() -> dict[str, set]:
         return {}
     sealed = json.loads(SEAL.read_text(encoding="utf-8"))
     out: dict[str, set] = defaultdict(set)
-    for r in sources.read_csv(JUDGEMENTS):
+    for r in shards.read_all(JUDGEMENTS):
         if r["date"] > sealed["date"] and r["sha256"] != sealed["sha256"]:
             out[r["project"]].add(r["sha256"])
     return out
@@ -341,14 +349,10 @@ def ask(
         projects[r.get("kind", "")].append(
             n + (" (retirado)" if r.get("retired") == "yes" else "")
         )
-    camp_file = campaign_dir() / "ledger.jsonl"
     latest: dict[
         str, dict
     ] = {}  # a cell's lines merged oldest to newest, as the campaign does
-    for line in (
-        camp_file.read_text(encoding="utf-8").splitlines() if camp_file.exists() else []
-    ):
-        c = json.loads(line)
+    for c in shards.read_all(campaign_dir() / "ledger.jsonl"):
         k = "|".join(
             str(c.get(f)) for f in ("template", "symbol", "timeframe", "direction")
         )

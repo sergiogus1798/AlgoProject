@@ -10,13 +10,12 @@ from core.store import collect
 
 
 def plant(data: Path, ident: str = "1530c225") -> None:
-    """One survivor folder and ledger files in a store standing for gorilla."""
+    """One survivor folder in a store standing for gorilla."""
     folder = data / "store" / "DAX40_H1_" / f"Strategy 1.2.3 {ident}"
     folder.mkdir(parents=True)
     (folder / "strategy.sqx").write_bytes(b"sqx")
     origin: dict[str, str] = {"project": "Test_A", "symbol": "DAX40", "timeframe": "H1"}
     (folder / "manifest.json").write_text(json.dumps({"origin": origin}))
-    (data / "ledger").mkdir()
     (data / "projects").mkdir()
     (data / "projects" / "registry.csv").write_text(
         "name,install,symbol\r\nTest_A,SQX_w2,DAX40\r\n", newline=""
@@ -28,11 +27,6 @@ def plant(data: Path, ident: str = "1530c225") -> None:
             "t"
         )
     (data / "reports" / "Test_A" / "r.csv").write_text("a\n")
-    (data / "ledger" / "DAX40_H1_simple_long.jsonl").write_text('{"a": 1}\n{"a": 2}\n')
-    (data / "ledger" / "DAX40_H1_other_P.jsonl").write_text(
-        '{"x": 1}\n'
-    )  # not this cell
-    (data / "ledger" / "DAX40_M30.jsonl").write_text('{"x": 2}\n')  # other timeframe
 
 
 def test_collect_lands_suffixed_and_never_overwrites(tmp_path: Path) -> None:
@@ -40,7 +34,6 @@ def test_collect_lands_suffixed_and_never_overwrites(tmp_path: Path) -> None:
     gor, here = tmp_path / "gorilla", tmp_path / "here"
     plant(gor)
     plan = collect.listing("Test_A", gor)
-    assert plan["ledgers"] == ["DAX40_H1_other_P.jsonl", "DAX40_H1_simple_long.jsonl"]
     assert collect.listing("Test_B", gor)["folders"] == []
 
     dry = collect.collect(plan, f"{gor}/", here, dry=True)
@@ -49,14 +42,12 @@ def test_collect_lands_suffixed_and_never_overwrites(tmp_path: Path) -> None:
     out = collect.collect(plan, f"{gor}/", here)
     got = here / "store" / "DAX40_H1__gorilla" / "Strategy 1.2.3_gorilla 1530c225"
     assert (got / "strategy.sqx").read_bytes() == b"sqx"
-    assert (here / "ledger" / "DAX40_H1_simple_long_gorilla.jsonl").read_text().count(
-        "\n"
-    ) == 2
+    assert not (here / "ledger").exists()  # the ledger comes by bin/ledger-pull.sh
 
     (got / "strategy.sqx").write_bytes(b"edited")  # a second collect leaves it alone
     again = collect.collect(plan, f"{gor}/", here)
     assert (got / "strategy.sqx").read_bytes() == b"edited"
-    assert again[0].startswith("existe") and "0 filas nuevas" in again[-1]
+    assert again[0].startswith("existe")
     assert out[0].startswith("traída")
 
 

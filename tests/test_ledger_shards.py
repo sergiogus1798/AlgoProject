@@ -68,7 +68,66 @@ def test_csv() -> None:
     assert [x["project"] for x in got] == ["P", "Q"], got
 
 
+def test_outside_data_and_empty_csv() -> None:
+    """A ledger path outside the data root works; a zero-byte pulled CSV is skipped."""
+    out = TMP.parent / f"{TMP.name}_out" / "a.jsonl"
+    put(out, [{"ts": "2026-10-01", "n": 1}])
+    assert [r["n"] for r in shards.read_all(out)] == [1]
+    f = DATA / "ledger" / "cells" / "empty.csv"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text("project,date\nP,2026-10-01\n", encoding="utf-8")
+    z = shards.REMOTE / "gorilla" / "ledger" / "cells" / "empty.csv"
+    z.parent.mkdir(parents=True, exist_ok=True)
+    z.write_bytes(b"")
+    assert [r["project"] for r in shards.read_all(f)] == ["P"]
+
+
+def test_phase2_write_and_count() -> None:
+    """append writes this server's shard with host and id; study.read and studies() count a row that
+    only lives under _remote/gorilla; the board's attempts count a Simple Strategy of the registry."""
+    from ledger import record, study
+
+    real = study.path
+    study.path = lambda sid: DATA / "ledger" / f"{sid}.jsonl"
+    try:
+        row = {"ts": "2026-10-05T00:00:00+00:00", "step": 8, "n_in": 10, "n_out": 2}
+        record.append("Z_H1_s", row)
+        mine = shards.shard_path(DATA / "ledger" / "Z_H1_s.jsonl")
+        written = json.loads(mine.read_text().splitlines()[0])
+        assert written["host"] == shards.server() and written["id"]
+        put(
+            shards.REMOTE / "gorilla" / "ledger" / "Z_H1_s.jsonl",
+            [{"ts": "2026-10-06T00:00:00+00:00", "step": 6, "n_in": 5, "n_out": 5}],
+        )
+        put(shards.REMOTE / "gorilla" / "ledger" / "G_M15_t.gorilla.jsonl", [row])
+        record.append("Z_H1_s", row)  # a genuine identical search stays a second row
+        assert len(study.read("Z_H1_s")) == 3  # two of this server's + gorilla's
+        assert {"Z_H1_s", "G_M15_t"} <= set(study.studies())  # a study only gorilla ran
+        assert not any("." in x for x in study.studies())
+    finally:
+        study.path = real
+    from studies.research.memory import attempts
+
+    reg = {
+        "symbol": "GBPJPY",
+        "timeframe": "H1",
+        "template": "simple:long",
+        "family": "momentum",
+    }
+    got = attempts.one(
+        "Trade_GBPJPY_H1_momentumL_gorilla", reg, {}, {}, frozenset(), TMP
+    )
+    assert (got["symbol"], got["timeframe"], got["direction"], got["family"]) == (
+        "GBPJPY",
+        "H1",
+        "long",
+        "momentum",
+    )
+
+
 if __name__ == "__main__":
     test_union()
     test_csv()
+    test_outside_data_and_empty_csv()
+    test_phase2_write_and_count()
     print("ok")

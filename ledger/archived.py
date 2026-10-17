@@ -2,8 +2,7 @@
 
 from typing import Any, TypedDict
 
-from core.archive.manifest import sha256
-from ledger import spend, study, trials
+from ledger import shards, spend, study, trials
 
 
 class Ledger(TypedDict):
@@ -26,16 +25,15 @@ def ledger(symbol: str, timeframe: str, family: str) -> Ledger:
 
     Returns:
         `study`, `searches` (ledger rows), `trials` (`trials.accumulated`: n, sigma, mean,
-        unit), `segments` (`spend.virgin`: reads per segment) and the ledger file's sha256,
+        unit), `segments` (`spend.virgin`: reads per segment) and the sha256 of the ledger's row ids (`shards.digest`),
         None when the study has no ledger yet — which then counts nothing.
     """
     sid = study.study_id(symbol, timeframe, family)
     frame = study.read(sid)
-    file = study.path(sid)
     return {
         "study": sid,
         "searches": len(frame),
         "trials": trials.accumulated(frame),
         "segments": spend.virgin(frame, symbol),
-        "sha256": sha256(file) if file.exists() else None,
+        "sha256": shards.digest(study.path(sid)),
     }

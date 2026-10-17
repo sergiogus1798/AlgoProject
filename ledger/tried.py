@@ -2,7 +2,6 @@
 """Contract L2: what a sweep tried, not only what it chose -- one line per value tested."""
 
 import argparse
-import json
 import uuid
 from datetime import datetime, timezone
 
@@ -13,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from core.store.write import locked
-from ledger import study as studymod
+from ledger import shards, study as studymod
 from ledger.trials import SHARPE_UNITS
 
 KINDS = ("parameter", "threshold", "config", "template", "block")
@@ -49,16 +48,7 @@ def path(study: str) -> Path:
 
 def read(study: str) -> pd.DataFrame:
     """Every test ever recorded for one study, oldest first; empty with the contract's columns."""
-    file = path(study)
-    rows = (
-        [
-            json.loads(x)
-            for x in file.read_text(encoding="utf-8").splitlines()
-            if x.strip()
-        ]
-        if file.exists()
-        else []
-    )
+    rows = shards.read_all(path(study))
     return (
         pd.DataFrame(rows, columns=pd.Index(COLUMNS))
         if not rows
@@ -68,10 +58,10 @@ def read(study: str) -> pd.DataFrame:
 
 def _append(study: str, rows: list[dict]) -> None:
     """Append the rows in one write, so two sessions never interleave half a sweep. Never rewrites."""
-    file = path(study)
+    file = shards.shard_path(path(study))  # one writer per file (D27)
     file.parent.mkdir(parents=True, exist_ok=True)
     with file.open("a", encoding="utf-8") as handle:
-        handle.write("".join(json.dumps(r, default=str) + "\n" for r in rows))
+        handle.write("".join(shards.stamp(r) + "\n" for r in rows))
 
 
 def _stamp(study: str, **row: object) -> dict[str, Any]:

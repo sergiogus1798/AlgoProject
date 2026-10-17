@@ -1,10 +1,10 @@
 """The campaign's ledger: every cell ever queued, one JSON line per change of state, never rewritten."""
 
-import json
 from datetime import datetime
 from typing import Any
 
 from core.datapaths import campaign_dir
+from ledger import shards
 
 KEY = ("template", "symbol", "timeframe", "direction")
 OPEN = (
@@ -20,10 +20,8 @@ def key(cell: dict) -> str:
 
 def cells() -> dict[str, dict]:
     """Every cell at its latest state, keyed by `key`, in the order they were queued."""
-    file = campaign_dir() / "ledger.jsonl"
     out: dict[str, dict] = {}
-    for line in file.read_text(encoding="utf-8").splitlines() if file.exists() else []:
-        row = json.loads(line)
+    for row in shards.read_all(campaign_dir() / "ledger.jsonl"):
         out[key(row)] = {**out.get(key(row), {}), **row}
     return out
 
@@ -45,10 +43,12 @@ def mark(cell: dict, state: str, **facts: object) -> dict[str, Any]:
         "state": state,
         "at": datetime.now().isoformat(timespec="seconds"),
     }
-    file = campaign_dir() / "ledger.jsonl"
+    file = shards.shard_path(
+        campaign_dir() / "ledger.jsonl"
+    )  # one writer per file (D27)
     file.parent.mkdir(parents=True, exist_ok=True)
     with file.open("a", encoding="utf-8") as out:
-        out.write(json.dumps(row, ensure_ascii=False) + "\n")
+        out.write(shards.stamp(row) + "\n")
     return row
 
 
