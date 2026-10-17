@@ -146,4 +146,4 @@ MIRRORS  # core/paths.py
 PRESERVES  # engines/resample/draws.py
 PAYS  # studies/research/marketProfile/favourable.py
 bucket  # ui/daemon/data/catalogue.py
-HISTORY_FALLBACK_YEARS  # ui/daemon/mt5bridge/runs.py
+HISTORY_FALLBACK_YEARS  # mt5/verify/runs.py

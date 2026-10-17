@@ -5,10 +5,11 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from sqx.databank import locate
 from studies.run import where
 from ui.daemon.runs import guess_asset
 from ui.daemon.strategy import archive_write as write
-from ui.daemon.strategy import archived, costcurve, locate, meta, stats
+from ui.daemon.strategy import archived, costcurve, meta, stats
 from ui.daemon.tearsheet import harvest
 
 ROUTER = APIRouter()

@@ -17,12 +17,14 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 |---|---|---|---|
 | `autopilot.py` | Step 26 as an autopilot action: the window's preflight over a list of finalists, one check each, the pool filled. | imported by `pipeline.autopilot` | finalists + the owner's dates, model, firms → pool rows, `out/verificados.csv`, `out/mt5verify.log`, one summary line |
 | `conditions.py` | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | imported | account + symbol → `sqx_settings`-shaped costs |
+| `display.py` | How a stored Verificar result reads in the window: capitals, percentages and one line per firm. | imported by `runs.result` | dict → dict |
 | `firms.py` | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | imported | asset → firms usable, or why not |
 | `judge.py` | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | imported | trade lists + costs → verdict, tables, chart |
 | `mt5side.py` | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | imported | `.mq5` → trades per firm |
 | `pool.py` | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | `python3 -m mt5.verify.pool [--rebuild]` | `AlgoData/mt5/verify/<run>/` → `AlgoData/pool/pool.sqlite` |
 | `report.py` | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | imported | summaries + tabs → the two files |
 | `run.py` | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | `python3 -m mt5.verify.run --strategy <sqx> --from YYYY-MM-DD --to YYYY-MM-DD --model ohlc_m1 [--firms ftmo,hantec] [--set k=v]` | a `.sqx` → a verdict per firm |
+| `runs.py` | What MT5 Bridge › Verificar reads and checks: past checks, the strategy's file, and whether one may start now. | imported by `ui/daemon/mt5bridge/api.py`, `autopilot.py` | disk → JSON |
 | `sidebyside.py` | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | imported | `firm_result`'s pairs → one table block |
 | `sizing.py` | The fixed-risk mode's own pieces of the judge (encargo 61): the real-loss cap and the no-stop verdict. | — | — |
 | `sqxside.py` | The SQX half of a check: a Test_ project on the conductor, one retest per firm, the EA exported. | imported | project → trades per firm |
@@ -58,7 +60,7 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 - **Row 5** is the drawdown of the balance at each trade's close; the intraday floating one
   with M1 bars is still pending.
 - **Desde/Hasta in the window** (owner, 2026-09-29 §3.2): Hasta defaults to the last day
-  `assets/symbols/<S>.yaml`'s `data.to` says SQX holds (`ui.daemon.mt5bridge.runs.hasta_default`),
+  `assets/symbols/<S>.yaml`'s `data.to` says SQX holds (`mt5.verify.runs.hasta_default`),
   editable, the day before that (a range closing on SQX's last day never starts). Desde defaults
   to `MT5`: the job reads each firm's first month of whole H1 weeks once the terminal is open
   (`knowhow/mt5/mt5-history-depth-first-bar.md`), `HISTORY_FALLBACK_YEARS` (4) only when no

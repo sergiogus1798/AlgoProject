@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from core.datapaths import tmp_dir
-from sqx.databank import find
+from sqx.databank import find, locate
 from sqx.inspect import strategymeta
-from ui.daemon.strategy import archived, locate
+from ui.daemon.strategy import archived
 
 
 def live(project: str, databank: str, identity: str) -> dict[str, Any]:

@@ -8,8 +8,6 @@ itself is `mt5.verify.run` (`mt5/verify/README.md`); this package lists, checks 
 |---|---|---|---|
 | `__init__.py` | MT5 Bridge › Verificar: one strategy in SQX at each prop firm's conditions against its MT5 backtest. | imported | — |
 | `api.py` | MT5 Bridge's routes: the form's options, past checks, one result, the preflight and the job. | imported | request → JSON |
-| `display.py` | How a stored Verificar result reads in the window: capitals, percentages and one line per firm. | imported by `runs.result` | dict → dict |
-| `runs.py` | What MT5 Bridge › Verificar reads and checks: past checks, the strategy's file, and whether one may start now. | imported | disk → JSON |
 
 ## Contracts and traps
 

@@ -10,8 +10,7 @@ import pandas as pd
 
 from core import assetdata, sqxfile
 from core.paths import MT5_ACCOUNTS, ROOT, WORKERS
-from mt5.verify import firms, pool
-from ui.daemon.mt5bridge import runs
+from mt5.verify import firms, pool, runs
 
 ROLE = "conductor"  # where mt5.verify.run builds its Test_ project (its config.yaml)
 KEYS = ("strategy", "identity", "mother", "sqx", "symbol", "timeframe")
@@ -80,7 +79,7 @@ def check(
             its own, not a refusal (`advance.busy`).
 
     Returns:
-        {"ok", "reasons", "text"}. The reasons are the window's own (`mt5bridge.runs.check`:
+        {"ok", "reasons", "text"}. The reasons are the window's own (`mt5.verify.runs.check`:
         dates, model, firms, a saved account and an `mt5:` symbol per firm, the conductor
         free, the MT5 terminal closed) for every finalist, plus a missing parameter, a
         finalist that does not match its file and a firm's unconfirmed commission.

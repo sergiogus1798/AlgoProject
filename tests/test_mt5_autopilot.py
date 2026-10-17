@@ -11,11 +11,16 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from live_only import require  # noqa: E402
+
 from core import assetdata, sqxfile  # noqa: E402
 from core.paths import DATA  # noqa: E402
-from live_only import require  # noqa: E402
-from mt5.verify import autopilot, firms, pool  # noqa: E402
-from ui.daemon.mt5bridge import runs  # noqa: E402
+from mt5.verify import (  # noqa: E402
+    autopilot,
+    firms,
+    pool,
+    runs,  # noqa: E402
+)
 
 PROJECT = "Test_USDJPY_donchianUpperCrossUp_H1"
 MOTHERS = DATA / "structural" / PROJECT / "mothers"

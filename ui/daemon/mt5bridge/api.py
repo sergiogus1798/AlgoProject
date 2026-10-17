@@ -7,9 +7,9 @@ from pydantic import BaseModel
 
 from core import sqxfile
 from mt5 import wine
+from mt5.verify import runs
 from sqx import jobs, proof
 from ui.daemon.launch.api import queued
-from ui.daemon.mt5bridge import runs
 
 ROUTER = APIRouter()
 LABEL = "mt5verify"

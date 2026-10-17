@@ -11,9 +11,9 @@ from core.archive import read as archive
 from core.paths import MT5_ACCOUNTS, MT5_DATA, STRATEGY_POOLS, archive_dir
 from mt5 import guard, tester, wine
 from mt5.verify import firms
+from mt5.verify.display import polish
+from sqx.databank import locate
 from sqx.worker import preflight as advance
-from ui.daemon.mt5bridge.display import polish
-from ui.daemon.strategy import locate
 
 RUNS = MT5_DATA / "verify"
 DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")

@@ -7,7 +7,7 @@ panel (cumulative sums, percentiles) is redone on the frozen rows, so it equals 
 on the day of archiving (measured 2026-09-28, JSON diff empty).
 
 ```
-api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · locate.cfx ─▶ strategymeta.read
+api ─▶ meta.live ─▶ sqx.databank.locate.sqx (install → raw/ export → archive) · locate.cfx ─▶ strategymeta.read
     ├▶ costcurve.curve ◀─ tearsheet.harvest.read
     ├▶ stats.build ─▶ tearsheet.tradestats (shape, returns) · tearsheet.oos2 (door, oos2 cosecha)
     ├▶ archived.* ─▶ core.archive.read (also used by results/, tearsheet/, tearmarket/)
@@ -27,7 +27,6 @@ api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · 
 | `archive_write.py` | Freeze one strategy into the archive: its .sqx, its cosecha rows, every study result, its provenance. | imported | a live strategy → `archive/<identity>/<stamp>/` |
 | `archived.py` | The `source=archive` side of every Ficha route: an archived version read back, nothing computed. | imported | archive → the live shapes |
 | `costcurve.py` | One strategy's equity curve: SQX's daily one, IS then OOS1 on one axis. | imported | cosecha rows + trades → curves |
-| `locate.py` | Where one strategy's .sqx and its project.cfx are, by reading files only — never asking SQX. | imported | identity → path, sentence |
 | `meta.py` | The metadata panel's data: `sqx.inspect.strategymeta.read` on the located .sqx, or the archived one. | imported | path → dict |
 | `stats.py` | The basic statistics of one strategy per sample — IS, OOS1, both joined, and OOS2 behind its door. | imported | cosecha rows → dict |
 

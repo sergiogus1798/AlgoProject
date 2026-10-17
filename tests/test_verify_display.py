@@ -1,6 +1,6 @@
 """MT5 Bridge display: percentages in Spanish format, firm names and verdict parts polished."""
 
-from ui.daemon.mt5bridge.display import percent, polish
+from mt5.verify.display import percent, polish
 
 
 def test_polish() -> None:

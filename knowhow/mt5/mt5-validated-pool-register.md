@@ -19,7 +19,7 @@ tag: 🔬  date: 2026-10-02  see: mt5-verify-clock-zones, thresholds-live-in-the
 - 🔬 same rows: `thresholds_hash` 5132c9efee9f2550 on all 24, while `config_hash` changes
   f1fbef9cb8eb93d1 → a3597d820eae2ca4 at 14:09 on 2026-09-30 (config.yaml edited, thresholds not).
 - `tests/test_mt5_pool.py`, `tests/test_mt5_autopilot.py`.
-- 🤔 `mt5.verify.autopilot.check` reuses `mt5bridge.runs.check`, which calls
+- 🤔 `mt5.verify.autopilot.check` reuses `mt5.verify.runs.check`, which calls
   `advance.busy("conductor", "")` with no `own_log`: an autopilot that itself ran SQX on the
   conductor would be refused until that log is 15 min old (`QUIET_MIN`). Read in the code, not
   run; a real autopilot run on a conductor project confirms it.
