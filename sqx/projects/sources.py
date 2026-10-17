@@ -6,13 +6,12 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from core import worker
+from core import assetdata, worker
 from core.paths import DATA
 from sqx import progress
 from sqx.databank import find
 from sqx.projects import registry
 from sqx.projects.retire import STOCK
-from ui.daemon import runs
 
 # The order the gallery lists states in: what moves first, then what can be opened.
 ORDER = ("corriendo", "parado", "terminado", "construido", "ausente")
@@ -161,7 +160,7 @@ def card(
     if where is None:
         return {
             **base,
-            "symbol": row.get("symbol") or runs.guess_asset(name),
+            "symbol": row.get("symbol") or guess_asset(name),
             "timeframe": row.get("timeframe") or None,
             "strategies": 0,
             "databanks": {},
@@ -182,7 +181,7 @@ def card(
     said, why, live = state(role, top, name, run, sum(counted.values()))
     return {
         **base,
-        "symbol": row.get("symbol") or symbol or runs.guess_asset(name),
+        "symbol": row.get("symbol") or symbol or guess_asset(name),
         "timeframe": row.get("timeframe") or timeframe,
         "strategies": sum(counted.values()),
         "databanks": counted,
@@ -245,3 +244,17 @@ def locate(project: str, identity: str, databank: str = "") -> dict[str, Any]:
         if got:
             return {"databank": find.spelled(project, d), "name": got}
     return {"error": f"ninguna databank de {project} guarda esa estrategia"}
+
+
+def guess_asset(project: str) -> str | None:
+    """Which asset a project trades, read off its name.
+
+    Args:
+        project: SQX project name, e.g. "TestUSDJPY_Workflow_v1".
+
+    Returns:
+        The longest asset symbol the name contains, or None — the window then asks. Exports
+        do not record the feed, so the name is the only free evidence.
+    """
+    found = [s for s in assetdata.symbols() if s.lower() in project.lower()]
+    return max(found, key=len) if found else None

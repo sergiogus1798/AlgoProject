@@ -8,7 +8,7 @@ from ledger import gate, spend
 from ledger import study as studymod
 from sqx.workflow.records import Door, Oos2Gauge
 from studies.run import where
-from ui.daemon.runs import guess_asset
+from sqx.projects.sources import guess_asset
 from ui.text.numbers import num
 
 

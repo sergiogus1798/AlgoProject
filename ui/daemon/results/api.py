@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from core.paths import DATA
-from ui.daemon import runs as launch
+from sqx.projects import sources
 from ui.daemon.results import catalogue, forproject, knobs, matrix, presence, runs
 from ui.daemon.strategy import archived
 
@@ -224,7 +224,7 @@ def projects() -> dict[str, Any]:
         "projects": [
             {
                 "project": p.name,
-                "asset": launch.guess_asset(p.name),
+                "asset": sources.guess_asset(p.name),
                 "databanks": sorted(
                     d.name
                     for d in p.iterdir()

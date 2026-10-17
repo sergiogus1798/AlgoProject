@@ -124,7 +124,7 @@ client sends the plan back and the daemon compares. `pipeline/autopilot` and `mt
   comes back as the sentence the window shows instead of a button. A job that fails anyway shows
   the end of its log in the same place; the log stays under `logs/ui/`.
 - **A project's asset is read off its name.** Exports do not record the feed, so
-  `runs.guess_asset` takes the longest asset symbol the project name contains and the window
+  `sqx.projects.sources.guess_asset` takes the longest asset symbol the project name contains and the window
   lets the owner override it. A project named without its asset gets no button until one is
   chosen.
 - **A gate report is tied to its harvest by the manifest, not by the folder date.** The report

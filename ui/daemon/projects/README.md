@@ -12,7 +12,7 @@ places that each know part of a project:
 | today's SQX log of the install (`progress.run_state`) and, for a worker running it, `-project action=status` (`progress.state` → `tasklog.status`) | the state: corriendo / parado / terminado / construido, and `ausente` for a project that left only reports and is not retired in `registry.csv` — a retired one carries `install_label` «retirados» and the window shows it only under that filter (owner, 2026-10-04) |
 
 **Imports from:** `core`, `sqx.projects.registry`, `sqx.projects.retire` (`STOCK`), `sqx.progress`,
-`ui.daemon.runs`, `sqx.databank.find` · **Consumed by:** `ui/desktop/workspace/gallery.py`,
+`sqx.databank.find` · **Consumed by:** `ui/desktop/workspace/gallery.py`,
 `ui/desktop/cmdpalette.py`, `ui/desktop/projectflow.py`
 
 | file | what it does | run it | in → out |
@@ -20,7 +20,6 @@ places that each know part of a project:
 | `__init__.py` | The gallery's projects: every project the window can open, merged from the four sources. | imported | — |
 | `api.py` | The gallery's routes: every project on one list, and where one strategy of a project lives. | imported | request → JSON |
 | `janitor.py` | The weekly sweep, run from where the workflow rail can be read (`sqx` may not import `ui`). | `python3 -m ui.daemon.projects.janitor [--yes]` | the installs → one keep/retire line per project |
-| `sources.py` | Every project the window can open, merged from the four places that each know part of it. | imported | disk → cards |
 
 ## Traps
 
@@ -31,7 +30,7 @@ places that each know part of a project:
 - **A project SQX is writing is counted by its files**, not its roster: `find.roster` returns
   nothing while the log has the project running, so a half-written `.sqx` is never hashed.
 - **The first answer of a daemon cost ~12 s on 2026-09-27** (7 181 strategies on three installs; 0.13 s cold on 2026-10-04, 229 projects):
-  every roster is hashed once. The counts are then cached per folder mtime in `sources.distinct`,
+  every roster is hashed once. The counts are then cached per folder mtime in `sqx.projects.sources.distinct`,
   unbounded, because `find.roster`'s own cache holds 64 folders and the gallery walks ~400 —
   with only that cache every call cost the full 12 s. Warm: ~0.03 s.
 - **«terminado» without today's log is an inference**: no task log survives per project, so a

@@ -38,6 +38,7 @@
 | `sessiondb.py` | Build a task's <Session> block from SQX's Data Manager database, read through a copy. | imported | a session name → its `<Session>` block, or None |
 | `setups.py` | Write one segment's window and costs into a task's <Setup> blocks, which is where they live. | imported | an asset + a task XML → dates, slippage, spread, commission method, swap and data range |
 | `source.py` | Find a project SQX itself wrote that defines an asset's feed, and its session when one does. | imported | donor + asset session and feed → a project.cfx, or None |
+| `sources.py` | Every project the window can open, merged from the four places that each know part of it. | imported | disk → cards |
 | `spp.py` | Write the two SPP tasks of a custom project: the permutation grid, one window each. | `python3 -m sqx.projects.spp <SYM> --cfx <cfx> --input <databank>` | un `.cfx` + el catálogo `spp:` de `_build.yaml` → `SPP IS` y `SPP OOS` escritas y activas |
 | `stage.py` | Switch on only one workflow step's tasks, so `action=start` runs that step and nothing else. | `python3 -m sqx.projects.stage --cfx <cfx> --step build,oos` | a workflow project → the same project, one step switched on |
 | `summary.py` | Say out loud what building a project applied, which is the half a human reads. | imported | `builder.build`'s result → the lines a human reads |

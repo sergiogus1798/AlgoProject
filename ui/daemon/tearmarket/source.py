@@ -7,7 +7,8 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 from core import assetdata, barstore
-from ui.daemon.runs import context, guess_asset
+from sqx.projects.sources import guess_asset
+from ui.daemon.runs import context
 
 SAMPLES = ("IS", "OOS")
 NO_HARVEST = (

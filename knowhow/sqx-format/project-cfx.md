@@ -27,5 +27,5 @@ The strategy template is `<StrategyType templateFile=>` in the Build task; `<Pro
 - A project's symbol and timeframe: the first `<Setup><Chart symbol= timeframe=>` of the first
   `<Task>` of `config.xml` (symbol = text before the first `_`). It can contradict the name:
   `EURJPY_H1` on the master is H4. Search it with a regex — a task XML runs to MB and parsing one
-  per project cost the gallery ~1 s for 14 projects (`ui/daemon/projects/sources.chart`, 2026-09-27).
+  per project cost the gallery ~1 s for 14 projects (`sqx/projects/sources.chart`, 2026-09-27).
 - Rewrite-on-exit is also how `-project action=loadconfig` becomes permanent (see retest-rewrites-sqstats).

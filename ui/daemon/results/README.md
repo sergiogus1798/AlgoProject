@@ -7,7 +7,7 @@ here writes into the data root or runs a study (that is `ui/daemon/runner/`) —
 the command a `↻ solo …` job runs, which writes one partial result beside the stored one.
 
 **Imports from:** `core.paths`, `core.study.config`, `ui.daemon.runner.table`, each study's own config loader and
-`tooltips.py`, `ui.daemon.runs.guess_asset` · **Consumed by:** `ui/desktop/` through `/api/*`
+`tooltips.py`, `sqx.projects.sources.guess_asset` · **Consumed by:** `ui/desktop/` through `/api/*`
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

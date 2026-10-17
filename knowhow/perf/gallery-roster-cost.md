@@ -7,7 +7,7 @@ tag: 🔬  date: 2026-09-27  see: sqx-format/strategy-identity, sqx-format/proje
 `sqx.databank.find.roster` hashes each `.sqx` (`sqxfile.identity`, ~1.7 ms each): 7 181 strategies on the
 three installs = ~12 s cold. Its `lru_cache(maxsize=64)` cannot hold a walk over every databank
 (~414 folders, ~57 non-empty), so a second walk cost the full 12 s again. Cache the **count** per
-`(project, databank, mtime)` unbounded (`ui/daemon/projects/sources.distinct`), skip empty folders
+`(project, databank, mtime)` unbounded (`sqx/projects/sources.distinct`), skip empty folders
 without hashing, and fetch the gallery off the GUI thread. Warm: ~0.03 s.
 
 ## Evidence

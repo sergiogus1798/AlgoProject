@@ -252,17 +252,3 @@ def plan(module: str, c: dict) -> dict[str, Any]:
     """
     got = RUNS[module](c)
     return {"argv": got} if isinstance(got, list) else {"reason": got}
-
-
-def guess_asset(project: str) -> str | None:
-    """Which asset a project trades, read off its name.
-
-    Args:
-        project: SQX project name, e.g. "TestUSDJPY_Workflow_v1".
-
-    Returns:
-        The longest asset symbol the name contains, or None — the window then asks. Exports
-        do not record the feed, so the name is the only free evidence.
-    """
-    found = [s for s in assetdata.symbols() if s.lower() in project.lower()]
-    return max(found, key=len) if found else None

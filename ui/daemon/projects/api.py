@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from ui.daemon.projects import sources
+from sqx.projects import sources
 
 ROUTER = APIRouter()
 
