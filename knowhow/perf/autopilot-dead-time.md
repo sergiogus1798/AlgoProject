@@ -38,7 +38,7 @@ entryQuality 104. Build 10:09:42 → stopped by hand 10:21:33 at 571 (status «A
   relaunches.
 - 🔬 2026-10-04, NIKKEI225 M30, `Results` and `OOS` at 10,000 strategies each, restart route: steps 9, 11
   and 13 took 13-17 min for seconds of SQX work, and the stop after the build 17 min. SQX resaves every
-  `.sqx` on each stop and sync, so `ui/daemon/loader/state.fingerprint` (canonical parse, ~19 ms a file)
+  `.sqx` on each stop and sync, so `sqx/databank/state.fingerprint` (canonical parse, ~19 ms a file)
   re-read all 10,000 each time: 3.2 min, called several times per step by `afterrun` and the rail. Now a
   per-file cache keyed by (path, mtime, size) and a fork pool for the files not seen: 4.7 s cold, 0.12 s
   warm, same digest (`tests/test_ui_loader.py`). With that and `--live`, step 15's overhead was ~1 min.
@@ -50,7 +50,7 @@ entryQuality 104. Build 10:09:42 → stopped by hand 10:21:33 at 571 (status «A
   - Fixed, 230c856: the export fingerprint called both SPP databanks stale at every stop because SQX
     re-saves `optimizationProfile.bin` in another byte order (`sqx-format/optimization-profile-byte-order`).
     🤔 In the validation run the SPP databanks were still re-exported at the stop of step 19 (WFM); cause
-    open. Confirm with two consecutive stops with no SQX work between and `ui/daemon/loader/state.py`
+    open. Confirm with two consecutive stops with no SQX work between and `sqx/databank/state.py`
     `_entries` diffed.
   - Fixed, caccb79: `sqx.variants.execute` and `.pilot` stopped the worker with the post-stop export on though
     they write only the WFC databanks `afterrun.skipped()` ignores; now `worker.stop(role, export=False)`.

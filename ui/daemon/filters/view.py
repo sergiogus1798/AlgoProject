@@ -3,8 +3,9 @@
 import re
 from typing import TypedDict, cast
 
+from sqx.databank import discards
 from ui.daemon.databank.table import Table
-from ui.daemon.filters import discards, evaluate
+from ui.daemon.filters import evaluate
 
 PART = re.compile(r"^(.*?) (>|<|≥|≤|=|entre|dentro|fuera) ?(.*)$")
 CODE = {shown: code for code, shown in evaluate.SHOWN.items()}

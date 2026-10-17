@@ -8,8 +8,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeVar
 
+from core import diskmemo, sqxfile
 from core.paths import report_dir
-from ui.daemon import diskmemo
+from ui.daemon import version
 from ui.daemon.results import tfrows
 
 # A study's own verdict words (verdict.csv, for /curate) on the contract's five-state scale,
@@ -51,7 +52,9 @@ WORDS = {
 # Kept on disk too (owner, 2026-10-04): a daemon just started read a 10,000-strategy project's
 # megabyte JSONs again, ~12 s of a 30-s first open.
 T = TypeVar("T")
-_CACHE: dict[Any, Any] = diskmemo.load("results")
+# The memo is valid for this daemon version and this `core/sqxfile.py`.
+_CODE = f"{version.fingerprint()}{Path(sqxfile.__file__).stat().st_mtime_ns}"
+_CACHE: dict[Any, Any] = diskmemo.load("results", _CODE)
 _KEPT = [len(_CACHE)]  # how many entries the memo on disk holds
 # One reader at a time: three tables built at once each parsed the same megabyte JSONs
 # (🔬 2026-10-04, 12 s three times over under one GIL). Re-entrant: a reader may read.
@@ -177,7 +180,7 @@ def keep() -> None:
     """Write the cache to disk when it grew since the last time — after a table was built."""
     with _READING:
         if len(_CACHE) != _KEPT[0]:
-            diskmemo.save("results", _CACHE)
+            diskmemo.save("results", _CACHE, _CODE)
             _KEPT[0] = len(_CACHE)
 
 

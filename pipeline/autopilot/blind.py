@@ -12,11 +12,10 @@ from ledger import blind as rebuilt
 from ledger import gate, record, thresholds
 from ledger import study as studymod
 from pipeline.autopilot import call, survivors
-from sqx.projects import stage
 from sqx import jobs
+from sqx.databank import state as loader
+from sqx.projects import stage
 from ui.daemon.launch import chain, preflight
-from ui.daemon.loader import state as loader
-
 
 # The flag that adds a study's oos2 reading to the one that decides without it (18.5).
 OOS2 = {"marketSurfaces": "--oos2"}
@@ -135,7 +134,7 @@ def wfm(project: str, role: str) -> str:
     """Step 19's reading, computed from the matrix SQX just ran and not read.
 
     The export is the worker stop's own (`loader.afterrun`); it is made here when the newest
-    one is not of the strategies the databank holds now (`loader.state.age`): none at all (a
+    one is not of the strategies the databank holds now (`sqx.databank.state.age`): none at all (a
     stop with `ALGO_NO_EXPORT`), or an earlier matrix's after an export that failed.
     """
     name = bank(project)

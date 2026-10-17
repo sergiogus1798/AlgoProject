@@ -6,9 +6,10 @@ from typing import Any, cast
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from sqx.databank import discards
 from ui.daemon.databank import table as tablemod
 from ui.daemon.databank.table import Table
-from ui.daemon.filters import discards, dists, evaluate, ledgerrow, saved, view
+from ui.daemon.filters import dists, evaluate, ledgerrow, saved, view
 from ui.daemon.runner import where
 
 ROUTER = APIRouter()

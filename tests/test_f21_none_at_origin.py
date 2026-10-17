@@ -7,9 +7,9 @@ import pytest
 
 from core import assetdata
 from pipeline.autopilot import survivors
+from sqx.databank import find
 from studies.research.profilePower import one as power
 from ui.daemon.launch import liverun
-from ui.daemon.loader import find
 from ui.daemon.portfolios import correlation
 from ui.daemon.results import catalogue
 from ui.daemon.runner import table

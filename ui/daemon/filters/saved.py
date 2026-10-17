@@ -5,7 +5,7 @@ from typing import TypedDict
 import yaml
 
 from core.paths import filters_root
-from ui.daemon.filters.discards import stamp
+from sqx.databank.discards import stamp
 
 FILE = filters_root() / "saved.yaml"
 

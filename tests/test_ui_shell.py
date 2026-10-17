@@ -19,9 +19,11 @@ from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from core.paths import ROOT  # noqa: E402
-from ui.daemon.loader import state as loadstate  # noqa: E402
-from sqx import jobs
-from sqx import tasklog  # noqa: E402
+from sqx import (
+    jobs,
+    tasklog,  # noqa: E402
+)
+from sqx.databank import state as loadstate  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
 from ui.desktop import client  # noqa: E402
 from ui.desktop.nav import LIBRARY, ZONES  # noqa: E402

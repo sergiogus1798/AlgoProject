@@ -4,7 +4,7 @@ kw: gallery slow, /api/projects/all 12 seconds, roster cost, find.roster lru_cac
 tag: 🔬  date: 2026-09-27  see: sqx-format/strategy-identity, sqx-format/project-cfx
 ---
 # Counting every project's distinct strategies costs ~12 s once; keep the count cached per folder mtime
-`loader.find.roster` hashes each `.sqx` (`sqxfile.identity`, ~1.7 ms each): 7 181 strategies on the
+`sqx.databank.find.roster` hashes each `.sqx` (`sqxfile.identity`, ~1.7 ms each): 7 181 strategies on the
 three installs = ~12 s cold. Its `lru_cache(maxsize=64)` cannot hold a walk over every databank
 (~414 folders, ~57 non-empty), so a second walk cost the full 12 s again. Cache the **count** per
 `(project, databank, mtime)` unbounded (`ui/daemon/projects/sources.distinct`), skip empty folders

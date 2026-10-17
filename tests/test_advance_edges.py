@@ -14,11 +14,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from tests.test_advance import CALLS, P, fakes, tree, write  # noqa: E402
-from sqx.projects import taskcap  # noqa: E402
-from sqx import progress  # noqa: E402
-from ui.daemon.advance import api, preflight, run  # noqa: E402
 from sqx import log as sqxlog  # noqa: E402
+from sqx import progress  # noqa: E402
+from sqx.projects import taskcap  # noqa: E402
+from sqx.worker import preflight  # noqa: E402
+from tests.test_advance import CALLS, P, fakes, tree, write  # noqa: E402
+from ui.daemon.advance import api, run
 
 
 def fails(built: dict, **how: object) -> str:

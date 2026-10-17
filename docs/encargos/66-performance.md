@@ -914,7 +914,7 @@ horas-núcleo para 19 activos (MEDIDO) en 2,7 h de pared. **Cambia el flujo de s
 
 ### 4.5 `fanout` con `fork` desde un proceso con hilos
 
-`ui/daemon/loader/state.py:114` hace `fork` dentro del demonio FastAPI;
+`sqx/databank/state.py:114` hace `fork` dentro del demonio FastAPI;
 `portfolio/common/monteCarlo/simulate/engine.py:66` documenta un bloqueo real por eso mismo.
 Arreglo: `forkserver` o un subproceso. Tareas diminutas (`sqxfile.identity` por fichero en
 `gate/collect.py:20`): agrupar en bloques de 100, como `sqx/variants`.
@@ -929,7 +929,7 @@ espera a `AlgoBank`**; lo que `AlgoBank` vuelva innecesario se borra entonces.
 - **Una sola pasada de `orderstocsv` en 6+7.** Hoy son tres sobre los mismos ficheros:
   `ui/daemon/loader/afterrun.py:124` lanza los dos `export.trades` y después la cosecha vuelve a
   exportar. `harvest --exports` ya escribe los dos `trades.parquet`, pero
-  `ui/daemon/loader/state.py:223` no le pasa el flag. **206 s por corrida (MEDIDO).**
+  `sqx/databank/state.py:223` no le pasa el flag. **206 s por corrida (MEDIDO).**
 - **Métricas, curvas, identidad y estructura en paralelo.** `gate/collect.py:86,134`,
   `core/sqxview.py:50`, `gate/harvest.py:141` recorren 20.000 `.sqx` en serie: 54 s (MEDIDO; otra
   medición sobre 150 `.sqx` reales da 6,2 ms por fichero sólo en `sqxview.frame`, ~124 s). Las
@@ -1082,7 +1082,7 @@ reaperturas dejaba sin explicar.
 
 ### 7.2 Exportaciones que se rehacen sin que nada cambiara
 
-- **La huella no sobrevive a «cargar y regrabar»** (`ui/daemon/loader/state.py:149`). En 4 de 4
+- **La huella no sobrevive a «cargar y regrabar»** (`sqx/databank/state.py:149`). En 4 de 4
   corridas, `Results` (10.000, intacto) se re-exporta en el paso 19, justo tras la reapertura que
   lo regrabó: ~155 s, más ~30 de OOS y Retest, más 43 s en los pasos 11 y 13. **Arreglo sin SQX:**
   que `liverun.export` exporte sólo las salidas del paso y los databanks rellenados

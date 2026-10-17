@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
+from sqx.databank import find
 from ui.daemon import runs
-from ui.daemon.loader import find
 from ui.daemon.runner import optimisation, readings, screening, transfer, where
 
 STUDIES = {

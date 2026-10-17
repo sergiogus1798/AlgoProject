@@ -16,11 +16,11 @@ from core.paths import databank_dir, export_dir, harvest_dir, metrics_export
 from ledger import cells, record
 from pipeline.autopilot import criteria, facts, selection, survivors, trim
 from sqx.curate import apply_verdict
+from sqx.databank import find, state
+from sqx.databank.fingerprint import fingerprint
 from sqx.projects import registry
 from sqx.projects.crosstfload import SIBLING
-from ui.daemon.advance.preflight import by_identity
-from ui.daemon.loader import find, state
-from sqx.databank.fingerprint import fingerprint
+from sqx.worker.preflight import by_identity
 
 CRITERIA = Path(__file__).with_name("criteria.yaml")
 KEEP = "MANTENER"  # anything but DESCARTAR keeps a strategy (sqx/curate/README.md)

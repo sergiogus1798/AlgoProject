@@ -5,7 +5,7 @@ from functools import lru_cache
 import pandas as pd
 
 from core.paths import harvest_dir, metrics_export
-from ui.daemon.loader.state import newest
+from sqx.databank.state import newest
 
 # Columns of either file that are labels, not figures.
 STRUCTURAL = ("Param Count", "TimeFrame", "DoF Ratio")  # measured in neither block

@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from core.datapaths import tmp_dir
+from sqx.databank import find
 from sqx.inspect import strategymeta
-from ui.daemon.loader import find
 from ui.daemon.strategy import archived, locate
 
 

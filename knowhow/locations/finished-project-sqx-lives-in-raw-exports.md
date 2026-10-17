@@ -1,11 +1,11 @@
 ---
 q: Where is a finished project's .sqx stored, and under what name does E2's reader need it?
-kw: where is the .sqx of a finished workflow project; databank folder empty on the install; loader.find finds nothing; raw strategies copy same identity; strategymeta backtest empty; metadata of a strategy without SQX
+kw: where is the .sqx of a finished workflow project; databank folder empty on the install; sqx.databank.find finds nothing; raw strategies copy same identity; strategymeta backtest empty; metadata of a strategy without SQX
 tag: 🔬  date: 2026-09-28  see: identity-differs-across-databanks
 ---
 # A finished project's .sqx is often only in `raw/…/strategies/`, and E2's reader needs it under the databank's name
 `Test_USDJPY_donchianUpperCrossUp_M30` keeps `project.cfx` on the custodian but an **empty
-`databanks/`**, so `loader.find` finds no file. The `Results` strategy survives as the copy the
+`databanks/`**, so `sqx.databank.find` finds no file. The `Results` strategy survives as the copy the
 SPP export left in `AlgoData/raw/<P>/SPP_IS/<day>/strategies/` — **same identity** as in Results
 (`4d679e0c…`), but its `lastSettings` is the SPP IS task, not the build. Look there (then the
 archive) by hashing each file; say which copy you read. `sqx.inspect.strategymeta.read` matches the

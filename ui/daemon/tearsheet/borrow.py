@@ -7,7 +7,7 @@ from typing import cast
 import pandas as pd
 
 from core.paths import DATA
-from ui.daemon.loader import find
+from sqx.databank import find
 from ui.daemon.results.hits import aliases
 
 

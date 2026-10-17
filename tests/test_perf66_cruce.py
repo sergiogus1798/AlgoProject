@@ -203,7 +203,8 @@ def test_the_execute_phases_land_in_their_buckets(tmp_path: Path) -> None:
 def loader_world(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
     """A tmp install (`Results` and `OOS`, two files each) under the REAL `state.status` / `commands` / `load`."""
     import os
-    from ui.daemon.loader import find, state
+
+    from sqx.databank import find, state
 
     top = tmp_path / "top"
     banks = top / "user" / "projects" / "Test_P" / "databanks"
@@ -267,7 +268,7 @@ def test_commands_asks_the_harvest_for_exports_when_either_side_is_stale(
     loader_world: dict,
 ) -> None:
     """The step-7 case: the build's trades fresh, the retest's not -> still one pass; cross-market -> none."""
-    from ui.daemon.loader import state
+    from sqx.databank import state
 
     now = state.status("Test_P", "Results")
     assert exports_flag(state.commands("Test_P", now)) == ["--exports"]  # both stale
@@ -291,7 +292,7 @@ def test_load_queues_the_trades_unless_the_harvest_covers_the_whole_databank(
     loader_world: dict,
 ) -> None:
     """A build with an unpaired strategy keeps its trades job (after the harvest); a fully paired one has the harvest write them."""
-    from ui.daemon.loader import state
+    from sqx.databank import state
 
     state.load("Test_P", "Results")
     assert [k for k, _ in loader_world["started"]] == ["metrics", "harvest"]
@@ -368,7 +369,7 @@ def test_a_failed_harvest_does_not_take_the_trades_job_with_it(
     loader_world: dict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The harvest that carried `--exports` failed: the next load offers the trades again (not the failed harvest)."""
-    from ui.daemon.loader import state
+    from sqx.databank import state
 
     job = {
         "loader": "harvest",

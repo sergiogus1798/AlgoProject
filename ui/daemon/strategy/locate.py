@@ -5,7 +5,7 @@ from pathlib import Path
 from core import sqxfile
 from core.paths import archive_dir, export_dir, project_dir
 from sqx import progress
-from ui.daemon.loader import find
+from sqx.databank import find
 
 NOWHERE = "sin .sqx en ningún install"
 
@@ -43,7 +43,7 @@ def sqx(project: str, databank: str, identity: str) -> tuple[Path | None, str]:
 
     Returns:
         (the .sqx or None, where it came from as a sentence). First the install that holds
-        the databank (`loader.find`, refused while SQX writes the project), then an export's
+        the databank (`sqx.databank.find`, refused while SQX writes the project), then an export's
         copy, then the newest archived version; otherwise (None, `NOWHERE`).
     """
     spelled = find.spelled(project, databank)

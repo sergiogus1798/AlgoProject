@@ -11,7 +11,7 @@ from core.archive import read as archive
 from core.paths import MT5_ACCOUNTS, MT5_DATA, STRATEGY_POOLS, archive_dir
 from mt5 import guard, tester, wine
 from mt5.verify import firms
-from ui.daemon.advance import preflight as advance
+from sqx.worker import preflight as advance
 from ui.daemon.mt5bridge.display import polish
 from ui.daemon.strategy import locate
 

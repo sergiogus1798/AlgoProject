@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from sqx import progress, tasklog  # noqa: E402
-from ui.daemon.loader import find  # noqa: E402
+from sqx.databank import find  # noqa: E402
 
 # What SQX had written of global_log_*.log one second into a build, 2026-09-28 12:07:15.
 HALF = (

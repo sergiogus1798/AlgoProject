@@ -7,7 +7,8 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from ui.daemon.filters import api, discards, evaluate, ledgerrow, view  # noqa: E402
+from sqx.databank import discards  # noqa: E402
+from ui.daemon.filters import api, evaluate, ledgerrow, view
 
 P, D = "Test_UiFilters", "Results"
 SHARPE = "Sharpe Ratio (OOS)"

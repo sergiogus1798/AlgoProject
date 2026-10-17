@@ -12,12 +12,13 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from core.paths import databank_dir, project_dir
+from sqx import progress
 from sqx.projects import crosstfload
 from sqx.projects.workflow import CROSSTF_BUILD
-from sqx import progress
-from ui.daemon.advance import confirm, preflight as advance
+from sqx.worker import preflight as advance
 from sqx.workflow import launchsteps
 from sqx.workflow.launchsteps import Refusal
+from ui.daemon.advance import confirm
 
 BUILD = "Build"
 ROLES = {

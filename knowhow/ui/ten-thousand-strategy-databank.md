@@ -6,8 +6,8 @@ tag: 🔬  date: 2026-10-04  see: zones-load-on-first-open
 # A big databank costs in four places: identity hashing, repeated work per request, table items, column measuring
 Never build one Qt item per cell, never let Qt measure every row, never recompute per request what
 depends only on files. Measured on `Trade_NIKKEI225_M30_volatilidadL` (10,000 `.sqx`):
-- `core.sqxfile.identity` is memoised by (path, size, mtime_ns); `ui/daemon/diskmemo.py` keeps it on disk.
-- One computation per key, the others wait: `loader/find.LISTING`, `results/store._READING`, the
+- `core.sqxfile.identity` is memoised by (path, size, mtime_ns); `core/diskmemo.py` keeps it on disk.
+- One computation per key, the others wait: `sqx/databank/find.LISTING`, `results/store._READING`, the
   single-flight `databank/table.table`. The window's three whole-databank calls pass `wait=120`.
 - The table is a `QAbstractTableModel` (`workspace/tablemodel.py`), `setResizeContentsPrecision(100)`.
 

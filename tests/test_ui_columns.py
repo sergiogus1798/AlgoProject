@@ -15,14 +15,14 @@ from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtGui import QColor  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+from sqx.databank import discards  # noqa: E402
 from ui.daemon.databank import columns as store  # noqa: E402
 from ui.daemon.databank import segments  # noqa: E402
-from ui.daemon.filters import discards  # noqa: E402
 from ui.desktop import client  # noqa: E402
+from ui.desktop.theme import C  # noqa: E402
 from ui.desktop.workspace import columns  # noqa: E402
 from ui.desktop.workspace.columnsmenu import ColumnsMenu  # noqa: E402
 from ui.desktop.workspace.columnsview import WIDE  # noqa: E402
-from ui.desktop.theme import C  # noqa: E402
 from ui.desktop.workspace.panel import Panel  # noqa: E402
 
 P = "Test_UiColumns"

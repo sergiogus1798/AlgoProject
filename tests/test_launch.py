@@ -11,8 +11,8 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from sqx.projects import stage  # noqa: E402
+from sqx.worker import preflight as advance  # noqa: E402
 from tests.test_advance import CALLS, P, fakes, tree  # noqa: E402
-from ui.daemon.advance import preflight as advance  # noqa: E402
 from ui.daemon.launch import api, run  # noqa: E402
 
 

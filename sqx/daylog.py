@@ -54,7 +54,7 @@ def log_lines(install: Path) -> tuple[list[str], float]:
         midnight starts a new one. It used to be the last 2 MB of the file, and a retest's
         periodic syncs fill 2 MB in an hour: 🔬 2026-09-29, MCR 2 Spread 1 h in, the start
         line fell out, every reader took the run for finished — the count, the pulse and
-        `loader.find.writing`, the guard that keeps loads off a databank SQX is writing.
+        `sqx.databank.find.writing`, the guard that keeps loads off a databank SQX is writing.
         The file is read whole once and then only what it gained, so the start is never
         lost however big the day grows.
     """

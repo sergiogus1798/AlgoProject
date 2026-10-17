@@ -17,7 +17,7 @@ a run killed before «Project finished» otherwise blocks loads and launches unt
 started, `tasklog.task_runs` raised AttributeError on `BEFORE.search(chunk).group(1)` 10 s in, the
 job's `finally` stopped the custodian. `find.writing` then said True all day (no process alive), so
 «Recargar databank» queued nothing and both launchers' preflight refused. Fixed in `tasklog.py`,
-`advance/run.watch`, `loader/find.writing`, `advance/preflight.busy`; `tests/test_tasklog.py`.
+`advance/run.watch`, `sqx/databank/find.writing`, `sqx/worker/preflight.busy`; `tests/test_tasklog.py`.
 
 2026-09-29 06:48, «▶ SQX» of step 13 on the same project: MCR 1 Bar ran 5 min with `before == {}`;
 En marcha showed «22 / ·», «Ritmo —», and the jobs strip «MCR 1 Bar 0 % · 122 probadas». Fixed in

@@ -1,8 +1,9 @@
 """Which studies a strategy page can use in its own databank, and where the others live."""
 
 from typing import Any
+
+from sqx.databank import find
 from ui.daemon.databank import layout
-from ui.daemon.loader import find
 from ui.daemon.results.catalogue import STUDIES
 from ui.daemon.runner import table
 

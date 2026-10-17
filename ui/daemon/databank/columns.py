@@ -5,7 +5,7 @@ import os
 import threading
 from pathlib import Path
 
-from ui.daemon.filters import discards
+from sqx.databank import discards
 
 # FastAPI runs these routes on a thread pool: two saves at once must not interleave their
 # read-modify-write.

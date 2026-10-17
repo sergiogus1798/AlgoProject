@@ -6,13 +6,13 @@ places that each know part of a project:
 
 | source | gives |
 |---|---|
-| each install's `user/projects/*/project.cfx` (`progress.projects`) | that it exists, where (workers first, as `loader.find.install_of`), and the symbol and timeframe of its first task's main chart |
+| each install's `user/projects/*/project.cfx` (`progress.projects`) | that it exists, where (workers first, as `sqx.databank.find.install_of`), and the symbol and timeframe of its first task's main chart |
 | `AlgoData/projects/registry.csv` (`sqx.projects.registry`) | symbol, timeframe, template, purpose — they win over the `.cfx` when present |
-| the roster of each databank (`loader.find.roster`) | the total of distinct strategies (identity), 0 for an empty folder without hashing |
+| the roster of each databank (`sqx.databank.find.roster`) | the total of distinct strategies (identity), 0 for an empty folder without hashing |
 | today's SQX log of the install (`progress.run_state`) and, for a worker running it, `-project action=status` (`progress.state` → `tasklog.status`) | the state: corriendo / parado / terminado / construido, and `ausente` for a project that left only reports and is not retired in `registry.csv` — a retired one carries `install_label` «retirados» and the window shows it only under that filter (owner, 2026-10-04) |
 
 **Imports from:** `core`, `sqx.projects.registry`, `sqx.projects.retire` (`STOCK`), `sqx.progress`,
-`ui.daemon.runs`, `ui.daemon.loader.find` · **Consumed by:** `ui/desktop/workspace/gallery.py`,
+`ui.daemon.runs`, `sqx.databank.find` · **Consumed by:** `ui/desktop/workspace/gallery.py`,
 `ui/desktop/cmdpalette.py`, `ui/desktop/projectflow.py`
 
 | file | what it does | run it | in → out |

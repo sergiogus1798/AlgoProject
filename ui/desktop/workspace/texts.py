@@ -13,7 +13,7 @@ FAMILIES = {
 
 # What the rail's step 4 and every launcher's preflight check, for the drawer under the rail
 # (owner, 2026-09-28: «no entiendo "Preflight USDJPY pasa hoy"»). Read from core.assetcheck,
-# ui/daemon/launch/preflight.py and ui/daemon/advance/preflight.py: keep in step with them.
+# ui/daemon/launch/preflight.py and sqx/worker/preflight.py: keep in step with them.
 PREFLIGHT = (
     "QUÉ ES EL PREFLIGHT. Una comprobación que se hace antes de gastar CPU, para no construir "
     "ni retestear sobre algo mal puesto. Hay dos, y ninguna toca SQX: sólo leen ficheros.\n"

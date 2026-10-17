@@ -15,7 +15,6 @@ is a search and the ledger exists to count them.
 |---|---|---|---|
 | `__init__.py` | The databank filters of Proyecto: AND rows over real columns, discards on disk, one ledger row each. | — | — |
 | `api.py` | The filter routes: metrics, preview, apply, manual discard, clear, state, saved filters. | imported | request → JSON |
-| `discards.py` | The discard log of one databank: what the filter in force and the manual deletions set aside. | imported | log ↔ hidden identities, funnel steps |
 | `dists.py` | The stored `distribution` blocks of a project's strategies, by identity, for the median mode. | imported | `reports/<P>/*/<day>/<study>/estrategias/*.json` → blocks |
 | `evaluate.py` | Which columns a filter may read, and which visible strategies an AND of rows sets aside. | imported | table, rows → dropped identities |
 | `ledgerrow.py` | The ledger row of a filter or a manual deletion: its study (Q9), its step and its segment. | imported | filter → one ledger row |

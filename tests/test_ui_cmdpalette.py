@@ -16,17 +16,18 @@ import harvest_planted  # noqa: E402
 
 harvest_planted.plant()  # before core.paths: the harvest below is planted, not the machine's
 
+import pandas as pd  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtCore import QSettings, Qt  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication, QLineEdit  # noqa: E402
 
-import pandas as pd  # noqa: E402
-
 from core.paths import DATA, ROOT  # noqa: E402
-from ui.daemon.loader import state as loadstate  # noqa: E402
-from sqx import jobs
-from sqx import tasklog  # noqa: E402
+from sqx import (
+    jobs,
+    tasklog,  # noqa: E402
+)
+from sqx.databank import state as loadstate  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
 from ui.daemon.runner import where  # noqa: E402
 from ui.desktop import client, cmdrank  # noqa: E402

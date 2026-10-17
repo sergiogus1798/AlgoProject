@@ -7,9 +7,9 @@ from typing import Any, cast
 from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel
 
+from sqx.databank import find
 from ui.daemon.databank import columns, equity, funnel, layout, segments, table
 from ui.daemon.loader import api as loader
-from ui.daemon.loader import find
 
 ROUTER = APIRouter()
 

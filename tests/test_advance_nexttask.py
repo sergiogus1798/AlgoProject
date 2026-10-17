@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqx.projects.stage import titles
-from ui.daemon.advance.preflight import next_task
+from sqx.worker.preflight import next_task
 
 
 def task(title: str, source: str, output: str) -> dict:

@@ -176,7 +176,7 @@ def test_a_source_changed_during_an_export_reads_stale(tmp_path: Path) -> None:
     import time
 
     from core import manifest
-    from ui.daemon.loader import state
+    from sqx.databank import state
 
     bank, out = tmp_path / "bank", tmp_path / "out"
     bank.mkdir(), out.mkdir()

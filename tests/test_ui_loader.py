@@ -14,8 +14,9 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from sqx import jobs  # noqa: E402
-from ui.daemon.loader import api, find, state  # noqa: E402
+from sqx.databank import find, state  # noqa: E402
 from sqx.databank import fingerprint as printed  # noqa: E402
+from ui.daemon.loader import api
 
 # A build databank with its oos1 retest, and a cross-market one, both on the custodian. Since
 # F13 (2026-09-28) the fixture is the USDJPY Donchian project; when an install no longer holds

@@ -23,7 +23,6 @@ ALLOW: set[tuple[str, str]] = {
     ("mt5/verify/sqxside.py", "ui.daemon"),
     ("pipeline/autopilot/blind.py", "ui.daemon"),
     ("pipeline/autopilot/call.py", "ui.daemon"),
-    ("pipeline/autopilot/judge.py", "ui.daemon"),
     (
         "pipeline/autopilot/neighbours.py",
         "ui.daemon",

@@ -10,20 +10,20 @@ from pathlib import Path
 from typing import Any
 
 from core.datapaths import tmp_dir
-from core.phases import note, phase
 from core.paths import ROOT, bank_dir
+from core.phases import note, phase
 from ledger import steprows
+from sqx import progress
+from sqx.databank import find, state
 from sqx.export import membank
 from sqx.projects import crosstfload, exiting, live, stage
 from sqx.projects.workflow import CROSSTF
-from sqx import progress
+from sqx.workflow import launchsteps
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher
-from sqx.workflow import launchsteps
-from ui.daemon.loader import afterrun, find, state
 from ui.daemon.launch.run import assets, compare, counts, record, snapshot
-
+from ui.daemon.loader import afterrun
 
 # The tasks that run slow in a session hours old, and at their speed in one just opened
 # (🔬 2026-10-05, same project, SQX's own task time: WFM 1,837 s aged, 1,275 s fresh, 1,222 s on

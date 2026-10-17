@@ -1,11 +1,11 @@
 """What of a databank is loaded, what is stale, and the commands that bring it up to date."""
 
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 from core.paths import export_dir, harvest_dir, metrics_export
 from sqx import jobs
-from ui.daemon.loader import find
+from sqx.databank import find
 from sqx.databank.fingerprint import fingerprint
 
 # The three products a databank's page reads, by what they unlock on screen.

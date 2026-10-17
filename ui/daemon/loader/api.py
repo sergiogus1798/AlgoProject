@@ -1,10 +1,11 @@
 """The routes that load a databank's data when the window selects it."""
 
 from typing import Any
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ui.daemon.loader import state
+from sqx.databank import state
 
 ROUTER = APIRouter()
 

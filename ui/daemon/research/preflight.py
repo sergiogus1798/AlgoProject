@@ -4,8 +4,8 @@ from typing import Any, TypedDict
 
 from core.paths import CLAUDE_BIN
 from sqx.projects import registry
+from sqx.worker import preflight as advance
 from studies.research.board import proposal
-from ui.daemon.advance import preflight as advance
 from ui.daemon.launch import api as launch
 from ui.daemon.research import queue
 

@@ -1,11 +1,11 @@
 """The population matrix: every strategy of one databank against every study, one state per cell."""
 
-from typing import Any
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
+from sqx.databank import find
 from ui.daemon.results import catalogue, stale, store
-from ui.daemon.loader import find
 
 
 def _column(folder: Path, project: str) -> tuple[dict, list[dict]]:

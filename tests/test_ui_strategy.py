@@ -7,15 +7,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from fastapi.testclient import TestClient  # noqa: E402
-
 from unittest import mock  # noqa: E402
+
+from fastapi.testclient import TestClient  # noqa: E402
 
 from core import paths  # noqa: E402
 from core.assetdata import AUTONOMOUS  # noqa: E402
 from sqx import progress  # noqa: E402
+from sqx.databank import find  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
-from ui.daemon.loader import find  # noqa: E402
 from ui.daemon.tearsheet import borrow, oos2  # noqa: E402
 
 # A self-contained copy of one Test_ project that has since been retired: its project.cfx, one

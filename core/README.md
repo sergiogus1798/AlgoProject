@@ -20,6 +20,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `cfx.py` | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | project → dicts |
 | `commission.py` | Each broker's own commission as a %, refreshed weekly from the latest close. | brokers, feed → `pct_now` per broker |
 | `datapaths.py` | The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches, spread. | names → `Path` |
+| `diskmemo.py` | What the daemon computed once, kept across restarts: one pickled dict per name in AlgoData/ui/memo/. | dict ↔ AlgoData/ui/memo/ |
 | `exportdrv.py` | What leaves SQX through the worker: trades, and the symbol list (metrics are read off the .sqx). | request → files |
 | `fanout.py` | Independent tasks across processes, the costliest first, each result handed back as it lands. | tasks + costs → results |
 | `fleetpaths.py` | Where the live MT5 fleet's files are, and each account's plan from machine.yaml. | → `Path`, dict |

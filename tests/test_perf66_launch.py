@@ -16,7 +16,8 @@ sys.path.insert(0, str(ROOT))
 from mt5.verify import sqxside
 from pipeline.autopilot import blind, entry, run
 from sqx.projects import live, taskcap
-from ui.daemon.advance import preflight, run as advance_run
+from sqx.worker import preflight
+from ui.daemon.advance import run as advance_run
 from ui.daemon.launch import liverun
 from ui.daemon.loader import afterrun
 

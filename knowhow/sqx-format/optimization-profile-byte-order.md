@@ -7,7 +7,7 @@ tag: 🔬  date: 2026-10-05  see: sqx-format/optimization-profile-bin, perf/auto
 Trap: the member (19.5 MB inside each SPP-result `.sqx`) keeps its size and its multiset of bytes, but ~894k
 positions move at every save, so its zip CRC changes. A fingerprint built from member CRCs calls every SPP
 databank stale at each stop and re-exports it (63 s wasted per stop). Fix (230c856): hash that member
-order-free — `core/sqxfile.py` `mark` uses a byte histogram; consumer `ui/daemon/loader/state.py` `_entries`.
+order-free — `core/sqxfile.py` `mark` uses a byte histogram; consumer `sqx/databank/state.py` `_entries`.
 Not: "a changed CRC means changed content". 🤔 In the validation run the SPP databanks were still re-exported
 at the stop of step 19 (WFM); another cause is open.
 

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from ui.daemon.advance import preflight as advance
+from sqx.worker import preflight as advance
 from ui.daemon.launch import chainplan, preflight
 from ui.daemon.workflow import api as workflow
 

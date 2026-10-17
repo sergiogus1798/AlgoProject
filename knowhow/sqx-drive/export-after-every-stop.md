@@ -22,7 +22,7 @@ every XML entry order-free (SQX's resave reshuffles SQStats in settings.xml and 
 - 🔬 2026-09-28, before the fix: `advance.busy('custodian', 'Test_XAUUSD_donchianUpperCrossUp_H1')`
   right after creating it read `Test_USDJPY_donchianUpperCrossUp_M30 se modificó en SQX_w2 hace
   1.0 h` (the owner's own crossmarket run at 21:39) — `RECENT_H = 24` in
-  `ui/daemon/advance/preflight.py`, removed 2026-09-29 (OPEN.md §83, §32's real lock in its place).
+  `sqx/worker/preflight.py`, removed 2026-09-29 (OPEN.md §83, §32's real lock in its place).
 - 🔬 `ui.daemon.create.author` (`CLAUDE_BIN -p … --permission-mode auto`) on the chat's draft
   `donchianUpperBreakUp`: ~3 min, answered `YA EXISTE: donchianUpperCrossUp` and deleted the
   draft. Headless it warns «workspace has not been trusted» and ignores the 42 allow rules of

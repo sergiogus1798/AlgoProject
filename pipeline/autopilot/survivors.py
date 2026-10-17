@@ -9,7 +9,7 @@ from core.paths import databank_dir
 from ledger import study as studymod
 from sqx.curate import apply_verdict
 from sqx.projects import registry
-from ui.daemon.advance.preflight import by_identity
+from sqx.worker.preflight import by_identity
 from ui.daemon.runner import where
 
 # The steps whose `cut` in criteria.yaml names where the survivors live from then on: 16

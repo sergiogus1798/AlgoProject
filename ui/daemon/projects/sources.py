@@ -8,11 +8,11 @@ from typing import Any
 
 from core import worker
 from core.paths import DATA
+from sqx import progress
+from sqx.databank import find
 from sqx.projects import registry
 from sqx.projects.retire import STOCK
 from ui.daemon import runs
-from sqx import progress
-from ui.daemon.loader import find
 
 # The order the gallery lists states in: what moves first, then what can be opened.
 ORDER = ("corriendo", "parado", "terminado", "construido", "ausente")

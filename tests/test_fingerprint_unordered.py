@@ -3,7 +3,7 @@
 import zipfile
 from pathlib import Path
 
-from ui.daemon.loader import state
+from sqx.databank import state
 
 
 def _sqx(folder: Path, profile: bytes) -> Path:

@@ -8,11 +8,11 @@ from typing import Any, TypedDict
 from core import sqxfile, worker
 from core.datapaths import project_registry
 from core.paths import MASTER, WORKERS, databank_dir, project_dir
+from sqx import progress
+from sqx.databank import discards
 from sqx.projects import crosstfload, live, registry, stage
 from sqx.projects.configure import BY_TASK, DEFAULT_SEGMENT
-from sqx import progress
 from sqx.worker import guard as workerguard
-from ui.daemon.filters import discards
 from sqx.workflow.launchsteps import Refusal, unconfigured
 from sqx.workflow.steps import STEPS
 

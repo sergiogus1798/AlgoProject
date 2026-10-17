@@ -10,7 +10,6 @@ a confirmation. Sequence and evidence: `knowhow/ui/window-advances-workflow.md`.
 | `api.py` | The routes of «Continuar workflow»: its preflight, and the one job that applies it. | imported | request → JSON |
 | `buildcap.py` | The build's time cap: SQX stops a build on its strategy count only, so the minutes are ours. | imported | project.cfx + running task → stop |
 | `confirm.py` | The confirmation «Continuar workflow» shows before it deletes anything (encargo 22 §7.2). | imported | preflight → text |
-| `preflight.py` | Whether «Continuar workflow» may touch a project's install now, and every reason it may not. | imported | project, databank → `{ok, reasons, …}` |
 | `run.py` | «Continuar workflow»: copy the discards aside, cut the databank, start the next task and wait. | `python3 -m ui.daemon.advance.run --project P --databank D` (the window queues it) | discards → databank cut, next task run, worker stopped |
 
 ## Traps

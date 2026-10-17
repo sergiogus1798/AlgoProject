@@ -22,5 +22,3 @@ nothing of it is read or queued.
 | `afterrun.py` | Export every new or stale databank of an install's custom projects, right after it stops. | `python3 -m ui.daemon.loader.afterrun --role custodian` | install → metrics/, raw/, harvest/ |
 | `api.py` | The routes that load a databank's data when the window selects it. | imported | request → JSON |
 | `extrasdef.py` | The exports an analysis reads that are not loader pieces: which databanks feed each, and the command. | imported by `afterrun.py` | — |
-| `find.py` | Where a databank's files live, which retest pairs with it, and whether SQX is writing it now. | imported | project, databank → paths, facts |
-| `state.py` | What of a databank is loaded, what is stale, and the commands that bring it up to date. | imported | project, databank → status, jobs |

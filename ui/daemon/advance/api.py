@@ -8,9 +8,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from sqx import jobs, proof
-
-from sqx.worker import winddown
-from ui.daemon.advance import confirm, preflight
+from sqx.worker import preflight, winddown
+from ui.daemon.advance import confirm
 
 ROUTER = APIRouter()
 LABEL = "advance"

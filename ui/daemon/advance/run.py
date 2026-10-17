@@ -15,12 +15,15 @@ import pandas as pd
 
 from core import worker
 from ledger import record
+from sqx import log as sqxlog
+from sqx import progress
 from sqx.curate import apply_verdict
+from sqx.databank import discards
 from sqx.projects import crosstfload, stage, taskcap
-from sqx import progress, log as sqxlog
 from sqx.worker import guard as workerguard
-from ui.daemon.advance import buildcap, preflight
-from ui.daemon.filters import discards, ledgerrow
+from sqx.worker import preflight
+from ui.daemon.advance import buildcap
+from ui.daemon.filters import ledgerrow
 from ui.daemon.launch import configure
 
 POLL, READY_TRIES = (
