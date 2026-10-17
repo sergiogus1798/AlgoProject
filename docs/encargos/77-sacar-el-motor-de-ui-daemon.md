@@ -9,11 +9,11 @@
 | 3 | `loader/find`, `loader/state` → `sqx/databank/`; `advance/preflight` → `sqx/worker/`; la hoja `filters/discards` → `sqx/databank/`; `diskmemo` → `core/` con la huella del código como argumento | ~50 | hecho 2026-10-17 | `c65901e` |
 | 4 | `launch/steps` → `sqx/workflow/launchsteps.py`; `workflow/steps`+`sources` y la hoja `records` → `sqx/workflow/` (va antes que el 3: `preflight` los importa) | ~30 | hecho 2026-10-17 | `6ca743a` |
 | 5 | `launch/*` y `advance/run`+`buildcap` → `sqx/run/`; `chainplan` se funde en el plan del autopiloto | ~25 | pendiente | |
-| 6 | `runner/where` → `studies/run/where.py` (`table` se queda: importa `ui.daemon.runs` y los cuatro `runner/*` de estudios, que no son hojas) | ~20 | parcial 2026-10-17: `where` hecho, `table` pendiente | (este) |
-| 7 | `mt5bridge/runs` → `mt5/verify/`; fuera los `ui → mt5.*` directos | ~6 | hecho 2026-10-17 (más `display` y `strategy/locate`) | (este) |
-| 8 | `strategy/archive_write` → `core/archive/`; `pipeline.ledger.state.work_dir` → `core`; el escritor de `criteria` | ~10 | parcial 2026-10-17: `work_dir` y el escritor de `criteria` hechos; `archive_write` parado (importa `sqx` y `ui`) | (este) |
-| 9 | `sqxconfig/{write,studywrite,sections,options}` y `projects/sources` → `sqx/projects/`; el lector de campaña → `pipeline/campaign/` | ~25 | parcial 2026-10-17: `projects/sources` hecho; `sqxconfig` y el lector de campaña parados | (este) |
-| 10 | Sueltos: `engines/variants/excess` (mover `tradelevel`), `core/archive/manifest` → `ledger/`, `ui/desktop/launch` | ~8 | hecho 2026-10-17 | (este) |
+| 6 | `runner/where` → `studies/run/where.py` (`table` se queda: importa `ui.daemon.runs` y los cuatro `runner/*` de estudios, que no son hojas) | ~20 | parcial 2026-10-17: `where` hecho, `table` pendiente | `486b7e0` |
+| 7 | `mt5bridge/runs` → `mt5/verify/`; fuera los `ui → mt5.*` directos | ~6 | hecho 2026-10-17 (más `display` y `strategy/locate`) | `1bea5bc` |
+| 8 | `strategy/archive_write` → `core/archive/`; `pipeline.ledger.state.work_dir` → `core`; el escritor de `criteria` | ~10 | parcial 2026-10-17: `work_dir` y el escritor de `criteria` hechos; `archive_write` parado (importa `sqx` y `ui`) | `d0c38c1` |
+| 9 | `sqxconfig/{write,studywrite,sections,options}` y `projects/sources` → `sqx/projects/`; el lector de campaña → `pipeline/campaign/` | ~25 | parcial 2026-10-17: `projects/sources` hecho; `sqxconfig` y el lector de campaña parados | `bf1db89` |
+| 10 | Sueltos: `engines/variants/excess` (mover `tradelevel`), `core/archive/manifest` → `ledger/`, `ui/desktop/launch` | ~8 | hecho 2026-10-17 | `9a95bf7` |
 | — | `ALLOW` vacío; `ui.daemon` en `MAY_IMPORT` sin excepciones | — | pendiente | |
 
 **Bitácora:** (cada sesión añade una línea: fecha, paso, qué pasó)
