@@ -13,9 +13,10 @@ os.environ["ALGO_DATA_ROOT"] = str(TMP)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ledger import shards  # noqa: E402
-from core.paths import DATA  # noqa: E402
 
-assert DATA == TMP
+# core.paths may be loaded already by an earlier test, so point the module at the temp root
+DATA = shards.DATA = TMP
+shards.REMOTE = TMP / "ledger" / "_remote"
 
 
 def put(file: Path, rows: list[dict]) -> None:
