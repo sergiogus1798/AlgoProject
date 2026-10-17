@@ -236,7 +236,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/verify/runs.py` | 232 | What MT5 Bridge › Verificar reads and checks: past checks, the strategy's file, and whether one may start now. | core, mt5, sqx | — |
 | `mt5/verify/sidebyside.py` | 65 | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | core, mt5 | pandas |
 | `mt5/verify/sizing.py` | 65 | The fixed-risk mode's own pieces of the judge (encargo 61): the real-loss cap and the no-stop verdict. | core, mt5 | pandas |
-| `mt5/verify/sqxside.py` | 204 | The SQX half of a check: a Test_ project on the conductor, one retest per firm, the EA exported. | core, sqx | pandas |
+| `mt5/verify/sqxside.py` | 210 | The SQX half of a check: a Test_ project on the conductor, one retest per firm, the EA exported. | core, sqx | pandas |
 | `mt5/verify/ticks.py` | 159 | The optional second MT5 pass on real ticks: its backtest, its verdict beside the chosen model's, and the merged tab with three curves per firm. | core, mt5 | pandas |
 | `mt5/wine.py` | 215 | Where MetaTrader 5 lives inside its Wine prefix, and how to run a Windows program there. | core | — |
 | `mt5/winside/query.py` | 158 | Read-only queries to the running MT5 terminal; runs under the Windows Python inside the Wine prefix. | — | MetaTrader5 |
@@ -574,7 +574,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/variants/varianttrades.py` | 108 | Every variant's trades on the three legs and every market, in one `variant_trades.parquet` per batch. | core, sqx | pandas |
 | `sqx/worker/guard.py` | 187 | Whether a worker is up, and the marker a launcher job leaves while the worker it started runs. | core | psutil |
 | `sqx/worker/preflight.py` | 328 | Whether «Continuar workflow» may touch a project's install now, and every reason it may not. | core, sqx | — |
-| `sqx/worker/session.py` | 283 | One worker session of a launcher: rule 5, wait for SQX to be ready, follow a run to «Project finished», the build's time cap. | core, sqx | — |
+| `sqx/worker/session.py` | 288 | One worker session of a launcher: rule 5, wait for SQX to be ready, follow a run to «Project finished», the build's time cap. | core, sqx | — |
 | `sqx/worker/winddown.py` | 74 | Cancelling a launcher job: let it stop the worker it started, and stop only that worker. | core, sqx | psutil |
 | `sqx/workflow/launchsteps.py` | 182 | Which SQX tasks one workflow step launches from the window, and the SQX steps it cannot launch. | core, sqx | — |
 | `sqx/workflow/records.py` | 131 | The records the rail passes between its modules: the step row, the install view, the context. | — | — |
@@ -1410,7 +1410,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/launch/configure.py` | 74 | Run the configurator of every chosen task still unconfigured, as its skill does, with the worker stopped. | core, sqx | — |
 | `ui/daemon/launch/liverun.py` | 289 | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | core, ledger, sqx, ui | — |
 | `ui/daemon/launch/preflight.py` | 272 | Whether «Lanzar en SQX» may start one task of a project now, and every reason it may not. | core, sqx, ui | — |
-| `ui/daemon/launch/run.py` | 173 | «Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop. | core, ledger, sqx, ui | — |
+| `ui/daemon/launch/run.py` | 174 | «Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop. | core, ledger, sqx, ui | — |
 | `ui/daemon/library.py` | 147 | What the template library holds, read off disk into one answer per template. | core, sqx | — |
 | `ui/daemon/loader/__init__.py` | 1 | Loads a databank the window selects: what it lacks, what is stale, and the jobs that fetch it. | — | — |
 | `ui/daemon/loader/afterrun.py` | 279 | Export every new or stale databank of an install's custom projects, right after it stops. | core, sqx, studies, ui | — |

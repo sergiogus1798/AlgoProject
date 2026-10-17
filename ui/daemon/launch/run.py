@@ -4,13 +4,11 @@
 import argparse
 import signal
 import sys
-import time
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from core import worker
 from core.datapaths import template_runs
 from core.phases import phase
 from ledger import steprows
@@ -20,7 +18,8 @@ from sqx.projects import crosstfload, stage
 from sqx.templates.registry import RUN_COLUMNS, append
 from sqx.worker import guard as workerguard
 from sqx.worker import preflight as advance
-from sqx.worker.session import assets, graceful, ready, say, watch
+from sqx.worker import session
+from sqx.worker.session import assets, graceful, say
 from ui.daemon.launch import configure, preflight
 
 
@@ -86,32 +85,16 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
     say(10, f"activando solo {', '.join(titles)}")
     stage.just(pre["cfx"], titles)
     say(15, f"arrancando el {preflight.ROLES.get(role, role)}")
-    workerguard.refuse_if_up(role, top, port)
-    try:
-        with phase("start"):
-            worker.start(role)  # inside: a start that fails half-way is stopped too
-        workerguard.mark(role, project)
-        with phase("ready"):
-            ready(project, role)
-        began = time.time()
-        offsets = sqxlog.mark(top)
-        started_at = dict(offsets)  # `watch` advances `offsets`; the restore reads all
-        worker.started(
-            worker.call(f"-project action=start name={project}", role), project
-        )
-        say(60, f"{', '.join(titles)} lanzada(s)")
-        with phase("sqx", " + ".join(titles)):
-            run = watch(project, role, offsets)
-    finally:
-        # The job started it (refused above when it was up already), so it stops it.
-        with phase("stop"):  # the export after the stop is its own row, inside this one
-            worker.stop(role)
-        left = workerguard.stopped(role, top, port)
-    if left:
-        sys.exit(
-            f"el {role} no se paró ({left}): sus databanks pueden estar a medio escribir; "
-            "no se sigue"
-        )
+    got = session.run(
+        role,
+        project,
+        "sus databanks pueden estar a medio escribir; no se sigue",
+        session.Hooks(
+            phase=lambda n: phase(n, " + ".join(titles)) if n == "sqx" else phase(n),
+            launched=lambda: say(60, f"{', '.join(titles)} lanzada(s)"),
+        ),
+    )
+    run, began, started_at = got["run"], got["began"], got["started_at"]
     outputs = {t["output"] for t in chosen}
     with phase("restore"):
         back = restore(

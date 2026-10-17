@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 from mt5.verify import sqxside
 from pipeline.autopilot import blind, entry, run
 from sqx.projects import live, taskcap
-from sqx.worker import preflight
+from sqx.worker import preflight, session
 from sqx.worker import session as advance_run
 from ui.daemon.launch import liverun
 from ui.daemon.loader import afterrun
@@ -270,18 +270,18 @@ def test_a_load_or_a_sync_that_failed_is_not_an_empty_retest(
     strategy.write_text("x")
     cfg = {"input": "In", "load_s": 0, "sync_tries": 2, "poll_s": 0}
     monkeypatch.setattr(
-        sqxside, "WORKERS", {"conductor": {"path": tmp_path, "port": 1}}
+        session.preflight, "WORKERS", {"conductor": {"path": tmp_path, "port": 1}}
     )
     monkeypatch.setattr(sqxside, "worker_dir", lambda role: tmp_path)
     monkeypatch.setattr(
         sqxside, "databank_dir", lambda p, b, top: tmp_path / "databanks" / b
     )
     for name in ("refuse_if_up", "mark", "stopped"):
-        monkeypatch.setattr(sqxside.workerguard, name, lambda *a: None)
-    monkeypatch.setattr(sqxside.worker, "start", lambda role: None)
-    monkeypatch.setattr(sqxside.worker, "stop", lambda role, export: stops.append(role))
+        monkeypatch.setattr(session.workerguard, name, lambda *a: None)
+    monkeypatch.setattr(session.worker, "start", lambda role: None)
+    monkeypatch.setattr(session.worker, "stop", lambda role, export: stops.append(role))
     monkeypatch.setattr(
-        sqxside.worker,
+        session.worker,
         "call",
         lambda cmd, role: (
             replies["load"]
@@ -291,9 +291,9 @@ def test_a_load_or_a_sync_that_failed_is_not_an_empty_retest(
             else "OK"
         ),
     )
-    monkeypatch.setattr(sqxside.session, "ready", lambda *a: None)
-    monkeypatch.setattr(sqxside.session, "watch", lambda *a: {})
-    monkeypatch.setattr(sqxside.sqxlog, "mark", lambda top: {})
+    monkeypatch.setattr(session, "ready", lambda *a: None)
+    monkeypatch.setattr(session, "watch", lambda *a: {})
+    monkeypatch.setattr(session.sqxlog, "mark", lambda top: {})
     monkeypatch.setattr(sqxside.live, "mark", lambda role: ())
     monkeypatch.setattr(sqxside.loadwait, "loaded", lambda *a: None)
     with pytest.raises(SystemExit, match="SQX rechazó `-databank action=load"):

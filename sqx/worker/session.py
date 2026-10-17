@@ -5,6 +5,9 @@ import re
 import sys
 import time
 import zipfile
+from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -13,6 +16,7 @@ from core import proc, worker
 from sqx import log as sqxlog
 from sqx import progress
 from sqx.projects import taskcap
+from sqx.worker import guard as workerguard
 from sqx.worker import preflight
 
 POLL, READY_TRIES = (
@@ -206,3 +210,79 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict[str, Any]:
                 else ""
             ),
         )
+
+
+@dataclass(frozen=True)
+class Hooks:
+    """What a launcher adds to the shared session; every field is optional.
+
+    Attributes:
+        phase: A timing-row factory (`core.phases.phase`) for the start, ready, sqx and stop
+            stretches; none by default.
+        before: Called inside the `try`, before the worker starts.
+        between: Called once SQX is ready, before `action=start` (a databank load).
+        launched: Called right after `action=start` answered.
+        after: Called with the run read, worker still up, still inside the `try`.
+        export: False stops the worker without the export after the stop.
+    """
+
+    phase: Callable[..., AbstractContextManager] = lambda *_: nullcontext()
+    before: Callable[[], None] | None = None
+    between: Callable[[], None] | None = None
+    launched: Callable[[], None] | None = None
+    after: Callable[[dict[str, Any]], None] | None = None
+    export: bool = True
+
+
+def run(role: str, project: str, ending: str, hooks: Hooks = Hooks()) -> dict[str, Any]:
+    """The worker session every launcher shares: refuse a worker already up, start it, wait
+    until it answers, `action=start`, follow the run, and stop it in a `finally`.
+
+    Args:
+        role: The worker; this call starts and stops it.
+        project: The project to start.
+        ending: What follows «el <role> no se paró (<left>): » when the stop leaves it up.
+        hooks: What the launcher adds; see `Hooks`.
+
+    Returns:
+        `run` (the last read of `watch`), `began` (wall clock at ready) and `started_at` (the
+        log offsets at `action=start`, which `watch` itself advances). SystemExit when the
+        worker is still up after the stop.
+    """
+    top, port = preflight.WORKERS[role]["path"], preflight.WORKERS[role]["port"]
+    workerguard.refuse_if_up(role, top, port)  # `start` answers 0 on «already running»
+    got: dict[str, Any] = {}
+    phase = hooks.phase
+    try:
+        if hooks.before:
+            hooks.before()
+        with phase("start"):
+            worker.start(role)  # inside: a start that fails half-way is stopped too
+        workerguard.mark(role, project)
+        with phase("ready"):
+            ready(project, role)
+        got["began"] = time.time()
+        if hooks.between:
+            hooks.between()
+        offsets = sqxlog.mark(top)
+        got["started_at"] = dict(offsets)
+        worker.started(
+            worker.call(f"-project action=start name={project}", role), project
+        )
+        if hooks.launched:
+            hooks.launched()
+        with phase("sqx"):
+            got["run"] = watch(project, role, offsets)
+        if hooks.after:
+            hooks.after(got["run"])
+    finally:
+        # This job started it (refused above when it was up), so it stops it: a worker left
+        # up auto-syncs, and a sync deletes what it does not hold (hard rule 1).
+        with phase("stop"):
+            worker.stop(role) if hooks.export else worker.stop(role, export=False)
+        left = workerguard.stopped(
+            role, top, port
+        )  # `stop` answers 0 on «STILL RUNNING»
+    if left:
+        sys.exit(f"el {role} no se paró ({left}): {ending}")
+    return got

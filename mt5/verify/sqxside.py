@@ -10,10 +10,8 @@ from typing import Any
 import pandas as pd
 
 from core import exportdrv, proc, trades, worker
-from core.paths import ROOT, WORKERS, databank_dir, worker_dir
-from sqx import log as sqxlog
+from core.paths import ROOT, databank_dir, worker_dir
 from sqx.projects import live, loadwait
-from sqx.worker import guard as workerguard
 from sqx.worker import session
 
 
@@ -103,27 +101,20 @@ def run(
         worker between the start and «Project finished» (hard rule 3); the worker is stopped
         in a `finally`, and refused beforehand if someone else has it up.
     """
-    top, port = WORKERS[role]["path"], WORKERS[role]["port"]
     staged = work / "in"
     staged.mkdir(parents=True, exist_ok=True)
     shutil.copy2(strategy, staged / strategy.name)
-    workerguard.refuse_if_up(role, top, port)
     folders = {}
-    try:
-        say(20, f"arrancando el {role}")
-        worker.start(role)
-        workerguard.mark(role, project)
-        session.ready(project, role)
+
+    def load() -> None:
+        """Load the staged strategy into the input databank and wait until SQX holds it."""
         since = live.mark(role)
-        load = f"-databank action=load project={project} name={cfg['input']} folder={staged}"
-        worker.checked(worker.call(load, role), load)
+        cmd = f"-databank action=load project={project} name={cfg['input']} folder={staged}"
+        worker.checked(worker.call(cmd, role), cmd)
         loadwait.loaded(role, since, cfg["load_s"], cfg["poll_s"], cfg["input"])
-        offsets = sqxlog.mark(top)
-        worker.started(
-            worker.call(f"-project action=start name={project}", role), project
-        )
-        say(30, "retest en SQX con las condiciones de cada empresa")
-        session.watch(project, role, offsets)
+
+    def sync(_run: dict) -> None:
+        """Flush each firm's output databank to disk; raise when one stays empty."""
         for firm, bank in outputs.items():
             worker.call(
                 f"-databank action=synctofiles project={project} name={bank}", role
@@ -138,11 +129,21 @@ def run(
                     "estrategia; no se compara nada"
                 )
             folders[firm] = folder
-    finally:
-        worker.stop(role, export=False)
-        left = workerguard.stopped(role, top, port)
-    if left:
-        raise SystemExit(f"el {role} no se paró ({left}): no se sigue")
+
+    session.run(
+        role,
+        project,
+        "no se sigue",
+        session.Hooks(
+            before=lambda: say(20, f"arrancando el {role}"),
+            between=load,
+            launched=lambda: say(
+                30, "retest en SQX con las condiciones de cada empresa"
+            ),
+            after=sync,
+            export=False,
+        ),
+    )
     return folders
 
 

@@ -11,15 +11,12 @@ from typing import Any
 
 import pandas as pd
 
-from core import worker
 from ledger import record
-from sqx import log as sqxlog
 from sqx.curate import apply_verdict
 from sqx.databank import discards
 from sqx.projects import crosstfload, stage
-from sqx.worker import guard as workerguard
-from sqx.worker import preflight
-from sqx.worker.session import graceful, ready, say, watch
+from sqx.worker import preflight, session
+from sqx.worker.session import graceful, say
 from ui.daemon.filters import ledgerrow
 from ui.daemon.launch import configure
 
@@ -155,27 +152,13 @@ def advance(project: str, databank: str) -> None:
             [t for t, a in on if a] + crosstfload.separate_titles(pre["cfx"]),
         )
     say(30, f"arrancando el {role}")
-    top, port = preflight.WORKERS[role]["path"], preflight.WORKERS[role]["port"]
-    workerguard.refuse_if_up(role, top, port)  # `start` answers 0 on «already running»
-    try:
-        worker.start(role)  # inside: a start that fails half-way is stopped too
-        workerguard.mark(role, project)
-        ready(project, role)
-        offsets = sqxlog.mark(preflight.WORKERS[role]["path"])
-        worker.started(
-            worker.call(f"-project action=start name={project}", role), project
-        )
-        say(60, f"{pre['task']} lanzada")
-        run = watch(project, role, offsets)
-    finally:
-        # The daemon started it (the preflight refused a worker already up), so it stops it:
-        # a worker left up auto-syncs, and a sync deletes what it does not hold (hard rule 1).
-        worker.stop(role)
-        left = workerguard.stopped(
-            role, top, port
-        )  # `stop` answers 0 on «STILL RUNNING»
-    if left:
-        sys.exit(f"el {role} no se paró ({left}): páralo antes de leer sus databanks")
+    got = session.run(
+        role,
+        project,
+        "páralo antes de leer sus databanks",
+        session.Hooks(launched=lambda: say(60, f"{pre['task']} lanzada")),
+    )
+    run = got["run"]
     say(
         100,
         f"{pre['task']}: {run['events'].get(pre['task'], '?')}; {databank} "
