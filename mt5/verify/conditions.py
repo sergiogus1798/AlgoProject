@@ -5,7 +5,6 @@ from typing import Any
 import pandas as pd
 
 from mt5 import guard, live
-from mt5.verify import months
 
 # MT5's ENUM_SYMBOL_SWAP_MODE → SQX's <Swap type>. The ones left out (swap in the base or the
 # margin currency, reopen modes) have no SQX equivalent: a firm quoting one is refused.
@@ -58,7 +57,7 @@ def holes(per_month: dict[str, int], window: tuple[str, str]) -> list[str]:
     """The whole months of the window where the tester has too few bars to trade.
 
     Args:
-        per_month: «YYYY-MM» → bars the tester walks that month (`months.tester_months`).
+        per_month: «YYYY-MM» → bars the tester walks that month (`months.tester_view`).
         window: (first day, last day), YYYY-MM-DD.
 
     Returns:
@@ -79,14 +78,21 @@ def holes(per_month: dict[str, int], window: tuple[str, str]) -> list[str]:
     return [str(m) for m, n in per.items() if n < GAP_SHARE * per.median()]
 
 
-def gap_months(
-    symbol: str, account: dict, window: tuple[str, str], timeframe: str
-) -> list[str]:
-    """`holes` of the `timeframe` bars the firm's tester walks for the window (🔬 2026-10-16: the
-    terminal's H1 series and the tester's history disagree — Hantec XAUUSD.h — so only the
-    tester's own count will do; 2026-10-17: on the strategy's timeframe, `months`).
+def spread_for_sqx(data: dict, info: dict, points: int) -> tuple[float, str]:
+    """SQX's fixed spread from the median spread of the firm's M1 history over the window
+    (`months.tester_view`), the source the tester prices from (owner, P26i A, 2026-10-17).
+
+    🔬 2026-10-17: the live quote is not that source. On a Saturday it read Hantec GBPJPY at
+    24.9 points (Friday 0.4) and FTMO at 5.3 (2.8), while the tester's P&L did not move.
+
+    Returns:
+        defaultSpread in SQX's points, and its Spanish line for the notes.
     """
-    return holes(months.tester_months(symbol, account, window, timeframe), window)
+    spread = round(points * info["point"] / data["instrument"]["tick_size"], 4)
+    return spread, (
+        f"spread {spread} puntos de SQX = {points} puntos de {info['name']} × {info['point']} "
+        "(mediana del spread de su histórico M1 en la ventana, el del tester)"
+    )
 
 
 def for_sqx(
@@ -102,16 +108,14 @@ def for_sqx(
         slippage: SQX's slippage in points, from config.yaml.
 
     Returns:
-        The settings and one Spanish line per figure, saying where it came from. The spread
-        is the one the firm quotes at the moment of reading (owner, 2026-09-29: «spread actual
-        del símbolo»), turned from the firm's points into SQX's.
+        The settings and one Spanish line per figure, saying where it came from — all but
+        the spread, which `spread_for_sqx` adds once the window is known.
 
     Raises:
         Refused: The commission for this firm is not confirmed in `assets/`, or the swap is
             quoted in a mode SQX cannot express. Never guessed (hard rule 5).
     """
     tick = data["instrument"]["tick_size"]
-    spread = round(info["spread"] * info["point"] / tick, 4)
     brokers = data["costs"]["commission"].get("brokers") or {}
     com = brokers.get(firm) or {}
     if com.get("method") is None or com.get("value") is None:
@@ -140,8 +144,6 @@ def for_sqx(
         "rollout_hour": data["swap"]["rollout_hour"],
     }
     lines = [
-        f"spread {spread} puntos de SQX = {info['spread']} puntos de {info['name']} "
-        f"× {info['point']} (leído ahora en su servidor)",
         f"comisión {com['method']} {com['value']} (assets, {com.get('source') or 'sin fuente'})",
         f"swap {swap['type']} largo {long_} corto {short}, triple el "
         f"{swap['triple_swap_on'].lower()} (su servidor)",
@@ -156,7 +158,6 @@ def for_sqx(
         )
     return (
         {
-            "defaultSpread": spread,
             "defaultSlippage": slippage,
             "commission": {"method": com["method"], "value": com["value"]},
             "swap": swap,

@@ -6,7 +6,7 @@ SQX exported, on that firm's own account.** No clicks: the terminal logs into ea
 by itself. The window's **MT5 BRIDGE › Verificar** zone launches it (`ui/daemon/mt5bridge/`).
 
 ```
-strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) + assets (commission)
+strategy.sqx ─▶ conditions (MT5, each account: swap, leverage; spread from its history) + assets (commission)
             ─▶ sqx.projects.mt5verify: Test_ project on the conductor — «MT5 FTMO», «MT5 HANTEC», «MQL5»
             ─▶ sqxside: start, load, run, sync, stop · orderstocsv · retire the project
             ─▶ mt5side: compile the exported .mq5 · tester on each account ([Common] Login/Server)
@@ -20,7 +20,7 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 | `display.py` | How a stored Verificar result reads in the window: capitals, percentages and one line per firm. | imported by `runs.result` | dict → dict |
 | `firms.py` | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | imported | asset → firms usable, or why not |
 | `judge.py` | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | imported | trade lists + costs → verdict, tables, chart |
-| `months.py` | The bars per month the Strategy Tester walks for one firm's symbol on the strategy's timeframe, from a short probe pass. | — | — |
+| `months.py` | The bars per month the Strategy Tester walks for one firm's symbol on the strategy's timeframe, and the spread of the M1 history it prices from, out of one short probe pass. | — | — |
 | `mt5side.py` | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | imported | `.mq5` → trades per firm |
 | `pool.py` | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | `python3 -m mt5.verify.pool [--rebuild]` | `AlgoData/mt5/verify/<run>/` → `AlgoData/pool/pool.sqlite` |
 | `report.py` | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | imported | summaries + tabs → the two files |
@@ -36,8 +36,11 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 
 - **Which data SQX runs on:** its own (Dukascopy/Darwinex feed), with the firm's costs — so the
   comparison answers "is SQX's long history valid for this firm" (owner, 2026-09-29).
-- **Spread:** the one the firm quotes at the moment of reading (owner: «spread actual del
-  símbolo»). It moves with the hour: 41 points on FTMO's gold at 19:31 Madrid on 2026-09-29.
+- **Spread:** the median spread of the firm's M1 history over the window, the source the tester
+  prices from (owner, P26i A, 2026-10-17; it replaced «spread actual del símbolo», 2026-09-29).
+  🔬 The live quote moves with the hour and the weekend: Saturday 2026-10-17 Hantec GBPJPY read
+  24.9 points (Friday 0.4) while the tester's P&L did not move. The same probe pass as the holes
+  (`months.tester_view`, `spread,<points>,<count>` lines) gives the histogram; `conditions.spread_for_sqx`.
 - **Two sizing modes, both must pass** (owner, 2026-10-15, encargo 61-4d): `config.yaml`
   `modes` — `lot` (1 lot, SQX `FixedSize`) and `risk` (1,000 USD per trade from the stop, SQX
   `FixedAmount`, `RiskedMoney`). `run.one_pass` builds a project and an EA per mode
@@ -95,8 +98,8 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 
 `earliest()` only cuts the window's start. Holes inside it (Hantec: no bars 2022-06 and
 2023-01 on USDJPY/GBPJPY) are read once per firm after the window is known
-(`conditions.gap_months`): `months.tester_months` runs a probe EA (`mql/AlgoProbeMonths.mq5`, on the
-strategy's timeframe, open_prices, the firm's account) that counts the bars the tester walks per month, cached in
+(`months.tester_view`, `conditions.holes`): `months.tester_view` runs a probe EA (`mql/AlgoProbeMonths.mq5`, on the
+strategy's timeframe, ohlc_m1, the firm's account) that counts the bars the tester walks per month, cached in
 `MT5_DATA/months/<server>_<symbol>_<timeframe>.json` while it covers the window. On the strategy's timeframe, not M1:
 🔬 Hantec 2022-06..2023-04 holds about one M1 bar an hour, enough for an H1 strategy (USDJPY/GBPJPY matched 95 %),
 not for an M15 one (XAUUSD). A whole month with under half the firm's median month of bars is a hole (`conditions.holes`; the firm's own median). `judge.firm_result(gaps=)`

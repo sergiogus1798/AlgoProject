@@ -16,7 +16,17 @@ from core.paths import MT5_DATA
 from core.study import result as study_result
 from ledger import gate, record, study as ledger_study
 from mt5 import compare, tester, wine
-from mt5.verify import conditions, firms, judge, mt5side, report, sizing, sqxside, ticks
+from mt5.verify import (
+    conditions,
+    firms,
+    judge,
+    months,
+    mt5side,
+    report,
+    sizing,
+    sqxside,
+    ticks,
+)
 from sqx.inspect import feeds
 from sqx.projects import mt5verify
 from sqx.projects.mt5verify import Sizing
@@ -302,7 +312,7 @@ def main() -> None:
     rule_five(asset)
 
     wanted = [f for f in a.firms.split(",") if f]
-    refused, costs, notes, leverage, depth = {}, {}, {}, {}, {}
+    refused, costs, notes, leverage, depth, infos = {}, {}, {}, {}, {}, {}
     try:
         for firm, row in firms.usable(asset).items():
             if wanted and firm not in wanted:
@@ -319,6 +329,7 @@ def main() -> None:
                 costs[firm], notes[firm] = conditions.for_sqx(
                     data, firm, info, cfg["sqx"]["slippage"]
                 )
+                infos[firm] = info
                 leverage[firm], depth[firm] = (
                     info["account_leverage"],
                     info["first_bar"],
@@ -346,9 +357,12 @@ def main() -> None:
     try:
         for firm in costs:
             row = firms.usable(asset)[firm]
-            gaps[firm] = conditions.gap_months(
-                row["symbol"], row["account"], window, timeframe
+            view = months.tester_view(row["symbol"], row["account"], window, timeframe)
+            gaps[firm] = conditions.holes(view["counts"], window)
+            costs[firm]["defaultSpread"], line = conditions.spread_for_sqx(
+                data, infos[firm], months.median(view["spread"])
             )
+            notes[firm].insert(0, line)
             if gaps[firm]:
                 print(
                     f"{firms.label(firm)}: sin barras en {', '.join(gaps[firm])}: "

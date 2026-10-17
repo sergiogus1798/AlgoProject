@@ -99,7 +99,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/tradestore.py` | 174 | The trade library: one Parquet per export, holding only what cannot be derived back. | core | numpy, pandas |
 | `core/uitoken.py` | 42 | The ui daemon's session token: minted by `ui.daemon.serve`, kept in a 0600 file under the data root, read by every client. | core | — |
 | `core/wfmatrix.py` | 178 | Read the Walk-Forward Matrix a WFM cross-check leaves inside a .sqx, without SQX running. | core | — |
-| `core/wfmobjectives.py` | 284 | SQX's Walk-Forward Matrix objectives per cell — stability, score, the WF specials — and its rule. | core | — |
+| `core/wfmobjectives.py` | 286 | SQX's Walk-Forward Matrix objectives per cell — stability, score, the WF specials — and its rule. | core | — |
 | `core/wftrades.py` | 87 | Assign the trades of a data=all export to the Walk-Forward cell and period that produced them. | — | numpy, pandas |
 | `core/worker.py` | 246 | Drive the headless worker install. The master's CLI is dead while its GUI is up. | core | — |
 | `core/xmlget.py` | 40 | Typed reads of an XML tree whose layout is known: the element, attribute or text is there or the read fails. | — | — |
@@ -224,15 +224,15 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/server.py` | 224 | MCP server over MetaTrader 5 under Wine: compile, backtest, compare with SQX, and read-only data. | core, mt5 | mcp, pandas |
 | `mt5/tester.py` | 217 | Run one Strategy Tester pass: write its ini, start the terminal detached, and collect the report. | core, mt5 | — |
 | `mt5/verify/autopilot.py` | 268 | Step 26 as an autopilot action: the window's preflight over a list of finalists, one check each, the pool filled. | core, mt5 | pandas |
-| `mt5/verify/conditions.py` | 165 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | pandas |
+| `mt5/verify/conditions.py` | 166 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | pandas |
 | `mt5/verify/display.py` | 66 | How a stored Verificar result reads in the window: capitals, percentages and one line per firm. | — | — |
 | `mt5/verify/firms.py` | 65 | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | core, ledger, mt5 | yaml |
 | `mt5/verify/judge.py` | 475 | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | core, mt5 | numpy, pandas |
-| `mt5/verify/months.py` | 84 | The bars per month the Strategy Tester walks for one firm's symbol on the strategy's timeframe, | core, mt5 | — |
+| `mt5/verify/months.py` | 110 | The bars per month the Strategy Tester walks for one firm's symbol on the strategy's timeframe, | core, mt5 | — |
 | `mt5/verify/mt5side.py` | 174 | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | mt5 | pandas |
 | `mt5/verify/pool.py` | 241 | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | core, ledger | pandas |
 | `mt5/verify/report.py` | 172 | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | core, mt5 | pandas |
-| `mt5/verify/run.py` | 472 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
+| `mt5/verify/run.py` | 486 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
 | `mt5/verify/runs.py` | 232 | What MT5 Bridge › Verificar reads and checks: past checks, the strategy's file, and whether one may start now. | core, mt5, sqx | — |
 | `mt5/verify/sidebyside.py` | 65 | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | core, mt5 | pandas |
 | `mt5/verify/sizing.py` | 65 | The fixed-risk mode's own pieces of the judge (encargo 61): the real-loss cap and the no-stop verdict. | core, mt5 | pandas |
@@ -1128,7 +1128,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_mt5_start_check.py` | 52 | mt5.report.start_check on a real tester report and its journal: 22 % history and a start moved to 2008-12-03. | core, live_only, mt5 | — |
 | `tests/test_mt5_ticks.py` | 64 | Step 26's optional real-ticks pass: three curves per firm on the merged chart, the verdicts | mt5 | pandas |
 | `tests/test_mt5bridge_render.py` | 23 | Known answers for the Verificar table's helpers: the state cell and the missing result. | ui | — |
-| `tests/test_mt5verify.py` | 494 | MT5 Bridge's step 26 on known answers: the clock, the five rows, a firm's costs and the project it writes. | core, mt5, sqx | numpy, pandas |
+| `tests/test_mt5verify.py` | 496 | MT5 Bridge's step 26 on known answers: the clock, the five rows, a firm's costs and the project it writes. | core, mt5, sqx | numpy, pandas |
 | `tests/test_mt5verify_drawdown.py` | 33 | Step 26's row 5: a relative drawdown gap over the limit passes when the points apart are few (P26h). | mt5, test_mt5verify | — |
 | `tests/test_neighbours_autopilot.py` | 105 | Step 13's T1 chain in the autopilot: its order on both routes, and the refusal of a reserved leg. | pipeline | pandas, pytest |
 | `tests/test_neighbours_draw.py` | 152 | Step 14's T1 draw (`sqx.variants.neighbours`) and its batch: classes, bounds, determinism, de-dup. | sqx | pandas, pytest |
@@ -1324,7 +1324,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_wfc_families.py` | 195 | Step 17 on synthetic families whose answer is known: with no edge the order is called «perverso» | studies | numpy, pandas |
 | `tests/test_wfm_cell_selector.py` | 44 | WFM's «Celda» selector: each option picks exactly one equity chart of the matrix tab, and the | core, ui | — |
 | `tests/test_wfm_levels.py` | 159 | Step 19's known answers: the oos2 re-charge on a hand-made trade, L1's false-positive rate on | engines, studies | numpy, pandas |
-| `tests/test_wfm_objectives.py` | 94 | Known answers for SQX's WFM objectives and area rule: one hand-built cell, one 6x5 matrix. | core, studies | numpy |
+| `tests/test_wfm_objectives.py` | 102 | Known answers for SQX's WFM objectives and area rule: one hand-built cell, one 6x5 matrix. | core, studies | numpy |
 | `tests/test_wfm_one.py` | 121 | Walk-Forward Matrix's «Run solo esta estrategia»: `--strategy` asks `many.one` for that | core, studies | pandas |
 | `tests/test_worker_lifecycle.py` | 258 | bin/sqx-worker.sh's start/stop lifecycle, without ever touching a real worker. | — | — |
 | `tests/test_worker_lock.py` | 197 | bin/sqx-lock.sh's owner lock (OPEN.md #32): a fake install dir, no real worker touched. | core | — |

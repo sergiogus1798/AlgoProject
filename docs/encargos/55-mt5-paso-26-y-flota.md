@@ -109,7 +109,7 @@ Sus respuestas, que **no se vuelven a preguntar**:
 | pregunta | respuesta |
 |---|---|
 | ¿con qué datos corre SQX? | los suyos (Dukascopy/Darwinex), con los costes de la empresa |
-| ¿qué spread? | el que da la empresa en el momento de leerlo («spread actual del símbolo») |
+| ¿qué spread? | ~~el que da la empresa en el momento de leerlo («spread actual del símbolo»)~~ → la mediana del spread de su histórico M1 en la ventana, el que usa el tester (P26i A, 2026-10-17: el sábado Hantec GBPJPY marcaba 24,9 puntos en vivo, el viernes 0,4) |
 | ¿de dónde salen las estrategias? | del archivo y de los databanks |
 | ¿cómo se dimensiona? | con el de la propia estrategia (hoy FixedSize), en los dos lados: la tarea de SQX lo lleva y el EA se compila con ese lote fijo (la primera prueba real enseñó que, solos, ninguno de los dos lo usa) |
 | ¿dónde se ve? | en la misma ventana, sección **MT5 BRIDGE › Verificar** |

@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core import assetdata
 from core.datapaths import projects_backup
 from mt5 import compare, guard, tester
-from mt5.verify import conditions, firms, judge, mt5side, sizing
+from mt5.verify import conditions, firms, judge, months, mt5side, sizing
 from sqx.projects import cfxio, mt5verify
 from sqx.projects.resources import definitions, main_feed, one_task
 
@@ -161,6 +161,8 @@ def gapped(failures: list[str]) -> None:
         failures.append("holes no encuentra junio con casi sin barras M1")
     if conditions.holes(per, ("2024-01-15", "2024-06-10")) != []:
         failures.append("holes juzga meses parciales o inventa huecos")
+    if months.median({"3": 1, "5": 2, "40": 1}) != 5:
+        failures.append("la mediana del histograma de spread no es la de sus barras")
 
 
 def priced(failures: list[str]) -> None:
@@ -169,7 +171,6 @@ def priced(failures: list[str]) -> None:
     data = assetdata.load("XAUUSD")
     info = {
         "name": "XAUUSD",
-        "spread": 41,
         "point": 0.01,
         "swap_mode": 1,
         "swap_long": -90.35,
@@ -177,6 +178,7 @@ def priced(failures: list[str]) -> None:
         "swap_rollover3days": 3,
     }
     got, _ = conditions.for_sqx(data, "ftmo", info, 0)
+    got["defaultSpread"] = conditions.spread_for_sqx(data, info, 41)[0]  # median, P26i
     if got != COSTS:
         failures.append(f"los costes de FTMO en unidades de SQX: {got}")
     # Hantec's gold commission is confirmed since 2026-10-01 (encargo 55 §1.4); the5ers' is not
