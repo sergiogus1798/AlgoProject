@@ -32,7 +32,7 @@ tested.
 | 🔬 The ledger door binds only an autonomous agent (`ALGO_AUTONOMOUS=1`); a human may read any segment, and the row is written either way | `ledger/gate.py:40-66` |
 | 🔬 The archive has **no development/validated mark**; `manifest.json` has `step` (e.g. `"16.5"`) | `core/archive/manifest.py`, manifest read 2026-09-30 |
 | 🔬 A study returns the contract dict (8 block kinds, 5 states); the window paints it with `ui/desktop/blocks/` | `core/study/CONTRACT.md` |
-| 🔬 Long jobs go through `ui/daemon/jobs.py`: lane `python` (core-budgeted, refuses below 20 GB free RAM) or `conductor` (SQX) | `ui/daemon/jobs.py:25-30,88` |
+| 🔬 Long jobs go through `sqx/jobs.py`: lane `python` (core-budgeted, refuses below 20 GB free RAM) or `conductor` (SQX) | `sqx/jobs.py:25-30,88` |
 | 🔬 Python's RAM reserve is 20 GB; the worst catalogue target peaks 2.5 GB | `knowhow/perf/ram-budget.md` |
 | 🔬 `checks.py`: 500 lines per file, README table per folder, docstrings + type hints, no absolute path outside `core/paths.py`, every `__main__` named by a manual chapter, pinned requirements, fresh `DEPENDENCIES.md` | `CODESTYLE.md`, `tools/checks.py` |
 | 🔬 `docs/manual/` was ten PDFs, one per family (`tools/manual.py` `FAMILIES`); the eleventh, «11-cartera», added 2026-09-30 (Q17) | `tools/manual.py:26` |
@@ -378,7 +378,7 @@ Also reported, not judged: the deflated Sharpe of the chosen portfolio with N fr
 
 Inside the PORTFOLIOS zone (`ui/desktop/portfolios/`), a second tab «Construir»: pick a pool (and a
 firm, when prohibition files exist), the drawer with every knob (`tooltips.py`), «Construir» enqueues
-`python3 -m portfolio.common.construct.report …` on the daemon's `python` lane (`ui/daemon/jobs.py`,
+`python3 -m portfolio.common.construct.report …` on the daemon's `python` lane (`sqx/jobs.py`,
 no SQX, no confirmation gate needed); the result is the contract dict painted by
 `ui/desktop/blocks/` — tabs: Veredicto · Universo (reconciliation, coverage per segment) · Parejas
 (grid of each measure, bars of failures per filter) · Búsqueda (funnel, score distribution of every

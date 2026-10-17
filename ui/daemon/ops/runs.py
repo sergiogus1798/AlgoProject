@@ -2,7 +2,7 @@
 
 from core import worker
 from core.paths import WORKERS
-from ui.daemon import progress
+from sqx import progress
 
 
 def count(role: str, project: str) -> dict | None:

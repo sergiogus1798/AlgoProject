@@ -11,7 +11,7 @@ places that each know part of a project:
 | the roster of each databank (`loader.find.roster`) | the total of distinct strategies (identity), 0 for an empty folder without hashing |
 | today's SQX log of the install (`progress.run_state`) and, for a worker running it, `-project action=status` (`progress.state` → `tasklog.status`) | the state: corriendo / parado / terminado / construido, and `ausente` for a project that left only reports and is not retired in `registry.csv` — a retired one carries `install_label` «retirados» and the window shows it only under that filter (owner, 2026-10-04) |
 
-**Imports from:** `core`, `sqx.projects.registry`, `sqx.projects.retire` (`STOCK`), `ui.daemon.progress`,
+**Imports from:** `core`, `sqx.projects.registry`, `sqx.projects.retire` (`STOCK`), `sqx.progress`,
 `ui.daemon.runs`, `ui.daemon.loader.find` · **Consumed by:** `ui/desktop/workspace/gallery.py`,
 `ui/desktop/cmdpalette.py`, `ui/desktop/projectflow.py`
 

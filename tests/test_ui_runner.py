@@ -24,7 +24,8 @@ if "--run" not in sys.argv:
 import pandas as pd
 
 from core.paths import DATA, report_dir  # noqa: E402
-from ui.daemon import jobs, jobsapi  # noqa: E402
+from ui.daemon import jobsapi
+from sqx import jobs  # noqa: E402
 from ui.daemon.runner import api, where  # noqa: E402
 
 # Since F13 (2026-09-28): the USDJPY Donchian project. The strategy is read off the newest

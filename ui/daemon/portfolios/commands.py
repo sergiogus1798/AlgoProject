@@ -5,7 +5,7 @@ from typing import Any
 
 from portfolio.common.construct.inputs import config
 from portfolio.funded.sim import inputs as bank_inputs, table as bank_table
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.portfolios import bankjob, construct, shelf
 
 LABEL = "portfolio"

@@ -4,7 +4,7 @@ kw: progress bar percent window jobs strip PROGRESS line, SQX task progress, cus
 tag: 🔬  date: 2026-09-28  see: ui/stale-ui-daemon
 ---
 # Where every progress figure of the window comes from — and which runs have none
-- **A Python job's bar** is its last `PROGRESS <0-100> <state>` stdout line (`ui/daemon/jobs.py`); 100 once it exits 0. A study that never prints one (`profitShape`) sits at **0 % until it ends** — not stuck.
+- **A Python job's bar** is its last `PROGRESS <0-100> <state>` stdout line (`sqx/jobs.py`); 100 once it exits 0. A study that never prints one (`profitShape`) sits at **0 % until it ends** — not stuck.
 - **An SQX task's bar**: SQX's own percent exists only in the compute-thread name of walk-forward tasks (`progress.PERCENT`); otherwise done ÷ total from the worker's status line (`Strategies generated`) over the task's input databank. **A build has no total**: indeterminate bar.
 - **The custodian pulse's whole-run count** exists only for window jobs that print `PROGRESS n de N` (`sqx.variants.execute`). A run started from a terminal gets the running **task**'s count from `-project action=status` — no rate, no ETA (OPEN §55).
 - The status line is asked only while the install's log says a project runs; the master is never asked.

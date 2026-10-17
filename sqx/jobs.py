@@ -13,7 +13,7 @@ import psutil
 
 from core import fanout
 from core.paths import DATA, ROOT
-from ui.daemon import winddown
+from sqx.worker import winddown
 
 LOGS = DATA / "logs" / "ui"
 TAIL = 25

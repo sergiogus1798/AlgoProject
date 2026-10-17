@@ -13,7 +13,7 @@ import pytest  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from ui.daemon import jobs  # noqa: E402
+from sqx import jobs  # noqa: E402
 from ui.daemon.loader import api, find, state  # noqa: E402
 from sqx.databank import fingerprint as printed  # noqa: E402
 

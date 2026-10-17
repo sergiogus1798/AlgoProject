@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from portfolio.common.construct.inputs import pool as pool_mod
 from portfolio.funded.decide import tables
-from ui.daemon import jobs, proof
+from sqx import jobs, proof
 from ui.daemon.portfolios import (
     analyse,
     bank,

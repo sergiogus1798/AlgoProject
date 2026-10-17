@@ -9,7 +9,7 @@ tag: 📓  date: 2026-09-25  see: locations/report-csv-conventions, sqx-drive/ru
 `Databank '<project>/<bank>' saved` at the end. The fine percentage travels in the compute thread's
 name: `[Blocking computeThread common #55 - WF: 16 runs : 40 % OOS WFO 2]`. Every `start` is one
 workflow step (`stage`), so a task done in an earlier start reads `SKIPPED, inactive task` now;
-`ui/daemon/progress.py` keys on the last `Starting project` and calls such a task «hecha antes».
+`sqx/progress.py` keys on the last `Starting project` and calls such a task «hecha antes».
 
 ## Evidence
 - `SQX_w2/user/log/StrategyQuant/log_2026_09_25.log`, run of `USDJPY_emaCross_H1` on 2026-09-25

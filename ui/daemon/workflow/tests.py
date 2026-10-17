@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.results import catalogue, forproject, knobs
 from ui.daemon.runner import table, where
 from ui.daemon.workflow import sources

@@ -7,7 +7,7 @@ project is running — the one command the custodian may receive between start a
 (CLAUDE.md rule 3; it syncs nothing). The master is never asked. The ledger view reads
 `AlgoData/ledger/*.jsonl` through `ledger/` and never writes a line.
 
-**Imports from:** `core/`, `ledger/`, `ui/daemon/progress.py`, `ui/daemon/jobs.py` (its `LOGS`),
+**Imports from:** `core/`, `ledger/`, `sqx/progress.py`, `sqx/jobs.py` (its `LOGS`),
 `ui/text/numbers.py` (`num`, pure Python: the pulse line prints counts as the window does) ·
 **Consumed by:** `ui/daemon/routers.py` (`ROUTER`) → `ui/desktop/ops/`
 

@@ -80,7 +80,7 @@ get_funnel  # ui/daemon/databank/api.py
 get_state  # ui/daemon/filters/api.py
 get_saved  # ui/daemon/filters/api.py
 post_saved  # ui/daemon/filters/api.py
-_reap  # ui/daemon/jobs.py
+_reap  # sqx/jobs.py
 job_list  # ui/daemon/jobsapi.py
 progress_installs  # ui/daemon/jobsapi.py
 progress_state  # ui/daemon/jobsapi.py

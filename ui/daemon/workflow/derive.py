@@ -6,7 +6,7 @@ from core.assetcheck import pending, provisional, validate
 from core.assetdata import load
 from sqx.projects.crosstfload import phase2_tasks
 from sqx.projects.stage import titles
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.workflow import sources
 from ui.daemon.workflow.records import Context, StepRow
 

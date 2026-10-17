@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from core import sqxfile
 from mt5 import wine
-from ui.daemon import jobs, proof
+from sqx import jobs, proof
 from ui.daemon.launch.api import queued
 from ui.daemon.mt5bridge import runs
 

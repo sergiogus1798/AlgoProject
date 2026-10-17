@@ -30,7 +30,7 @@ def test_floored_second_heavy_waits_and_light_ones_pack(
 ) -> None:
     """Free RAM for one heavy job above the floor: the second heavy waits (it would sleep),
     three light ones still start together."""
-    from ui.daemon import jobs
+    from sqx import jobs
     from ui.daemon.launch import chain
 
     heavy = jobs.weight({"study": "gate"}) * chain.GB_PER_WEIGHT
@@ -53,7 +53,7 @@ def test_floored_second_heavy_waits_and_light_ones_pack(
 
 def test_floored_reserves_cumulatively(monkeypatch: pytest.MonkeyPatch) -> None:
     """Two threads measuring the same free figure do not both pass: the first's reservation counts."""
-    from ui.daemon import jobs
+    from sqx import jobs
     from ui.daemon.launch import chain
 
     chain_fakes(monkeypatch, jobs.FLOOR_GB + 0.8)  # room for one light (0.75), not two
@@ -143,7 +143,7 @@ def test_two_wide_never_overlap_and_light_never_beside_wide(
 ) -> None:
     """With RAM to spare, only the cores gate: gate and feedQuality never run together, and a
     light study never starts beside a wide one."""
-    from ui.daemon import jobs
+    from sqx import jobs
     from ui.daemon.launch import chain
 
     seen = run_threads(
@@ -166,7 +166,7 @@ def test_two_wide_never_overlap_and_light_never_beside_wide(
 
 def test_light_studies_pack(monkeypatch: pytest.MonkeyPatch) -> None:
     """Sixteen light commands (weight 3 each) run together."""
-    from ui.daemon import jobs
+    from sqx import jobs
     from ui.daemon.launch import chain
 
     seen = run_threads(
@@ -181,7 +181,7 @@ def test_every_module_that_fans_out_is_wide() -> None:
     """A module under studies/ that calls `fanout.run` and belongs to a startable study of the
     catalogue has that study in `jobs.WIDE` (a calibrator and a data scan are not studies)."""
     from core.paths import ROOT
-    from ui.daemon import jobs
+    from sqx import jobs
     from ui.daemon.runner import table
 
     keys = {k for k, v in table.STUDIES.items() if "plan" in v}

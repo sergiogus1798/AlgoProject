@@ -5,7 +5,7 @@ from typing import Any, cast
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.launch import chainplan
 from ui.daemon.runner import where
 from ui.daemon.workflow import derive, ledgerview, needs, run, sources, tests

@@ -13,7 +13,7 @@ from unittest import mock  # noqa: E402
 
 from core import paths  # noqa: E402
 from core.assetdata import AUTONOMOUS  # noqa: E402
-from ui.daemon import progress  # noqa: E402
+from sqx import progress  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
 from ui.daemon.loader import find  # noqa: E402
 from ui.daemon.tearsheet import borrow, oos2  # noqa: E402

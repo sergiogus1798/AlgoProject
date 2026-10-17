@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from studies.research.board import store
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.research import preflight, proposals, queue, views
 
 ROUTER = APIRouter()

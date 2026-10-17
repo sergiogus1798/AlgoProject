@@ -25,7 +25,7 @@ from sqx import log as sqxlog
 from ui.daemon.advance import preflight as advance
 from ui.daemon.advance.run import ready, say, watch
 from ui.daemon.launch import configure, preflight
-from ui.daemon.projdisk import counts
+from sqx.projdisk import counts
 
 # The project folder before the start (hard rule 1), without log/; deleted once the counts match.
 SNAPSHOTS = advance.DISCARDS.parent / "snapshots"

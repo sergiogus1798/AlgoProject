@@ -16,7 +16,7 @@ the payload `chain`: what «Correr workflow» would run now and where it would s
 (`ui/daemon/launch/chainplan.plan`, painted beside its button).
 
 `POST /api/workflow/run {project, tests: [{n, key}], databank, strategies}` queues the ticked
-tests in `ui/daemon/jobs.py` → `{jobs, refused: [{n, key, why}]}`. `POST /api/workflow/backfill
+tests in `sqx/jobs.py` → `{jobs, refused: [{n, key, why}]}`. `POST /api/workflow/backfill
 {project}` queues `python3 -m ledger.backfill --blind <P> … --write` when offered.
 
 Reading is files only: the data root, the install's `project.cfx`, logs and databank folders, and

@@ -38,7 +38,7 @@ Full tables: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento).
   pairs, 113 s and 7.3 GB tree PSS.
 - 🔬 2026-09-27, one strategy (`crossmarket.one.run`, 9 markets, 25,000 draws): serial 883 s → each
   market + OOS a `core.fanout` task: 116 s, same 3.8 GB peak; at 2,000 draws 136 → 26 s, contract
-  JSON `==`. `ui/daemon/jobs.py` weighs jobs on 48 cores (fan-out 24, light 3, none below 20 GB free
+  JSON `==`. `sqx/jobs.py` weighs jobs on 48 cores (fan-out 24, light 3, none below 20 GB free
   — `knowhow/perf/ram-budget.md`, since 2026-09-27).
 - 🔬 2026-09-29, OPEN #69/#70 re-confirmed on real stored input: `crossmarket.report` batch,
   `Test_USDJPY_donchianUpperCrossUp_M30/Retest_Markets_-_Family/2026-09-28`, 200 real strategies ×

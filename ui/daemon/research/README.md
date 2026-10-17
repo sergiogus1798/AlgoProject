@@ -14,7 +14,7 @@ Reads that cost nothing, and one confirmation-gated job: the queue (the fourth l
 | `steps.py` | The five real steps one idea goes through: rule 5, the template, the project, the palette, the autopilot. | imported | idea → template, project, run |
 | `views.py` | What the «Investigar» panel reads: the profile's map, one cell's measures, the memory, the board. | imported | profile + memory → dicts |
 
-**Imports from:** `studies/research/board`, `studies/research/memory`, `ui/daemon/jobs`,
+**Imports from:** `studies/research/board`, `studies/research/memory`, `sqx/jobs`,
 `ui/daemon/advance/preflight`, `ui/daemon/launch/api` · **Consumed by:** `ui/desktop/research/`
 (over HTTP), the `/research-direct` skill (`proposals.answer`).
 

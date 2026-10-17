@@ -16,7 +16,7 @@ from ledger import steprows
 from sqx.export import membank
 from sqx.projects import crosstfload, exiting, live, stage
 from sqx.projects.workflow import CROSSTF
-from ui.daemon import progress
+from sqx import progress
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher

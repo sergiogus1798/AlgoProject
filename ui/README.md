@@ -72,7 +72,7 @@ Loopback alone keeps nobody on this machine out, so every request passes a gate 
 the daemon's own `Host`, no foreign `Origin` (a page in the owner's browser), and a session token
 the daemon mints at start into `AlgoData/ui/token-<port>` (0600) and the window sends as
 `X-Algo-Token` on everything but `GET /api/health`. And the three launchers below take a one-use
-nonce from their preflight (`daemon/proof.py`): `run`/`verify` starts nothing unless the
+nonce from their preflight (`sqx/proof.py`): `run`/`verify` starts nothing unless the
 confirmation it is asked to honour is the one the preflight would show now. The owner sees none of
 it. → `daemon/README.md` §«Who may call the daemon»
 
@@ -128,7 +128,7 @@ The two exceptions, both the owner's (2026-09-27):
   then compiles the EA SQX exported and backtests it in MT5 on each account. The terminal only
   backtests; it stays on the last account used.
 
-**The daemon's lanes** (`daemon/jobs.py`): every job is a child of the daemon, in memory, logged
+**The daemon's lanes** (`sqx/jobs.py`): every job is a child of the daemon, in memory, logged
 under `AlgoData/logs/ui/`. The **python** lane runs analysis modules (`python3 -m studies…`)
 within a core budget — a fan-out study takes half the cores, a light one three, a batch its
 workers — and starts nothing new below 20 GB of free RAM unless the lane is empty. Every analysis

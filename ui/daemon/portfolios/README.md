@@ -13,7 +13,7 @@ GET /preflight ─▶ commands.plan ─▶ {ok, reasons, text, confirm}      POS
 ```
 
 **Imports from:** `portfolio/common/construct`, `portfolio/funded/{sim,decide,catalog}`, `core/paths`, `core/study`,
-`ui/daemon/{jobs,proof}` · **Consumed by:** `ui/desktop/portfolios` over HTTP, `tests/test_ui_portfolios.py`
+`sqx/{jobs,proof}` · **Consumed by:** `ui/desktop/portfolios` over HTTP, `tests/test_ui_portfolios.py`
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

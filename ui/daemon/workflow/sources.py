@@ -8,7 +8,7 @@ from pathlib import Path
 from core import worker
 from core.datapaths import project_registry, template_dir, template_runs
 from core.paths import DATA, MT5_DATA
-from ui.daemon import progress, tasklog
+from sqx import progress, tasklog
 from ui.daemon.workflow.records import Result, SqxView
 from ui.daemon.workflow.steps import BATCH_ROOTS, DROP
 

@@ -13,7 +13,7 @@ from ledger import gate, record, thresholds
 from ledger import study as studymod
 from pipeline.autopilot import call, survivors
 from sqx.projects import stage
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.launch import chain, preflight
 from ui.daemon.loader import state as loader
 

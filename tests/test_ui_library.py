@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
-from ui.daemon import tasklog  # noqa: E402
+from sqx import tasklog  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
 from ui.daemon.coverage import ARCHETYPES  # noqa: E402
 from ui.desktop import client, names  # noqa: E402

@@ -9,7 +9,9 @@ import os
 
 from fastapi import FastAPI
 
-from ui.daemon import gate, jobs, progress, version
+from ui.daemon import gate, version
+
+from sqx import jobs, progress
 from ui.daemon.routers import ROUTERS
 
 APP = FastAPI(title="AlgoDaemon", docs_url=None, redoc_url=None)

@@ -10,7 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core import worker  # noqa: E402
 from tests.test_advance import P  # noqa: E402
-from ui.daemon import jobs, winddown  # noqa: E402
+from sqx import jobs
+from sqx.worker import winddown  # noqa: E402
 from sqx.worker import guard as workerguard  # noqa: E402
 from ui.daemon.launch import chain, run  # noqa: E402
 

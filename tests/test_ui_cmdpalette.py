@@ -25,7 +25,8 @@ import pandas as pd  # noqa: E402
 
 from core.paths import DATA, ROOT  # noqa: E402
 from ui.daemon.loader import state as loadstate  # noqa: E402
-from ui.daemon import jobs, tasklog  # noqa: E402
+from sqx import jobs
+from sqx import tasklog  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
 from ui.daemon.runner import where  # noqa: E402
 from ui.desktop import client, cmdrank  # noqa: E402

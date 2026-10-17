@@ -19,7 +19,7 @@ import psutil
 
 from core.paths import ROOT
 from sqx.projects import stage
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.advance.run import say
 from ui.daemon.launch import chaincheck, preflight
 from ui.daemon.launch import run as launcher

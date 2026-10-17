@@ -7,7 +7,7 @@ from typing import cast
 
 from core.researchpaths import autopilot_runs
 from sqx.projects import stage
-from ui.daemon import jobs, progress, tasklog
+from sqx import jobs, progress, tasklog
 from ui.daemon.workflow import api as workflow, derive
 from ui.daemon.workflow.steps import STEPS
 

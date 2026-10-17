@@ -10,7 +10,7 @@ typed. Three pieces, each with its own lifecycle under the data root:
 | cosecha | `harvest/<P>/<D>/<day>/` | `studies.screening.gate.harvest`, only for a build databank with an `OOS` retest | one-shot `orderstocsv` on the conductor |
 
 A piece is **stale** when any `.sqx` it reads (or its folder, for a file removed) is newer than
-its manifest. The conductor jobs run one at a time (`ui/daemon/jobs.py`, `conductor` lane) and
+its manifest. The conductor jobs run one at a time (`sqx/jobs.py`, `conductor` lane) and
 `bin/sqx-worker.sh run` refuses when another `sqcli` holds that install: the job fails, the piece
 reads `failed` with the refusal, and it is **never queued again on its own** — the owner's ↻ does.
 While SQX is writing the selected project (today's log started it and has not finished it),

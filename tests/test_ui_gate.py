@@ -14,7 +14,8 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from core import uitoken as session  # noqa: E402
-from ui.daemon import gate, proof  # noqa: E402
+from ui.daemon import gate
+from sqx import proof  # noqa: E402
 from ui.daemon.advance import api as advance  # noqa: E402
 from ui.daemon.launch import api as launch  # noqa: E402
 from ui.daemon.mt5bridge import api as bridge  # noqa: E402

@@ -6,7 +6,8 @@ import pandas as pd
 
 from core.paths import DATA
 from sqx.projects.stage import titles
-from ui.daemon import jobs, runs
+from ui.daemon import runs
+from sqx import jobs
 from ui.daemon.runner import batch, table, where
 from ui.daemon.workflow import sources, tests
 from ui.daemon.workflow.derive import BLIND

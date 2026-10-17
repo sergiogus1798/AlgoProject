@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from core.datapaths import template_dir, template_draft
 from core.paths import ASSETS
 from sqx.projects import registry
-from ui.daemon import jobs
+from sqx import jobs
 
 ROUTER = APIRouter()
 TIMEFRAMES = ("M15", "M30", "H1", "H4")

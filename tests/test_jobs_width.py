@@ -1,6 +1,6 @@
-"""How many commands of one test a step runs at once (`ui.daemon.jobs.width`)."""
+"""How many commands of one test a step runs at once (`sqx.jobs.width`)."""
 
-from ui.daemon import jobs
+from sqx import jobs
 
 
 def test_picked_survivors_run_several_at_once() -> None:

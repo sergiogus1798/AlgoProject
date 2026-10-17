@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from core.paths import WORKERS
-from ui.daemon.progress import genetic
+from sqx.progress import genetic
 
 
 def test_genetic_none_when_no_build_runs() -> None:

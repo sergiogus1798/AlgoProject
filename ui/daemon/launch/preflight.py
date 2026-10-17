@@ -14,7 +14,7 @@ from typing import Any, TypedDict
 from core.paths import databank_dir, project_dir
 from sqx.projects import crosstfload
 from sqx.projects.workflow import CROSSTF_BUILD
-from ui.daemon import progress
+from sqx import progress
 from ui.daemon.advance import confirm, preflight as advance
 from ui.daemon.launch import steps as launchsteps
 from ui.daemon.launch.steps import Refusal

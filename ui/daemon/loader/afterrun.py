@@ -26,7 +26,7 @@ from core.phases import phase
 from studies.breakage.mcRetest.inputs.tasks import DATABANK as MCR
 from sqx.projects import live
 from sqx.projects.workflow import CROSSTF
-from ui.daemon import progress
+from sqx import progress
 from sqx.worker import guard as workerguard
 from ui.daemon.loader import find, state
 from ui.daemon.loader.extrasdef import EXTRA, SMOKE_SHARE

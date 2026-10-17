@@ -7,7 +7,9 @@ from xml.etree.ElementTree import ParseError
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ui.daemon import jobs, proof, winddown
+from sqx import jobs, proof
+
+from sqx.worker import winddown
 from ui.daemon.advance import confirm, preflight
 
 ROUTER = APIRouter()

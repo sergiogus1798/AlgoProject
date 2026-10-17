@@ -11,7 +11,8 @@ from pydantic import BaseModel
 
 from core.paths import DATA
 from core.study.render import page
-from ui.daemon import jobs, runs
+from ui.daemon import runs
+from sqx import jobs
 from ui.daemon.results import store
 from ui.daemon.runner import batch, offer, rootseed, table, transfer
 

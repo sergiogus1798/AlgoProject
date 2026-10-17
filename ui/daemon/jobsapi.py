@@ -3,7 +3,7 @@
 from typing import Any
 from fastapi import APIRouter
 
-from ui.daemon import jobs, progress
+from sqx import jobs, progress
 
 ROUTER = APIRouter()
 

@@ -17,8 +17,7 @@ from core import worker
 from ledger import record
 from sqx.curate import apply_verdict
 from sqx.projects import crosstfload, stage, taskcap
-from ui.daemon import progress
-from sqx import log as sqxlog
+from sqx import progress, log as sqxlog
 from sqx.worker import guard as workerguard
 from ui.daemon.advance import buildcap, preflight
 from ui.daemon.filters import discards, ledgerrow
@@ -321,7 +320,7 @@ def main() -> None:
     ap.add_argument("--databank", required=True)
     a = ap.parse_args()
     # The daemon's cancel sends SIGTERM and waits: raising lets `advance`'s `finally` stop the
-    # worker it started (ui/daemon/jobs.py `_wind_down`). Local, not `launch.run.graceful`:
+    # worker it started (sqx/jobs.py `_wind_down`). Local, not `launch.run.graceful`:
     # launch.run imports this module, and importing it back would be a cycle.
     # The export after the stop is skipped on a cancel: it could outlast the grace period.
     signal.signal(

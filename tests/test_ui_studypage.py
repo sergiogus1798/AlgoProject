@@ -27,7 +27,8 @@ from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from core.paths import ROOT  # noqa: E402
-from ui.daemon import jobs, jobsapi  # noqa: E402
+from ui.daemon import jobsapi
+from sqx import jobs  # noqa: E402
 from ui.daemon.batch import api as batch  # noqa: E402
 from ui.daemon.results import api as results  # noqa: E402
 from ui.daemon.runner import api as runner  # noqa: E402

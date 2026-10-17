@@ -7,7 +7,8 @@ from pathlib import Path
 
 from core import cfx, sqxfile, sqxstats, worker
 from core.paths import DATA, databank_dir
-from ui.daemon import diskmemo, progress
+from ui.daemon import diskmemo
+from sqx import progress
 
 # The retest the gate pairs a build databank with: the task that reads it and writes `OOS`,
 # the name `sqx/projects/builder.py` gives the oos1 retest of every workflow project.

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from core import sqxfile
 from core.paths import archive_dir, export_dir, project_dir
-from ui.daemon import progress
+from sqx import progress
 from ui.daemon.loader import find
 
 NOWHERE = "sin .sqx en ningún install"

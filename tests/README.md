@@ -152,7 +152,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_inference_vs_jsharpe.py` | Our PSR, minimum track record, expected maximum, deflated Sharpe and trial count against tschm/jsharpe's stored outputs: the arithmetic agrees, the conventions do not, and both are pinned. | `python3 tests/test_inference_vs_jsharpe.py` |
 | `test_inspect_instruments.py` | Known-answer test for `sqx.inspect.instruments`: an instrument SQX wrote with an empty or a missing `commissions` attribute reads as "no commission declared" instead of crashing the whole listing (OPEN.md #103). The project is built here, in a temp dir — no install is read. | `python3 tests/test_inspect_instruments.py` |
 | `test_isoos_constant_column.py` | Known-answer test: a constant IS column has no p, stays in the table as NaN and cannot abort the BH step. | — |
-| `test_jobs_width.py` | How many commands of one test a step runs at once (`ui.daemon.jobs.width`). | `python3 -m pytest tests/test_jobs_width.py` |
+| `test_jobs_width.py` | How many commands of one test a step runs at once (`sqx.jobs.width`). | `python3 -m pytest tests/test_jobs_width.py` |
 | `test_launch.py` | «Lanzar en SQX» on a scratch install: its refusals, and the order of what it sends SQX. | — |
 | `test_ledger.py` | The ledger's two guarantees: the door refuses, and pooling widens what the DSR must clear. | — |
 | `test_ledger_blind_cscv.py` | ledger.blind.from_batch reads the CSCV's contract envelope (estudios/cscv.json), not the old flat file. | — |

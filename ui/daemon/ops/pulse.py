@@ -9,8 +9,8 @@ from pathlib import Path
 
 from core import worker
 from core.paths import WORKERS
-from ui.daemon import progress
-from ui.daemon.jobs import LOGS
+from sqx import progress
+from sqx.jobs import LOGS
 from ui.daemon.ops import runs
 from ui.text.numbers import num
 

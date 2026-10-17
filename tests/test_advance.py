@@ -20,7 +20,7 @@ import sqx_synthetic  # noqa: E402
 from ledger import record  # noqa: E402
 from sqx.curate import apply_verdict  # noqa: E402
 from sqx.projects import registry, stage  # noqa: E402
-from ui.daemon import progress  # noqa: E402
+from sqx import progress  # noqa: E402
 from sqx.worker import guard as workerguard  # noqa: E402
 from ui.daemon.advance import api, preflight, run  # noqa: E402
 from sqx import log as sqxlog  # noqa: E402

@@ -8,9 +8,9 @@ app ─▶ routers ─▶ templates ─▶ library ─▶ registry.csv · runs.c
  │                │           coverage · writes (sqx.templates.registry.append) · palettes
  │                │           interview ─▶ brief ─▶ AlgoData/templates/drafts/<name>.json
  │                ├─ assetapi ─▶ assets ─▶ core.assetwrite
- │                ├─ jobsapi ─▶ jobs · progress ─▶ tasklog
+ │                ├─ jobsapi ─▶ sqx.jobs · sqx.progress ─▶ sqx.tasklog
  │                └─ one package per surface (the table below)
- └── /api/health ─▶ version · jobs · progress
+ └── /api/health ─▶ version · sqx.jobs · sqx.progress
 ```
 
 **Imports from:** `core/`, `sqx/templates/`, `ui/text` (labels and figures, pure Python), and
@@ -18,7 +18,7 @@ through the packages `ledger/`, `pipeline/ledger`, `sqx/projects/stage`, `sqx/cu
 study's config loader · **Consumed by:** `ui/desktop/` (over HTTP only), `strategy/archive_view.py`
 (`gateview`)
 **Must not contain:** a Qt widget, an SQX command outside `advance/`, `launch/` and `mt5bridge/`'s job, or a second way
-of writing a CSV. `jobs.py` starts `python3 -m` modules and nothing else: never `sqcli`, never a
+of writing a CSV. `sqx/jobs.py` starts `python3 -m` modules and nothing else: never `sqcli`, never a
 worker — the routes that reach SQX are `advance/`'s «Continuar workflow», `launch/`'s «Lanzar
 en SQX», ▶ SQX and «Correr workflow», and `mt5bridge/`'s «Verificar en SQX y en MT5», on a worker
 only, each one job on the conductor lane.
@@ -35,20 +35,14 @@ only, each one job on the conductor lane.
 | `gate.py` | The gate every request to the daemon passes: its own Host, no foreign Origin, the session token. | imported by `app.py` | request → 403 · the route |
 | `gateview.py` | A gate report read off disk — its funnel and scorecard, one strategy's paired metrics and curve — for the databank panel's funnel and the archive (`ui.daemon.strategy.archive_view`). | imported | disk → JSON |
 | `interview.py` | The questions the chat asks before a template idea is written down, and which is next. | imported | answers → question |
-| `jobs.py` | The daemon's job list: analysis commands started from the window, queued, and how each one ended. | imported | argv → job record |
 | `jobsapi.py` | The routes every zone shares: the daemon's job list, and where an SQX project stands on disk. | imported | request → JSON |
 | `library.py` | What the template library holds, read off disk into one answer per template. | imported | disk → dicts |
 | `palettes.py` | What the window needs to draw the palette library, and the four writes it may do. | imported | disk → JSON · a palette → its file |
-| `progress.py` | Where a running SQX project is: its tasks, which one runs, how far, read from disk only. | imported | disk → JSON |
-| `projdisk.py` | What a project's folder on disk says: the installs, their projects, a project's tasks, databank counts, genetic settings. | imported | disk → dicts |
-| `proof.py` | One-use proof that a launcher's confirmation was computed: a nonce bound to the plan it was shown with. | imported by `launch/api.py`, `advance/api.py`, `mt5bridge/api.py` | plan → nonce · refusal |
 | `routers.py` | Every router the daemon serves, in the order `app.py` includes them. | imported | — |
 | `runs.py` | What running one analysis module on one strategy means: the command, given what exists on disk. | imported | context → argv · reason |
 | `serve.py` | Run the daemon on loopback. The window starts it; this is also how to run it by hand. | `python3 -m ui.daemon.serve [--port P]` | — |
-| `tasklog.py` | A project's own task log and the worker's status line: counts, times and the running total. | imported | disk · HTTP → dicts |
 | `templates.py` | The library's routes: the template catalogue, its coverage and writes, the palettes, the chat. | imported | request → JSON |
 | `version.py` | Which code a daemon serves: a fingerprint of `ui/daemon/`, so a window can spot a stale one. | imported | files → 16 hex |
-| `winddown.py` | Cancelling a launcher job: let it stop the worker it started, and stop only that worker. | imported by `jobs.py` | job → worker stopped |
 | `writes.py` | The three things the window may change: a template's status, its notes, a run's verdict. | imported | change → row |
 
 Retired by F13 of plan 24 (2026-09-28) with the zones that alone used them: `studyapi.py` (the

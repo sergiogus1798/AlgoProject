@@ -11,7 +11,7 @@ install):
 | `author.py` | «Crear la plantilla con Claude»: run /sqx-strategy-template headless on the chat's draft brief. | `python3 -m ui.daemon.create.author --name N` | draft → template in the library |
 | `project.py` | «+ Nuevo proyecto»: hard rule 5, then `sqx.projects.builder --workflow` on the custodian. | `python3 -m ui.daemon.create.project NAME --template T --symbol S --timeframe TF --max-strategies N --minutes M --purpose P` | template + asset → project on the custodian |
 
-**Imports from:** `core/`, `sqx/projects/registry`, `ui/daemon/jobs`, `ui/daemon/brief` ·
+**Imports from:** `core/`, `sqx/projects/registry`, `sqx/jobs`, `ui/daemon/brief` ·
 **Consumed by:** `ui/desktop/chat.py`, `ui/desktop/workspace/newproject.py` (over HTTP)
 
 The author runs Claude Code with no one in front of it: the skill's own questions become the

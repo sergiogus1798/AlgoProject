@@ -17,7 +17,7 @@ funding_planted.plant()  # before anything imports core.paths
 from ui_portfolios_planted import A, B, C, FUNDED, RUN, plant  # noqa: E402
 
 from portfolio.common.construct.incubation import record
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.portfolios import (
     api,
     commands,

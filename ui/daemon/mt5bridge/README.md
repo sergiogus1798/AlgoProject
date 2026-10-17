@@ -14,7 +14,7 @@ itself is `mt5.verify.run` (`mt5/verify/README.md`); this package lists, checks 
 ## Contracts and traps
 
 - **It reaches SQX and MT5, so it is a launcher** (hard rule 3): `mt5verify` is in
-  `winddown.LAUNCHERS` (a cancel lets the job's `finally` stop the conductor) and in
+  `sqx.worker.winddown.LAUNCHERS` (a cancel lets the job's `finally` stop the conductor) and in
   `launch.api.LAUNCHERS` (it and «Lanzar en SQX»/«Continuar workflow» refuse each other).
 - **Nothing is defaulted**: the window's dates, the tester's model and the firms come from the
   owner each time (some firms' data is poor), and a missing one is a refusal, not a guess.

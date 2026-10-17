@@ -4,7 +4,7 @@ from typing import Any
 from pathlib import Path
 
 from core.paths import export_dir, harvest_dir, metrics_export
-from ui.daemon import jobs
+from sqx import jobs
 from ui.daemon.loader import find
 from sqx.databank.fingerprint import fingerprint
 

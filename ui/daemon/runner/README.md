@@ -2,10 +2,10 @@
 
 One press of ▶ (this strategy), ▶▶ (the whole population) or ↻ (one sub-test alone) becomes the
 `python3 -m studies.<family>.<study>.report …` command(s) that study really takes, queued in
-`ui/daemon/jobs.py` — or the Spanish sentence the window shows instead of a button.
+`sqx/jobs.py` — or the Spanish sentence the window shows instead of a button.
 
 **Imports from:** `core/`, `pipeline.ledger.state`, `sqx.projects.registry`, `ui/daemon/runs.py`,
-`ui/daemon/jobs.py`, `ui/daemon/databank/layout.py`, `ui/daemon/results/catalogue.py` · **Consumed by:** `ui/daemon/routers.py` (`ROUTER`), `ui/daemon/workflow/run.py` · **Must not contain:** an SQX command, a study's
+`sqx/jobs.py`, `ui/daemon/databank/layout.py`, `ui/daemon/results/catalogue.py` · **Consumed by:** `ui/daemon/routers.py` (`ROUTER`), `ui/daemon/workflow/run.py` · **Must not contain:** an SQX command, a study's
 maths, or a write anywhere but a job's log — save `POST /api/study/screen`, which writes the page the window asked for. Every command here reads files; none reaches an
 install over HTTP or starts one.
 
