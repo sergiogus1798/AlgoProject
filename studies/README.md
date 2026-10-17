@@ -13,3 +13,4 @@ its results land and the traps that already produced wrong answers: `CLAUDE.md` 
 | `readings/` | what one strategy's result is made of | 8, 22, 23, 25 |
 | `data/` | whether the inputs are fit to judge with: `feedQuality` (encargo 17), `spread` | 4, 8 |
 | `research/` | where to look next, before any idea exists: the market profile, what was tried, the literature (`research/README.md`) | 1 |
+| `run/` | where a study's input lives on the data root, found before a run is offered (`run/README.md`) | — |

@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
+from studies.run import where
 from ui.daemon import runs
-from ui.daemon.runner import rootseed, where
+from ui.daemon.runner import rootseed
 
 NO_TF = runs.NO_TF
 

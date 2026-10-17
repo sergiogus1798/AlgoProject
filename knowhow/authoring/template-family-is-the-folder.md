@@ -6,7 +6,7 @@ tag: 🔬  date: 2026-09-27  see: pipeline/blind-steps-write-no-ledger-rows
 # A project's template family is its library folder's name, not the `.sqx` file's stem
 Every library template is `AlgoData/templates/library/<name>/template.sqx`, so `Path(row["template"]).stem`
 is `template` for all of them. The family (the third part of a ledger study id, owner Q9 of plan 24)
-is `<name>`: `ui/daemon/runner/where.family(project)` reads the newest `projects/registry.csv` row
+is `<name>`: `studies/run/where.family(project)` reads the newest `projects/registry.csv` row
 that names a template and returns its folder; no template → None, and the window refuses to run a
 study that signs the ledger. Step 20's door — the rail's and blindJoint's — reads only that study;
 looks signed with the project as family (E1's tests) live in another study and never open it.

@@ -1,11 +1,12 @@
 """What running one analysis module on one strategy means: the command, given what exists on disk."""
 
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 from core import assetdata
 from core.paths import DATA
-from ui.daemon.runner import rootseed, where
+from studies.run import where
+from ui.daemon.runner import rootseed
 
 # Module -> the argv after `python3`, or a sentence saying why the window cannot start it.
 # Every entry reads only `ctx`, which `context()` fills from the data root and the asset file;

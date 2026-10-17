@@ -1,7 +1,7 @@
 """The command lines of the optimisation family (steps 16.5-19), or why the window cannot start one."""
 
 from core.paths import DATA
-from ui.daemon.runner import where
+from studies.run import where
 
 
 def cloud(c: dict, strategy: str) -> list[str] | str:

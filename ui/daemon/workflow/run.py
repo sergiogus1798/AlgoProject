@@ -5,15 +5,16 @@ from typing import Any
 import pandas as pd
 
 from core.paths import DATA
-from sqx.projects.stage import titles
-from ui.daemon import runs
 from sqx import jobs
-from ui.daemon.runner import batch, table, where
+from sqx.projects.stage import titles
 from sqx.workflow import sources
-from ui.daemon.workflow import tests
-from ui.daemon.workflow.derive import BLIND
 from sqx.workflow.records import BackfillOffer, Context, Started
 from sqx.workflow.steps import STEPS
+from studies.run import where
+from ui.daemon import runs
+from ui.daemon.runner import batch, table
+from ui.daemon.workflow import tests
+from ui.daemon.workflow.derive import BLIND
 
 BY_N = {s["n"]: s for s in STEPS}
 ROOTS = ("raw", "harvest", "metrics", "reports")

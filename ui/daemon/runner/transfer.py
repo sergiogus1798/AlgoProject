@@ -4,7 +4,7 @@ from pathlib import Path
 
 from core.paths import DATA
 from core.symbols import alias
-from ui.daemon.runner import where
+from studies.run import where
 
 NO_CROSS = (
     "necesita el export del retest cross-market de este databank (skill /crossmarket); si "

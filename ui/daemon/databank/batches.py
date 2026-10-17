@@ -24,7 +24,7 @@ def batches(project: str) -> dict[str, list[Path]]:
 
     Returns:
         norm name → the folders found, from the factory and from the pipeline. Two of them
-        is a mother the window will not choose for the owner, as `runner/where.batch` says.
+        is a mother the window will not choose for the owner, as `studies/run/where.batch` says.
     """
     found: defaultdict[str, list[Path]] = defaultdict(list)
     for root in (variants_dir(project, "x").parent, work_dir(project, "x").parent):

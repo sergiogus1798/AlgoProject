@@ -3,7 +3,7 @@
 from core.paths import DATA, databank_dir, metrics_export
 from sqx.databank import find
 from sqx.workflow import sources
-from ui.daemon.runner import where
+from studies.run import where
 
 NO_HARVEST = "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
 NO_METRICS = "necesita el export de métricas de este databank (skill /export, metrics/)"

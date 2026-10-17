@@ -7,10 +7,10 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from sqx.databank import discards
+from studies.run import where
 from ui.daemon.databank import table as tablemod
 from ui.daemon.databank.table import Table
 from ui.daemon.filters import dists, evaluate, ledgerrow, saved, view
-from ui.daemon.runner import where
 
 ROUTER = APIRouter()
 

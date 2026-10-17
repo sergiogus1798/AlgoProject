@@ -28,8 +28,8 @@ from sqx import (
     tasklog,  # noqa: E402
 )
 from sqx.databank import state as loadstate  # noqa: E402
+from studies.run import where  # noqa: E402
 from ui.daemon.app import APP  # noqa: E402
-from ui.daemon.runner import where  # noqa: E402
 from ui.desktop import client, cmdrank  # noqa: E402
 from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.shell import Shell  # noqa: E402

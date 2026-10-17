@@ -29,7 +29,6 @@ ALLOW: set[tuple[str, str]] = {
     ),  # 2026-10-07: closing.py's launcher, for step 13's T1
     ("pipeline/autopilot/plan.py", "ui.daemon"),
     ("pipeline/autopilot/run.py", "ui.daemon"),
-    ("pipeline/autopilot/survivors.py", "ui.daemon"),
     ("ui/desktop/launch.py", "ui.daemon"),
 }
 

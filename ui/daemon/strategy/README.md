@@ -45,7 +45,7 @@ api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · 
 - **E2's reader matches the project's tasks by the .sqx's folder name**, so a copy found in
   `raw/…/strategies/` is copied to a temporary folder named as the databank before reading;
   read in place, `backtest` would list no task.
-- **«Archivar» needs the template family** (`runner.where.family`): without it the ledger count
+- **«Archivar» needs the template family** (`studies.run.where.family`): without it the ledger count
   cannot be signed, and the route refuses with `where.no_family`'s sentence.
 - **Per lot needs `Size`.** `tearsheet.harvest.TRADES` carries it since 2026-09-28; versions
   archived before froze their tearsheet without it, so `archived.tearsheet` takes the trades

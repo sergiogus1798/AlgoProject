@@ -10,7 +10,7 @@ from ledger import study as studymod
 from sqx.curate import apply_verdict
 from sqx.projects import registry
 from sqx.worker.preflight import by_identity
-from ui.daemon.runner import where
+from studies.run import where
 
 # The steps whose `cut` in criteria.yaml names where the survivors live from then on: 16
 # today («SPP OOS»), and 20 and 21 the day the owner gives one of them rules and a `cut`.

@@ -3,10 +3,11 @@
 from typing import Any
 
 from sqx import jobs
-from ui.daemon.results import catalogue, forproject, knobs
-from ui.daemon.runner import table, where
 from sqx.workflow import sources
 from sqx.workflow.records import Context, StudyTest
+from studies.run import where
+from ui.daemon.results import catalogue, forproject, knobs
+from ui.daemon.runner import table
 
 # The studies that sign their look in the ledger under the template family (owner, Q9 of
 # plan 24): without a template in the registry they never start from the window.

@@ -4,7 +4,7 @@ One press of ▶ (this strategy), ▶▶ (the whole population) or ↻ (one sub-
 `python3 -m studies.<family>.<study>.report …` command(s) that study really takes, queued in
 `sqx/jobs.py` — or the Spanish sentence the window shows instead of a button.
 
-**Imports from:** `core/`, `pipeline.ledger.state`, `sqx.projects.registry`, `ui/daemon/runs.py`,
+**Imports from:** `core/`, `pipeline.ledger.state`, `studies/run/where.py`, `ui/daemon/runs.py`,
 `sqx/jobs.py`, `ui/daemon/databank/layout.py`, `ui/daemon/results/catalogue.py` · **Consumed by:** `ui/daemon/routers.py` (`ROUTER`), `ui/daemon/workflow/run.py` · **Must not contain:** an SQX command, a study's
 maths, or a write anywhere but a job's log — save `POST /api/study/screen`, which writes the page the window asked for. Every command here reads files; none reaches an
 install over HTTP or starts one.
@@ -21,7 +21,6 @@ install over HTTP or starts one.
 | `screening.py` | The command lines of the screening and data families (steps 4-8), or why the window cannot start one. | imported | context → argv · sentence |
 | `table.py` | One press of a run button into the commands to start, or the Spanish sentence why none can start. | imported | request → argv list · sentence |
 | `transfer.py` | The command lines of the transfer and breakage families (steps 9-16), or why the window cannot start one. | imported | context → argv · sentence |
-| `where.py` | Where a study's input lives on the data root, found before a run is offered — never computed. | imported | data root → paths |
 
 ## Contracts and traps
 

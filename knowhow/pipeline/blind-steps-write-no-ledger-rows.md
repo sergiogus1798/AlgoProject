@@ -22,7 +22,7 @@ exist (note opens `lote <batch>`). ⚠️ Since 2026-09-28 the door binds only u
 - ⚠️ The family is part of the study id: atrCalculator [deleted 2026-10-11, step 24] logged USDJPY under
   `USDJPY_H1_USDJPY_workflow_profiling_v1` (project as family), the rest under `…_crossAboveHMA_v1`.
 - The window's runner passes `--family`
-  since 2026-09-28: the template folder from `projects/registry.csv` (`ui/daemon/runner/where.family`).
+  since 2026-09-28: the template folder from `projects/registry.csv` (`studies/run/where.family`).
 
 ## Step 6 (2026-10-04) 🔬
 SQX's project log `log/global_log_*.log` ends a Build task with one line, `Strategies generated: G, ...,

@@ -2,9 +2,9 @@
 
 What «Lote» draws: every variant of one mother's batch with its `param_*` values and its
 `NetProfit (build)` and `NetProfit (oos1)`. Reads `metrics.parquet` of the batch folder the
-optimisation runner would pick (`runner/where.batch`), nothing else.
+optimisation runner would pick (`studies/run/where.batch`), nothing else.
 
-**Imports from:** `core/datapaths`, `pipeline/ledger/state`, `ui/daemon/runner/where` ·
+**Imports from:** `core/datapaths`, `pipeline/ledger/state`, `studies/run/where` ·
 **Consumed by:** `ui/daemon/routers.py` (`ROUTER`) → `ui/desktop/batchview/`
 
 | file | what it does | run it | in → out |
@@ -25,7 +25,7 @@ optimisation runner would pick (`runner/where.batch`), nothing else.
 - **The strategy's name has two spellings.** SQX writes `Strategy 18.13.59`, the factory's folder
   `Strategy_18.13.59` and the pipeline's `Strategy_18-13-59`; either form is accepted.
 - **Two batches of one mother are refused, not chosen** — the same sentence the batch studies
-  give (`runner/where.batch`).
+  give (`studies/run/where.batch`).
 - **A parameter with one value is not an axis**: it goes to `fixed` and to the note.
 - **The mother is the row with `origin` true** (`P00000`, stratum `origin`, `sqx/variants/README.md`);
   canaries and inert pairs are drawn like any variant, their stratum shown on hover.

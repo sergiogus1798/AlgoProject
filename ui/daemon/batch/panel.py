@@ -9,7 +9,7 @@ import pyarrow.parquet as pq
 from core.datapaths import variants_dir
 from ledger import gate
 from pipeline.ledger.state import work_dir
-from ui.daemon.runner import where
+from studies.run import where
 
 # The one-way door, shut only for an autonomous agent (`ledger.gate.enforced`; owner,
 # 2026-09-28): then a column naming any of these is never read. `ALL` and `oos1+oos2` both

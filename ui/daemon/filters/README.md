@@ -7,7 +7,7 @@ record: the discards on disk, and one ledger row per filter or manual deletion, 
 is a search and the ledger exists to count them.
 
 **Imports from:** `core.paths`, `ledger.{record, study}`, `sqx.projects.stage`,
-`ui.daemon.{databank, runner.where, sqx.workflow.steps, results.catalogue}` · **Consumed by:**
+`ui.daemon.{databank, results.catalogue}`, `studies.run.where`, `sqx.workflow.steps` · **Consumed by:**
 `ui/daemon/routers.py` → `ui/desktop/workspace/filters.py` (+ `filterrow.py`), `workspace/funnel.py` (`/state`'s
 `rows`), F7's `ui/daemon/advance/` (the discards it curates)
 

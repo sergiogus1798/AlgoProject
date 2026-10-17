@@ -3,7 +3,7 @@
   "C901": 51,
   "PLR0913": 231,
   "broad_except": 35,
-  "layering_allow": 15,
+  "layering_allow": 14,
   "legacy_np_random": 0,
   "os_replace": 11,
   "pyright.core": 0,

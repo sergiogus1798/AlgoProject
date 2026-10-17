@@ -6,10 +6,10 @@
 |---|---|---|---|---|
 | 1 | `workerguard` → `sqx/worker/guard.py`; `advance/sqxlog` → `sqx/log.py`; `loader/fingerprint` → `sqx/databank/fingerprint.py`; además `daylog` → `sqx/daylog.py` (lo pedía `sqx/log.py`) | ~13 | hecho 2026-10-17 | `9c019fc` |
 | 2 | `jobs` → `sqx/jobs.py` (no `core/`: su cancelación para el worker con `winddown`); `progress`, `tasklog`, `projdisk`, `proof` → `sqx/`; `winddown` → `sqx/worker/`; `diskmemo` se queda (huella de las fuentes del demonio) | ~45 | hecho 2026-10-17 | `b83304f` |
-| 3 | `loader/find`, `loader/state` → `sqx/databank/`; `advance/preflight` → `sqx/worker/`; la hoja `filters/discards` → `sqx/databank/`; `diskmemo` → `core/` con la huella del código como argumento | ~50 | hecho 2026-10-17 | (este) |
+| 3 | `loader/find`, `loader/state` → `sqx/databank/`; `advance/preflight` → `sqx/worker/`; la hoja `filters/discards` → `sqx/databank/`; `diskmemo` → `core/` con la huella del código como argumento | ~50 | hecho 2026-10-17 | `c65901e` |
 | 4 | `launch/steps` → `sqx/workflow/launchsteps.py`; `workflow/steps`+`sources` y la hoja `records` → `sqx/workflow/` (va antes que el 3: `preflight` los importa) | ~30 | hecho 2026-10-17 | `6ca743a` |
 | 5 | `launch/*` y `advance/run`+`buildcap` → `sqx/run/`; `chainplan` se funde en el plan del autopiloto | ~25 | pendiente | |
-| 6 | `runner/where`+`table` → `studies/run/` | ~20 | pendiente | |
+| 6 | `runner/where` → `studies/run/where.py` (`table` se queda: importa `ui.daemon.runs` y los cuatro `runner/*` de estudios, que no son hojas) | ~20 | parcial 2026-10-17: `where` hecho, `table` pendiente | (este) |
 | 7 | `mt5bridge/runs` → `mt5/verify/`; fuera los `ui → mt5.*` directos | ~6 | pendiente | |
 | 8 | `strategy/archive_write` → `core/archive/`; `pipeline.ledger.state.work_dir` → `core`; el escritor de `criteria` | ~10 | pendiente | |
 | 9 | `sqxconfig/{write,studywrite,sections,options}` y `projects/sources` → `sqx/projects/`; el lector de campaña → `pipeline/campaign/` | ~25 | pendiente | |

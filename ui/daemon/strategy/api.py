@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ui.daemon.runner import where
+from studies.run import where
 from ui.daemon.runs import guess_asset
 from ui.daemon.strategy import archive_write as write
 from ui.daemon.strategy import archived, costcurve, locate, meta, stats

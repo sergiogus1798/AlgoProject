@@ -60,7 +60,7 @@ the numbers and the `doc` titles of `sqx/workflow/steps.py` must equal WORKFLOW.
   each run.
 - **Step 20** is refused while `ledger.gate.allow_read` refuses, before the runner is asked.
 - **The family** the studies of 8 (snooping), 17, 18, 18.5 and 20 sign the ledger under is the
-  template's name in `projects/registry.csv` (`runner/where.family`); no template, no run.
+  template's name in `projects/registry.csv` (`studies/run/where.family`); no template, no run.
 
 ## How each state is derived
 

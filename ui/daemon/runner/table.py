@@ -3,8 +3,9 @@
 from pathlib import Path
 
 from sqx.databank import find
+from studies.run import where
 from ui.daemon import runs
-from ui.daemon.runner import optimisation, readings, screening, transfer, where
+from ui.daemon.runner import optimisation, readings, screening, transfer
 
 STUDIES = {
     **screening.STUDIES,
