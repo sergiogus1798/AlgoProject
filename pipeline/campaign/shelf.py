@@ -17,7 +17,6 @@ COLUMNS = (
     "strategy",
     "mother",
     "identity",
-    "stop_x",
     "test",
     "folder",
     "workflow",

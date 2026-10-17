@@ -157,5 +157,5 @@ sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño
 
 **Siguientes pasos del día**
 1. Diagnosticar el fallo del 6+7 (guardado del databank tras un build de 10.000) antes de que el 3.er intento caiga igual; si es de código, arreglarlo y relanzar la celda con `run`.
-2. Al acabar el bucle: la #93 + el parche del 49 en un único commit; quitar `stop_x` de `pipeline/campaign/shelf.py`.
+2. Al acabar el bucle: la #93 + el parche del 49 en un único commit; quitar `stop_x` de `pipeline/campaign/shelf.py` (hecho 2026-10-17).
 3. Dueño: **K3** (de qué proyecto sale el pool de la cartera), **K1a-c** (ya en A), **R1** (si A, se borra el filtro de `price_rounding`), **R2**.

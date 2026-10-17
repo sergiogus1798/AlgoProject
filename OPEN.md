@@ -292,7 +292,7 @@ against a random trader with the same footprint (dossier `docs/AgentPDFs/medicio
   `mt5verify.exit_same_min` and `mt5verify.trades_min` (provisional). After it: rows 3b/4 relative to the
   mean daily |P&L|, SQX spread from history instead of an instant, MT5 equity drawdown, pool moved to `portfolio/inputs/pool.py`.
 - **(b) No-edge calibration of 18 / 18.5 / 19.** A population with no edge through those steps, as step 17's calibrate did.
-- **Leftovers.** Empty `stop_percentile` / `stop_x` columns in the pool and campaign CSVs. edgeCost's
+- **Leftovers.** edgeCost's
   `--strategy` mode stays because ~55 old result folders would otherwise be read by step 8.
   `portfolio/common/construct/candidates.py:26` still names `worth_it` in `SURVIVOR_WORDS`.
 
