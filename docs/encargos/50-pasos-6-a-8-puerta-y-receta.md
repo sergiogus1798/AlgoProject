@@ -36,7 +36,7 @@ la **receta del IS del paso 6** (qué pedir en el Build de SQX), medida.
 | 1 · V | una corrida entera por `/workflow` con el paso 8 vigente | Sonnet | máquina libre | ✅ 2026-10-15: segunda corrida (Test_USATEC_H1_breakoutL_v8b_leaseWeb) — paso 8 verificado: B=2, línea 2,576, z_mono máx 2,84, embudo 10.000 → 7.356 → 6 → 4 medoides; ledger B 1→2; edits_since_seal = 1 por el α 0,01 del 15-10 (posterior al sello del 12-10, edición contada, no fallo). La primera corrida cayó en el paso 8 por «List index overflow» (arreglado en d52908d). La segunda llegó al 18 y paró en el 18.5 por fichas sin price_rounding (medidas esta noche; causa extra: rollout_hour sin comillas, 1fcb33b). Supervivientes en el almacén; proyectos retirados. |
 | 2 · Parada | Q2, Q3 y Q4 | dueño | — | ✅ contestada el 2026-10-15 (todas las recomendaciones) |
 | 4 · Z1 + M | cargar lo que decida la parada; documentación de la puerta | Sonnet | 2 ✅ (Z1 sin trabajo: Q2 y Q3 dejan todo como está); M puede empezar ya | ✅ 2026-10-15: documentación de la puerta al día (salvo `criterios-implementados-2026-10-12`, que tiene otra sesión, y la cabecera de `criteria.yaml`, que no se toca) |
-| 5 · Receta del IS (ex 42) | paso 6: dosis-respuesta, A/B dentro/fuera del Build, familia contra gemela, flotante, equipo rojo | Opus (+ Sonnet para lanzar) | custodio libre; nada pesado junto a un workflow | 🟡 2026-10-17: fase 0 hecha (3 semillas GBPJPY H1 largo momentum); L5 A hecho (`gate.monoall`, 54b8de6c); falta aprobar las celdas de la fase 1 (R7) |
+| 5 · Receta del IS (ex 42) | paso 6: dosis-respuesta, A/B dentro/fuera del Build, familia contra gemela, flotante, equipo rojo | Opus (+ Sonnet para lanzar) | custodio libre; nada pesado junto a un workflow | 🟡 2026-10-17: fase 0 hecha (3 semillas GBPJPY H1 largo momentum); L1-L16 contestadas y fijadas (§5.2, al final); la fase 1 espera el PASA de `workflow-test` del 77 paso 5 (L8) |
 
 Orden: 1 → 4. El 5 es independiente salvo por la máquina (regla 19).
 
@@ -189,6 +189,42 @@ celda con < 2.000 estrategias se cae. **Si nada pasa la vara, la receta es la m�
 operaciones, beneficio > 0, operación media ≥ k × coste): quitar filtros es más barato que añadir falsos.
 **Fuera:** recetas por familia o por celda (Q6), el barrido de 20-50 operaciones/año como builds propios
 (el suelo 35/20 está decidido; se lee sobre las mismas poblaciones), el flotante como eje con builds propios.
+
+**Fijado antes del primer build de la fase 1 (dueño, 2026-10-17: L1-L16 = las recomendaciones).**
+Población: llamada directa al builder con `--acceptance calibration --exit-required --workflow`,
+recortada a Build+OOS, 6 min de Build (L4), `bin/workflow.sh run P [--own-log]`; z de toda la
+población con `studies.screening.gate.monoall` (L5). Sin población de prueba de 5 min: una celda con
+< 2.000 estrategias se descarta sin juzgarla (L7). La fase 1 empieza cuando `bin/workflow-test.sh`
+dé PASA sobre el bucle nuevo del 77 paso 5 (L8).
+
+| # | celda | paleta | R7 |
+|---|---|---|---|
+| 0 | GBPJPY H1 largo momentum (fase 0) | `momentum_base` | descubrimiento |
+| 1 | DJ30 H1 largo ruptura | `ruptura_base_v2` | descubrimiento |
+| 2 | DJ30 M30 corto momentum | `momentum_base` | confirmación |
+| 3 | EURJPY M30 largo momentum | `momentum_base` | confirmación |
+| 4 | EURJPY H1 largo momentum | `momentum_base` | descubrimiento |
+| 5 | GBPJPY H1 largo ruptura | `ruptura_base_v2` | confirmación |
+| 6 | GBPJPY M30 corto momentum | `momentum_base` | descubrimiento |
+| 7 | AUDJPY M30 largo ruptura | `ruptura_base_v2` | descubrimiento |
+| 8 | AUDJPY H1 corto momentum | `momentum_base` | descubrimiento |
+| 9 | DAX40 H1 largo ruptura | `ruptura_base_v2` | descubrimiento |
+| 10 | NIKKEI225 M30 corto ruptura | `ruptura_base_v2` | confirmación |
+| 11 | USDCHF H1 corto momentum | `momentum_base` | descubrimiento |
+| 12 | GBPUSD M30 largo ruptura | `ruptura_base_v2` | confirmación |
+
+Reparto sorteado por familia con la semilla 20261017 (L6). Medida:
+- **Resultado (L9):** el percentil de la z del mono dentro de su población. **Segunda etiqueta
+  (L10):** `drift_excess_t` (cubre R5). No hay más.
+- **Dosis-respuesta (L11):** quintiles de cada métrica del IS dentro de cada población; el umbral se
+  elige sólo en las celdas de descubrimiento.
+- **Veto flotante (R6, L12):** MAE en % de una cuenta de 100.000 con el tamaño de la simulación.
+- **Receta mínima (L13):** k = el menor múltiplo del coste cuya ganancia de z pasa de 0,05 en
+  descubrimiento (0,05 ≈ el ruido entre builds medido en la fase 0).
+- **Fase 2 (L14):** las gemelas `--random` van a las 5 celdas de descubrimiento con mayor proporción
+  de z ≥ 2,326. **Fase 3 (L15):** el A/B dentro/fuera del Build, en las 2 celdas de descubrimiento
+  donde el filtro superviviente ganó más z. Las de confirmación se leen una vez, al final.
+- **Datos (L16):** la cosecha apartada (`Results/_aparte/`) se guarda hasta entregar el dossier.
 
 ### 5.3 Lo que entrega
 
