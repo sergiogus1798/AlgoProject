@@ -17,7 +17,7 @@ from mt5.verify import sqxside
 from pipeline.autopilot import blind, entry, run
 from sqx.projects import live, taskcap
 from sqx.worker import preflight
-from ui.daemon.advance import run as advance_run
+from sqx.worker import session as advance_run
 from ui.daemon.launch import liverun
 from ui.daemon.loader import afterrun
 
@@ -78,7 +78,7 @@ def test_watch_ends_on_a_hung_task_every_abort_line_and_its_hours(
         lambda role, project: {"status": None, "tasks": []},
     )
     monkeypatch.setattr(advance_run.time, "sleep", lambda s: next(polls))
-    monkeypatch.setattr(advance_run, "MAX_HOURS", hours)
+    monkeypatch.setattr(advance_run.worker, "MAX_HOURS", hours)
     monkeypatch.setattr(taskcap, "_history", lambda: tmp_path / "task-durations.json")
     monkeypatch.setattr(
         taskcap, "UNKNOWN", -1
@@ -291,8 +291,8 @@ def test_a_load_or_a_sync_that_failed_is_not_an_empty_retest(
             else "OK"
         ),
     )
-    monkeypatch.setattr(sqxside.advance_run, "ready", lambda *a: None)
-    monkeypatch.setattr(sqxside.advance_run, "watch", lambda *a: {})
+    monkeypatch.setattr(sqxside.session, "ready", lambda *a: None)
+    monkeypatch.setattr(sqxside.session, "watch", lambda *a: {})
     monkeypatch.setattr(sqxside.sqxlog, "mark", lambda top: {})
     monkeypatch.setattr(sqxside.live, "mark", lambda role: ())
     monkeypatch.setattr(sqxside.loadwait, "loaded", lambda *a: None)

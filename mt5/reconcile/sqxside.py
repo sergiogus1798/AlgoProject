@@ -16,7 +16,7 @@ from mt5.reconcile import week as weeks
 from mt5.verify import sqxside as verify_sqx
 from sqx.projects import cfxio, mt5verify
 from sqx.projects.wfc import declare, retitle
-from ui.daemon.launch.run import assets as rule_five
+from sqx.worker.session import assets as rule_five
 
 
 def window(week: str, data: dict, warmup_days: int) -> tuple[str, str]:

@@ -16,13 +16,14 @@ from ledger import steprows
 from sqx import progress
 from sqx.databank import find, state
 from sqx.export import membank
+from sqx.projdisk import compare, counts, snapshot
 from sqx.projects import crosstfload, exiting, live, stage
 from sqx.projects.workflow import CROSSTF
+from sqx.worker.session import assets, say
 from sqx.workflow import launchsteps
-from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher
-from ui.daemon.launch.run import assets, compare, counts, record, snapshot
+from ui.daemon.launch.run import record
 from ui.daemon.loader import afterrun
 
 # The tasks that run slow in a session hours old, and at their speed in one just opened

@@ -56,9 +56,9 @@ def _ran(
             )
         ),
     )
-    monkeypatch.setattr(neighbours.launcher, "snapshot", lambda folder: folder)
-    monkeypatch.setattr(neighbours.launcher, "counts", lambda folder: {})
-    monkeypatch.setattr(neighbours.launcher, "compare", lambda *a: "nada perdido")
+    monkeypatch.setattr(neighbours.projdisk, "snapshot", lambda folder: folder)
+    monkeypatch.setattr(neighbours.projdisk, "counts", lambda folder: {})
+    monkeypatch.setattr(neighbours.projdisk, "compare", lambda *a: "nada perdido")
     monkeypatch.setattr(
         neighbours.closing,
         "export",

@@ -18,15 +18,8 @@ ALLOW: set[tuple[str, str]] = {
         "core/archive/cli.py",
         "ui.daemon",
     ),  # owner 2026-10-17: kept, its archive verb renders the window views
-    ("mt5/reconcile/sqxside.py", "ui.daemon"),
-    ("mt5/verify/run.py", "ui.daemon"),
-    ("mt5/verify/sqxside.py", "ui.daemon"),
     ("pipeline/autopilot/blind.py", "ui.daemon"),
     ("pipeline/autopilot/call.py", "ui.daemon"),
-    (
-        "pipeline/autopilot/neighbours.py",
-        "ui.daemon",
-    ),  # 2026-10-07: closing.py's launcher, for step 13's T1
     ("pipeline/autopilot/plan.py", "ui.daemon"),
     ("pipeline/autopilot/run.py", "ui.daemon"),
 }

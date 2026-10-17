@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+from sqx import projdisk  # noqa: E402
 from sqx.projects import stage  # noqa: E402
 from sqx.worker import preflight as advance  # noqa: E402
 from tests.test_advance import CALLS, P, fakes, tree  # noqa: E402
@@ -25,7 +26,7 @@ def scratch(root: Path, install: str = "SQX_w1", role: str = "conductor") -> dic
         ("just", cfx_.parent.name, on)
     )
     run.assets = lambda symbol: CALLS.append(("assets", symbol))
-    run.SNAPSHOTS = root / "snapshots"
+    projdisk.SNAPSHOTS = root / "snapshots"
     run.template_runs = lambda: root / "runs.csv"
     return {**built, "up": up}
 
@@ -113,10 +114,12 @@ def test_fallen_bank_keeps_snapshot(root: Path) -> None:
     """A databank the task does not write that lost files keeps the copy, and says so."""
     kept = root / "copy"
     kept.mkdir()
-    line = run.compare({"Results": 3, "OOS": 0}, {"Results": 1, "OOS": 2}, "OOS", kept)
+    line = projdisk.compare(
+        {"Results": 3, "OOS": 0}, {"Results": 1, "OOS": 2}, "OOS", kept
+    )
     assert "Results 3 → 1" in line and kept.exists(), line
     assert (
-        "borrado" in run.compare({"OOS": 0}, {"OOS": 2}, "OOS", kept)
+        "borrado" in projdisk.compare({"OOS": 0}, {"OOS": 2}, "OOS", kept)
         and not kept.exists()
     )
 

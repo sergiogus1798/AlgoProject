@@ -11,10 +11,10 @@ import pandas as pd
 
 from core import exportdrv, proc, trades, worker
 from core.paths import ROOT, WORKERS, databank_dir, worker_dir
+from sqx import log as sqxlog
 from sqx.projects import live, loadwait
 from sqx.worker import guard as workerguard
-from ui.daemon.advance import run as advance_run
-from sqx import log as sqxlog
+from sqx.worker import session
 
 
 def say(pct: int, line: str) -> None:
@@ -113,7 +113,7 @@ def run(
         say(20, f"arrancando el {role}")
         worker.start(role)
         workerguard.mark(role, project)
-        advance_run.ready(project, role)
+        session.ready(project, role)
         since = live.mark(role)
         load = f"-databank action=load project={project} name={cfg['input']} folder={staged}"
         worker.checked(worker.call(load, role), load)
@@ -123,7 +123,7 @@ def run(
             worker.call(f"-project action=start name={project}", role), project
         )
         say(30, "retest en SQX con las condiciones de cada empresa")
-        advance_run.watch(project, role, offsets)
+        session.watch(project, role, offsets)
         for firm, bank in outputs.items():
             worker.call(
                 f"-databank action=synctofiles project={project} name={bank}", role

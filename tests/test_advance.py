@@ -25,6 +25,7 @@ from sqx.databank import discards  # noqa: E402
 from sqx.projects import registry, stage  # noqa: E402
 from sqx.worker import guard as workerguard  # noqa: E402
 from sqx.worker import preflight  # noqa: E402
+from sqx.worker import session
 from ui.daemon.advance import api, run
 from ui.daemon.filters import ledgerrow
 
@@ -215,7 +216,7 @@ def fakes(
     )
     record.log = lambda study, row, scores=None: CALLS.append(("ledger", study, row))
     ledgerrow.placed = lambda project, databank: (8, "build")
-    run.POLL, run.START_WITHIN = 0, within
+    session.POLL, session.START_WITHIN = 0, within
     workerguard.MARKS = (
         built["top"].parent / "workers"
     )  # never the real AlgoData/logs/ui

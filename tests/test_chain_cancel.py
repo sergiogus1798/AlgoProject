@@ -10,10 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core import worker  # noqa: E402
 from tests.test_advance import P  # noqa: E402
-from sqx import jobs
+from sqx import jobs, projdisk
 from sqx.worker import winddown  # noqa: E402
 from sqx.worker import guard as workerguard  # noqa: E402
-from ui.daemon.launch import chain, run  # noqa: E402
+from ui.daemon.launch import chain  # noqa: E402
 
 
 def record(job: dict) -> dict:
@@ -54,7 +54,7 @@ def test_cancel_winds_down(root: Path) -> None:
         [
             "-c",
             (
-                "import signal, time, pathlib\nfrom ui.daemon.launch.run import graceful\n"
+                "import signal, time, pathlib\nfrom sqx.worker.session import graceful\n"
                 "signal.signal(signal.SIGTERM, graceful)\ntry:\n    time.sleep(60)\nfinally:\n"
                 f"    pathlib.Path({str(out)!r}).write_text('stopped')\n"
             ),
@@ -120,22 +120,22 @@ def test_cancel_python_and_snapshot(root: Path) -> None:
     chain._RUNNING["stop"] = False
     folder = root / "P"
     (folder / "databanks").mkdir(parents=True)
-    run.SNAPSHOTS = root / "snapshots"
-    copy = run.shutil.copytree
+    projdisk.SNAPSHOTS = root / "snapshots"
+    copy = projdisk.shutil.copytree
 
     def cut(src: Path, dst: Path, **kw: object) -> None:
         """Half a copy, then the SIGTERM lands."""
         (Path(dst) / "databanks").mkdir(parents=True)
         raise SystemExit("cancelado")
 
-    run.shutil.copytree = cut
+    projdisk.shutil.copytree = cut
     try:
-        run.snapshot(folder)
+        projdisk.snapshot(folder)
     except SystemExit:
         pass
-    run.shutil.copytree = copy
+    projdisk.shutil.copytree = copy
     assert not any((root / "snapshots" / "P").iterdir()), "a partial copy must go"
-    assert not run.snapshot(folder).name.endswith(".partial")
+    assert not projdisk.snapshot(folder).name.endswith(".partial")
 
 
 if __name__ == "__main__":

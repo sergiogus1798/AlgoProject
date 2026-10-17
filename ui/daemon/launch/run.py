@@ -2,133 +2,26 @@
 """«Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop."""
 
 import argparse
-import os
-import re
-import shutil
 import signal
 import sys
 import time
 from collections.abc import Sequence
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import Any
 
-from core import proc, worker
+from core import worker
 from core.datapaths import template_runs
 from core.phases import phase
 from ledger import steprows
 from sqx import log as sqxlog
-from sqx.projdisk import counts
+from sqx.projdisk import INTERRUPTED, compare, counts, restore, snapshot
 from sqx.projects import crosstfload, stage
 from sqx.templates.registry import RUN_COLUMNS, append
 from sqx.worker import guard as workerguard
 from sqx.worker import preflight as advance
-from ui.daemon.advance.run import ready, say, watch
+from sqx.worker.session import assets, graceful, ready, say, watch
 from ui.daemon.launch import configure, preflight
-
-# The project folder before the start (hard rule 1), without log/; deleted once the counts match.
-SNAPSHOTS = advance.DISCARDS.parent / "snapshots"
-
-
-def assets(symbol: str) -> None:
-    """Hard rule 5: `python3 -m core.assets <SYMBOL>` before touching a project; stop on non-zero."""
-    got = proc.run(
-        [sys.executable, "-m", "core.assets", symbol],
-        capture_output=True,
-        text=True,
-        timeout=120,
-        check=False,
-    )
-    print(got.stdout.strip(), flush=True)
-    if got.returncode:
-        sys.exit(
-            f"core.assets {symbol} salió con {got.returncode}: no se lanza nada\n"
-            f"{got.stderr.strip()}"
-        )
-
-
-def snapshot(folder: Path) -> Path:
-    """Copy the project aside, `log/` left out (knowhow/databanks/snapshot-before-restart.md);
-    named `.partial` until complete, and a copy cut short (a cancel) is removed."""
-    to = SNAPSHOTS / folder.name / f"{datetime.now():%Y%m%d-%H%M%S}"
-    partial = to.with_name(to.name + ".partial")
-    partial.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        shutil.copytree(folder, partial, ignore=shutil.ignore_patterns("log"))
-    except BaseException:  # SystemExit from a SIGTERM too
-        shutil.rmtree(partial, ignore_errors=True)
-        raise
-    return partial.rename(to)
-
-
-def compare(
-    before: dict[str, int], after: dict[str, int], output: str | set[str], kept: Path
-) -> str:
-    """The line on what the run did to the databanks; the snapshot goes only when nothing fell.
-
-    Args:
-        before: `counts` before the start.
-        after: `counts` after the stop.
-        output: The tasks' own output databank(s), which they may clear by configuration.
-        kept: The snapshot.
-
-    Returns:
-        The line to print. A databank no task of the run writes that lost files keeps the
-        snapshot (hard rule 1: a sync deletes what is not in memory).
-    """
-    outputs = {output} if isinstance(output, str) else output
-    fell = {
-        d: (n, after.get(d, 0))
-        for d, n in before.items()
-        if d not in outputs and after.get(d, 0) < n
-    }
-    if fell:
-        return (
-            "⚠️ bajaron databanks que la tarea no escribe: "
-            + ", ".join(f"{d} {a} → {b}" for d, (a, b) in fell.items())
-            + f". La copia se queda en {kept}"
-        )
-    shutil.rmtree(kept)
-    return "ningún otro databank bajó; la copia de seguridad se ha borrado"
-
-
-INTERRUPTED = re.compile(r"Cannot process strategy '([^']+)'")
-
-
-def restore(
-    project_dir: Path,
-    kept: Path,
-    before: dict[str, int],
-    outputs: set[str],
-    lines: list[str],
-) -> list[str]:
-    """Put back the strategies SQX's own sync race deleted, from the pre-run snapshot.
-
-    🔬 2026-09-29: the stop's shutdown sync ran while a periodic sync of «Retest Markets -
-    Family» held a strategy's lock; SQX logged «Cannot process strategy 'Strategy 9.11.67'»
-    (InterruptedException) and the periodic sync then counted it removed and deleted its
-    file. Only a strategy named in such a line, missing from a databank no task of the run
-    writes, is copied back — the worker is stopped, so nothing rewrites it.
-
-    Args:
-        project_dir: The project's folder on the install.
-        kept: The snapshot of it taken before the start.
-        before: `counts` before the start.
-        outputs: The run's own output databanks.
-        lines: The install log's lines written since the start.
-
-    Returns:
-        «databank/strategy» per file restored.
-    """
-    named = {m.group(1) for line in lines for m in [INTERRUPTED.search(line)] if m}
-    back = []
-    for bank in (b for b in before if b not in outputs):
-        for f in (kept / "databanks" / bank).glob("*.sqx") if named else []:
-            live = project_dir / "databanks" / bank / f.name
-            if f.stem in named and not live.exists():
-                shutil.copy2(f, live)
-                back.append(f"{bank}/{f.stem}")
-    return back
 
 
 def record(pre: dict[str, Any], project: str, built: int) -> str:
@@ -148,13 +41,6 @@ def record(pre: dict[str, Any], project: str, built: int) -> str:
         template_runs(), RUN_COLUMNS, row, ("template", "symbol", "timeframe")
     )
     return f"runs.csv: {what} {template} en {row['symbol']} {row['timeframe']}"
-
-
-def graceful(_signum: int, _frame: object) -> None:
-    """SIGTERM from the daemon's cancel: raise, so every `finally` stops the worker it started —
-    without the export after the stop, which could outlast the daemon's grace period."""
-    os.environ["ALGO_NO_EXPORT"] = "1"
-    raise SystemExit("cancelado desde la ventana: se para el worker antes de salir")
 
 
 def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:

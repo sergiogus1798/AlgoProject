@@ -10,10 +10,11 @@ from core import assetdata
 from core.paths import DATA, databank_dir, project_dir, worker_dir
 from core.phases import phase
 from pipeline.autopilot import call, closing, survivors, variants
+from sqx import projdisk
 from sqx.curate import apply_verdict
 from sqx.projects import crosstfload, live, stage
-from sqx.variants import inputs, legs as legmod
-from ui.daemon.launch import run as launcher
+from sqx.variants import inputs
+from sqx.variants import legs as legmod
 
 TAG = "neighbours"  # the trade export's batch tag: `raw/<P>/<leg>/<day>/neighbours/`
 
@@ -149,7 +150,7 @@ def retest(project: str, role: str, work: Path) -> str:
     project copied aside first (hard rule 1), the copy gone only when no databank the legs do
     not write lost a file."""
     folder = project_dir(project, apply_verdict.install_of(role))
-    kept, before = launcher.snapshot(folder), launcher.counts(folder)
+    kept, before = projdisk.snapshot(folder), projdisk.counts(folder)
     call.again(
         lambda: call.run(
             [
@@ -163,4 +164,4 @@ def retest(project: str, role: str, work: Path) -> str:
         )
     )
     own = {leg["databank"] for leg in legmod.legs()} | {legmod.source()}
-    return launcher.compare(before, launcher.counts(folder), own, kept)
+    return projdisk.compare(before, projdisk.counts(folder), own, kept)

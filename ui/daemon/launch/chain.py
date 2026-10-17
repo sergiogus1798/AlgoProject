@@ -21,8 +21,8 @@ from core.paths import ROOT
 from sqx import jobs
 from sqx.databank import state as loader
 from sqx.projects import stage
+from sqx.worker.session import graceful, say
 from sqx.workflow.records import Context
-from ui.daemon.advance.run import say
 from ui.daemon.launch import chaincheck, preflight
 from ui.daemon.launch import run as launcher
 from ui.daemon.loader import afterrun
@@ -78,7 +78,7 @@ def cancelled(signum: int, frame: object) -> None:
     _RUNNING["stop"] = True  # the tests still queued in the pool never start
     for proc in list(CHILDREN):
         proc.kill()
-    launcher.graceful(signum, frame)
+    graceful(signum, frame)
 
 
 def floored(

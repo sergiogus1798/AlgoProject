@@ -32,7 +32,7 @@ Rules for anyone (human or agent) editing here: [`CLAUDE.md`](CLAUDE.md). Facts 
 | `log.py` | SQX's own log from the moment of a launch on, across midnight: only the lines written since |
 | `jobs.py` | The daemon's job list: analysis commands started from the window, queued, and how each one ended. | imported | argv → job record |
 | `progress.py` | Where a running SQX project is: its tasks, which one runs, how far, read from disk only. | imported | disk → JSON |
-| `projdisk.py` | What a project's folder on disk says: the installs, their projects, a project's tasks, databank counts, genetic settings. | imported | disk → dicts |
+| `projdisk.py` | What a project's folder on disk says: the installs, their projects, a project's tasks, databank counts, genetic settings; the snapshot before a start, its comparison and restore. | imported | disk → dicts |
 | `proof.py` | One-use proof that a launcher's confirmation was computed: a nonce bound to the plan it was shown with. | imported by `ui/daemon/{launch,advance,mt5bridge,portfolios}/api.py` | plan → nonce · refusal |
 | `tasklog.py` | A project's own task log and the worker's status line: counts, times and the running total. | imported | disk · HTTP → dicts |
 | `groups/` | Empty directory (no tracked files) |

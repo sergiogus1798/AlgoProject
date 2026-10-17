@@ -15,10 +15,11 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from sqx import log as sqxlog  # noqa: E402
-from sqx import progress  # noqa: E402
+from sqx import progress, projdisk  # noqa: E402
 from sqx.projects import taskcap  # noqa: E402
 from sqx.worker import preflight  # noqa: E402
 from tests.test_advance import CALLS, P, fakes, tree, write  # noqa: E402
+from sqx.worker import session
 from ui.daemon.advance import api, run
 
 
@@ -144,16 +145,15 @@ def test_ready_waits_for_the_load(root: Path) -> None:
         "11:52:29 CLILogger - Syncing databank(s) from files\n"
         "11:52:30 CLILogger - Loaded 21 strategies to databank Results\n"
     )
-    assert run.syncing(root), "loading: not ready"
+    assert session.syncing(root), "loading: not ready"
     with f.open("a") as fh:
         fh.write("11:53:21 CLILogger - Synchronization finished.\n")
-    assert not run.syncing(root), "loaded: ready"
+    assert not session.syncing(root), "loaded: ready"
 
 
 def test_restore_after_sync_race(root: Path) -> None:
     """A strategy SQX logged «Cannot process strategy» for and then deleted comes back from the
     snapshot; one it did not name, and any in the run's own output, stay as they are."""
-    from ui.daemon.launch import run as launch
 
     kept, live = root / "kept", root / "live"
     for top in (kept, live):
@@ -166,7 +166,7 @@ def test_restore_after_sync_race(root: Path) -> None:
         "13:04:05 ERROR StrategiesSaver - Cannot process strategy 'Strategy 9.11.67'",
         "13:04:06 ERROR StrategiesSaver - Cannot process strategy 'Strategy 2.2.2'",
     ]
-    back = launch.restore(
+    back = projdisk.restore(
         live, kept, {"Retest Markets - Family": 2, "WFM": 1}, {"WFM"}, lines
     )
     assert back == ["Retest Markets - Family/Strategy 9.11.67"], back
