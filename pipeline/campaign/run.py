@@ -13,6 +13,7 @@ import yaml
 from core.assetoverride import PRECISION
 from core.datapaths import campaign_dir, template_dir
 from core.paths import DATA, ROOT, project_dir, worker_dir
+from core.proc import run as run_child
 from core.researchpaths import autopilot_runs
 from pipeline.campaign import keep, ledger, palette
 from sqx.projects import retire
@@ -80,13 +81,15 @@ def _attempt(
         if _stop_file().exists():
             while (
                 proc.poll() is None
-                and subprocess.run(
-                    ["pkill", "-TERM", "-f", AUTOPILOT.format(project)]
+                and run_child(
+                    ["pkill", "-TERM", "-f", AUTOPILOT.format(project)],
+                    check=False,
+                    timeout=120,
                 ).returncode
             ):
                 time.sleep(BOOT)  # still creating the project: no autopilot to tell yet
             proc.wait()
-            subprocess.run(WORKER, cwd=ROOT)
+            run_child(WORKER, cwd=ROOT, check=False, timeout=600)
             return None
         time.sleep(POLL)
     return proc.returncode

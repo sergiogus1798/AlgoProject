@@ -1,10 +1,10 @@
 """Freeze a finished workflow's strategies in the archive — finalists AND their mothers — and copy the run-stamped outputs."""
 
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
+from core import proc
 from core.datapaths import variants_dir
 from core.paths import DATA, ROOT
 
@@ -16,7 +16,7 @@ def _archive(
     cell: dict, identity: str, sqx: str | Path, note: str
 ) -> tuple[str | None, str]:
     """One `core.archive archive` call: the version folder, or None with the error's tail."""
-    done = subprocess.run(
+    done = proc.run(
         [
             sys.executable,
             "-m",
@@ -40,6 +40,8 @@ def _archive(
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,
+        timeout=600,
     )
     if done.returncode:
         return None, done.stderr.strip()[-400:]

@@ -30,6 +30,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `optprofile.py` | Read the Sys. Param Permutation profile SQX stores inside a .sqx, without SQX running. | `.sqx` → dicts |
 | `paths.py` | Every path and port in the project. The only module allowed to know where things live. | names, roles → `Path` |
 | `phases.py` | Wall clock of a named sub-phase, appended to the CSV `ALGO_PHASES` names; nothing without it. | a block → one CSV row |
+| `proc.py` | The one way to run a child process: it always has a deadline, and a failure raises unless asked not to. | — |
 | `researchpaths.py` | Where the research director's pieces live under the data root. | names → `Path` |
 | `significance.py` | Could this edge be zero? The Sharpe-based tests three studies now share. | returns → probabilities |
 | `sqxfile.py` | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | `.sqx` → values |

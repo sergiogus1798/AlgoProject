@@ -6,7 +6,7 @@ import subprocess
 import time
 from collections.abc import Callable
 
-from core import fleetpaths
+from core import fleetpaths, proc
 from core.fsio import atomic_write
 from mt5.fleet.app import floors, read, state
 
@@ -17,10 +17,11 @@ def send(title: str, body: str) -> None:
     """Show a critical desktop notification; cron has no session bus, so the owner's is named."""
     env = {**os.environ}
     env.setdefault("DBUS_SESSION_BUS_ADDRESS", f"unix:path=/run/user/{os.getuid()}/bus")
-    subprocess.run(
+    proc.run(
         ["notify-send", "--app-name=AlgoProject", "--urgency=critical", title, body],
         check=True,
         env=env,
+        timeout=120,
     )
 
 

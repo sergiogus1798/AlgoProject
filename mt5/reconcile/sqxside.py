@@ -3,7 +3,6 @@
 import json
 import re
 import shutil
-import subprocess
 import sys
 import zipfile
 from datetime import date, timedelta
@@ -11,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import assetdata, exportdrv, trades
+from core import assetdata, exportdrv, proc, trades
 from core.paths import ROOT
 from mt5.reconcile import week as weeks
 from mt5.verify import sqxside as verify_sqx
@@ -65,7 +64,9 @@ def build(name: str, strategy: Path, asset: str, timeframe: str, cfg: dict) -> P
         "Retest",
         "--json",
     ]
-    got = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, timeout=600)
+    got = proc.run(
+        argv, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False
+    )
     if got.returncode:
         raise SystemExit(
             f"el builder no creó {name}:\n{(got.stderr or got.stdout)[-2000:]}"

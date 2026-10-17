@@ -3,13 +3,12 @@
 import hashlib
 import json
 import shutil
-import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
 
-from core import assetdata, sqxfile
+from core import assetdata, proc, sqxfile
 from core.datapaths import tmp_dir, variants_dir
 from core.paths import ROOT, bank_dir, project_dir, report_dir, worker_dir
 from core.phases import phase
@@ -23,8 +22,13 @@ from sqx.variants import legs as legmod
 def _py(*args: str) -> None:
     """One module run as the skill runs it; its failure ends the step with its own words."""
     with phase(args[0].rsplit(".", 1)[-1] + (".clear" if "--clear" in args else "")):
-        got = subprocess.run(
-            [sys.executable, "-m", *args], cwd=ROOT, capture_output=True, text=True
+        got = proc.run(
+            [sys.executable, "-m", *args],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=3600,
         )
     if got.returncode:
         raise SystemExit(f"{args[0]}: {(got.stderr or got.stdout).strip()[-1500:]}")

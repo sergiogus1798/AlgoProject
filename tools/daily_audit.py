@@ -2,14 +2,13 @@
 """The half of the daily audit a machine can do alone. Judgement stays with the /audit agent."""
 
 import json
-import subprocess
 import sys
 from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core import manifest
+from core import manifest, proc
 from core.paths import AUDIT, DATA, MASTER, ROOT
 from tools import audit_tests
 
@@ -23,7 +22,9 @@ def run(*command: str) -> tuple[int, str]:
     Returns:
         (exit code, combined output).
     """
-    p = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    p = proc.run(
+        command, cwd=ROOT, capture_output=True, text=True, check=False, timeout=1800
+    )
     return p.returncode, (p.stdout + p.stderr).strip()
 
 
@@ -110,7 +111,7 @@ def undecided_assets() -> list[str]:
 
 def dead_code() -> list[str]:
     """Vulture findings over the repo with `tools/vulture_whitelist.py` (reported, never deleted)."""
-    got = subprocess.run(
+    got = proc.run(
         [
             sys.executable,
             "-m",
@@ -124,6 +125,8 @@ def dead_code() -> list[str]:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,
+        timeout=600,
     )
     return [x for x in got.stdout.splitlines() if x]
 

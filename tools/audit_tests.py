@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core import proc
 from core.paths import ROOT
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # depmap, for --changed
@@ -58,8 +59,14 @@ def run_one(path: str) -> tuple[str, int, float, str]:
     cap = SLOW.get(path, TIMEOUT)
     start = time.time()
     try:
-        p = subprocess.run(
-            command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=cap
+        p = proc.run(
+            command,
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=cap,
+            check=False,
         )
         code, out = p.returncode, p.stdout + p.stderr
         if (
@@ -186,12 +193,13 @@ def select(changed: set[str], graph: dict[str, set[str]]) -> dict[str, str]:
 
 def git_changed() -> set[str]:
     """`.py` paths git sees as modified or untracked."""
-    out = subprocess.run(
+    out = proc.run(
         ["git", "status", "--porcelain", "-uall"],
         cwd=ROOT,
         capture_output=True,
         text=True,
         check=True,
+        timeout=120,
     ).stdout
     return {
         line[3:].split(" -> ")[-1].strip('"')
@@ -212,7 +220,8 @@ def main() -> None:
     args = ap.parse_args()
     paths = None
     if args.changed is not None:
-        from depmap import file_graph, ROOT as DROOT
+        from depmap import ROOT as DROOT
+        from depmap import file_graph
 
         graph = {
             str(f.relative_to(DROOT)): {str(d.relative_to(DROOT)) for d in deps}

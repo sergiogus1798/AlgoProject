@@ -1,10 +1,9 @@
 """What leaves SQX through the worker: trades, and the symbol list (metrics are read off the .sqx)."""
 
 import shutil
-import subprocess
 from pathlib import Path
 
-from core import worker
+from core import proc, worker
 from core.paths import STAGING, WORKER_SH
 
 SYMBOLS_TIMEOUT_S = 120  # `-symbol action=list` after a ~20 s JVM start
@@ -35,11 +34,12 @@ def trades(source: Path, out_dir: Path, data: str = "main") -> str:
         f"output={out_dir}",
         f"data={data}",
     ]
-    got = subprocess.run(
+    got = proc.run(
         [str(WORKER_SH), "run", *cmd],
         capture_output=True,
         text=True,
         timeout=TRADES_TIMEOUT_S,
+        check=False,
     )
     if got.returncode:
         # SQX says why on stdout («No plugin loader was able to recognize file …»); a bare
@@ -65,7 +65,7 @@ def symbols() -> str:
         bar count is what tells a sync whether a feed has grown since it was last pulled.
     """
     worker.require_posix()
-    return subprocess.run(
+    return proc.run(
         [str(WORKER_SH), "run", "-symbol", "action=list"],
         capture_output=True,
         text=True,

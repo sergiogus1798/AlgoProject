@@ -45,6 +45,28 @@ def _is_np_random(func: ast.expr) -> bool:
     )
 
 
+def _bypass(node: ast.AST, path: Path) -> str | None:
+    """`os_replace` or `subprocess_run` when the node goes around the one writer or the one runner."""
+    if (
+        isinstance(node, ast.Attribute)
+        and node.attr == "replace"
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "os"
+        and path.name != "fsio.py"
+    ):  # a hand-rolled atomic write: core.fsio.atomic_write is the one writer
+        return "os_replace"
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "subprocess"
+        and node.func.attr in ("run", "check_output", "check_call", "call")
+        and path.name != "proc.py"
+    ):  # a child process without a deadline: core.proc.run is the one way
+        return "subprocess_run"
+    return None
+
+
 def _file_counts(path: Path) -> Counter[str]:
     """The four ast counters of one file."""
     pkg, out = _package(path), Counter()
@@ -66,14 +88,8 @@ def _file_counts(path: Path) -> Counter[str]:
                 for e in caught
             ):
                 out["broad_except"] += 1
-        elif (
-            isinstance(node, ast.Attribute)
-            and node.attr == "replace"
-            and isinstance(node.value, ast.Name)
-            and node.value.id == "os"
-            and path.name != "fsio.py"
-        ):  # a hand-rolled atomic write: core.fsio.atomic_write is the one writer
-            out["os_replace"] += 1
+        elif key := _bypass(node, path):
+            out[key] += 1
         elif isinstance(node, ast.Call):
             f = node.func
             name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", "")
@@ -145,6 +161,7 @@ def counts(files: list[Path]) -> dict[str, int]:
                 "unseeded_rng",
                 "legacy_np_random",
                 "os_replace",
+                "subprocess_run",
             )
         }
     )

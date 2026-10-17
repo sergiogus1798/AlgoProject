@@ -1,10 +1,10 @@
 """Send one account's package to the VPS and relaunch its terminal; or install the relaunch task. Dry-run unless --yes."""
 
 import argparse
-import subprocess
 import tempfile
 from pathlib import Path
 
+from core import proc
 from mt5.fleet import remote
 
 VPS = Path(__file__).parent / "vps"
@@ -14,12 +14,13 @@ HOME = "fleet-packages"  # under the VPS user's home
 def ps(script: Path, variables: dict[str, str]) -> str:
     """Run a VPS PowerShell script with its variables set first; returns stdout, raises on failure."""
     head = "".join(f"${k} = {v}\n" for k, v in variables.items())
-    done = subprocess.run(
+    done = proc.run(
         ["ssh", "-o", "ConnectTimeout=10", remote.SSH, remote.POWERSHELL],
         input=head + script.read_text(),
         capture_output=True,
         text=True,
         timeout=120,
+        check=False,
     )
     if done.returncode:
         raise SystemExit(
@@ -36,10 +37,13 @@ def quote(text: str) -> str:
 def push(package: Path, install: str, restart: bool) -> str:
     """Copy the package to the VPS, then lay it into the terminal at `install` (its data folder is found by origin.txt)."""
     name = package.name
-    subprocess.run(
-        ["ssh", remote.SSH, f"mkdir {HOME}"], capture_output=True, timeout=30
+    proc.run(
+        ["ssh", remote.SSH, f"mkdir {HOME}"],
+        capture_output=True,
+        timeout=30,
+        check=False,
     )  # exists already: harmless
-    subprocess.run(
+    proc.run(
         ["scp", "-qr", str(package), f"{remote.SSH}:{HOME}/"], check=True, timeout=300
     )
     return ps(
@@ -56,10 +60,13 @@ def install_watchdog(installs: list[str]) -> str:
     """Copy the watchdog and its list of installs to the VPS and register the scheduled task that runs it every 5 minutes."""
     tmp = Path(tempfile.gettempdir()) / "installs.txt"
     tmp.write_text("\n".join(installs) + "\n", encoding="utf-8")
-    subprocess.run(
-        ["ssh", remote.SSH, f"mkdir {HOME}"], capture_output=True, timeout=30
+    proc.run(
+        ["ssh", remote.SSH, f"mkdir {HOME}"],
+        capture_output=True,
+        timeout=30,
+        check=False,
     )  # exists already: harmless
-    subprocess.run(
+    proc.run(
         ["scp", "-q", str(VPS / "watchdog.ps1"), str(tmp), f"{remote.SSH}:{HOME}/"],
         check=True,
         timeout=60,

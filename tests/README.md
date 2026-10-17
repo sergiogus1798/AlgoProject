@@ -287,6 +287,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_portfolio_weights.py` | Known-answer test of the weight methods (M4 and M8, PLAN §8.6): every registry entry, equal = 1/K, the rest by hand. | — |
 | `test_portfolio_wf.py` | Known-answer test of the weight walk-forward (M8): windows, the planted reversal, noise, the ledger rows. | — |
 | `test_price_rounding_measure.py` | rounding.measure picks the rounding the trades were filled with. | — |
+| `test_proc.py` | core.proc.run: the deadline is enforced and a failure raises unless asked not to. | — |
 | `test_profilepower.py` | Known-answer tests of the profile's power study, and the proof that it never reads past `build`. | `python3 tests/test_profilepower.py` |
 | `test_progress_genetic.py` | «En marcha» shows the genetic settings of a running Build: PopulationSize × Islands must fill first. | — |
 | `test_project_map.py` | Known-answer test for sqx.inspect.project_map: an inactive task runs nothing in SQX, so it must not appear as live in databank_flow(), tldr()'s loop/at-risk/terminal lines, or task_order()'s [INACTIVE] flag. OPEN.md #10. | `python3 tests/test_project_map.py` |

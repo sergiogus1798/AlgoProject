@@ -9,7 +9,6 @@ import hashlib
 import json
 import os
 import re
-import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -18,6 +17,7 @@ import markdown
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core import proc
 from core.datapaths import tmp_dir
 from core.paths import BROWSER, MANUAL, MANUAL_SRC
 
@@ -353,7 +353,7 @@ def main() -> None:
             print(f"{len(stems):2d} chapters -> {pdf.name} unchanged")
             continue
         html.write_text(doc, encoding="utf-8")
-        subprocess.run(
+        proc.run(
             [
                 str(BROWSER),
                 "--headless=new",
@@ -367,6 +367,7 @@ def main() -> None:
             check=True,
             capture_output=True,
             env={**os.environ, "TMPDIR": str(tmp_dir())},
+            timeout=300,
         )  # Chrome's scoped_dir*
         html.unlink()
         done[fam] = fingerprint(doc)

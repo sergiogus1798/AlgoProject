@@ -1,8 +1,9 @@
 """The two calls to the VPS over `ssh vps`: pull the beacon's files, run the health probe."""
 
 import json
-import subprocess
 from pathlib import Path
+
+from core import proc
 
 SSH = "vps"
 FLEET_FOLDER = "AppData/Roaming/MetaQuotes/Terminal/Common/Files/fleet"  # relative to the VPS user's home
@@ -12,7 +13,7 @@ POWERSHELL = 'powershell -NoProfile -Command "$input | Out-String | Invoke-Expre
 
 def pull(into: Path) -> bool:
     """Copy the beacon's `*.json` files from the VPS into `into`; False when the VPS does not answer."""
-    done = subprocess.run(
+    done = proc.run(
         [
             "scp",
             "-q",
@@ -24,17 +25,19 @@ def pull(into: Path) -> bool:
         capture_output=True,
         text=True,
         timeout=50,
+        check=False,
     )
     return done.returncode == 0
 
 
 def probe() -> dict | None:
     """The VPS's RAM, CPU, disk, uptime and each terminal's process and log; None when it does not answer."""
-    done = subprocess.run(
+    done = proc.run(
         ["ssh", "-o", "ConnectTimeout=10", SSH, POWERSHELL],
         input=PROBE.read_text(),
         capture_output=True,
         text=True,
         timeout=90,
+        check=False,
     )
     return json.loads(done.stdout) if done.returncode == 0 else None

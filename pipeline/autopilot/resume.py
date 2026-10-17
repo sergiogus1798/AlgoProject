@@ -2,15 +2,16 @@
 
 import argparse
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 from typing import cast
 from xml.etree import ElementTree
 
+from core import proc
 from core.paths import ROOT, project_dir, worker_dir
-from core.store import cli as store, verify, write
+from core.store import cli as store
+from core.store import verify, write
 from sqx.projects import cfxio, crosstfload, registry, stage
 from sqx.projects.databanks import databanks
 
@@ -129,7 +130,9 @@ def main() -> None:
 
     def run(*argv: str) -> None:
         """Run one module of this project; stop the resume when it fails."""
-        if subprocess.run([sys.executable, "-m", *argv], cwd=ROOT).returncode:
+        if proc.run(
+            [sys.executable, "-m", *argv], cwd=ROOT, check=False, timeout=3600
+        ).returncode:
             raise SystemExit(f"{argv[0]} salió con error: no se reanuda nada")
 
     run("core.assets", row["symbol"])  # hard rule 5
@@ -144,7 +147,7 @@ def main() -> None:
         banks = fill(a.project, a.role, files)
     print(f"{a.project}: {len(files)} estrategias en {', '.join(banks)}")
     # Step 12's judge comes first (it cuts the databank step 13 reads): the first thing RUN counts
-    said = subprocess.run(
+    said = proc.run(
         [
             sys.executable,
             "-m",
@@ -157,6 +160,7 @@ def main() -> None:
         capture_output=True,
         text=True,
         check=True,
+        timeout=600,
     ).stdout
     do = [d for d in json.loads(said)["do"] if d["kind"] != "judge"]
     first = do[0]["n"] if do else None

@@ -5,15 +5,13 @@ import json
 import os
 import signal
 import time
-import urllib.parse
-import urllib.request
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from core import worker
 from core.paths import WORKERS
 from core.xmlget import rx
-from typing import Any
 
 
 def _file(role: str) -> Path:
@@ -37,13 +35,7 @@ def _setting(role: str, key: str) -> str:
 def call(role: str, action: str, **params: str) -> dict[str, Any]:
     """POST one /project/<action>; SystemExit with SQX's own words on an `error` answer."""
     port, token = _setting(role, "WebServerPortUsed"), _setting(role, "BrowserToken")
-    req = urllib.request.Request(
-        f"http://localhost:{port}/project/{action}",
-        data=urllib.parse.urlencode(params, doseq=True).encode(),
-        headers={"browserToken": token},
-    )
-    with urllib.request.urlopen(req, timeout=600) as r:
-        got = json.loads(r.read().decode("utf-8"))
+    got = json.loads(worker.post(port, token, action, params))
     if "error" in got:
         raise SystemExit(f"SQX /project/{action}: {got['error']}")
     return got

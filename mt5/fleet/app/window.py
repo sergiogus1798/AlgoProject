@@ -1,12 +1,12 @@
 """MetaTracker's window: the five tabs over the fleet, the refresh timer and the desktop notifications."""
 
-import subprocess
 import time
 from datetime import datetime
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QLabel, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
+from core import proc
 from mt5.fleet.app import fmt, read, state, theme
 from mt5.fleet.app.tab_deploy import DeployTab
 from mt5.fleet.app.tab_fleet import FleetTab
@@ -104,7 +104,7 @@ class Tracker(QWidget):
                 and r["light"] in (state.RED, state.SILENT)
                 and self.seen.get(login) != r["light"]
             ):
-                subprocess.run(
+                proc.run(
                     [
                         "notify-send",
                         "-u",
@@ -113,6 +113,7 @@ class Tracker(QWidget):
                         f"{fmt.who(r['beat'], r['stage'])}: {r['text']}",
                     ],
                     check=False,
+                    timeout=120,
                 )
             self.seen[login] = r["light"]
 

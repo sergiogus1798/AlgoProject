@@ -9,7 +9,6 @@ the git state with each file's age, which is what the proposing agent reads.
 import argparse
 import json
 import os
-import subprocess
 import sys
 import time
 from datetime import date
@@ -19,6 +18,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from core import proc
 from core.paths import AUDIT
 
 PUSH = ["git", "-c", "credential.helper=!gh auth git-credential", "push", "origin"]
@@ -28,7 +28,14 @@ NEVER_SUFFIX = (".csv", ".parquet", ".sqx", ".db")
 
 def git(repo: Path, *args: str) -> str:
     """Run git in `repo` and return stdout; a failure raises with git's own message."""
-    got = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True)
+    got = proc.run(
+        ["git", *args],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
     if got.returncode:
         raise SystemExit(f"git {' '.join(args[:2])}: {got.stderr.strip()}")
     return got.stdout
@@ -147,8 +154,14 @@ def apply(
             **os.environ,
             "PATH": f"{Path.home() / '.local/bin'}:{os.environ['PATH']}",
         }
-        got = subprocess.run(
-            [*PUSH, branch], cwd=repo, capture_output=True, text=True, env=env
+        got = proc.run(
+            [*PUSH, branch],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+            timeout=300,
         )
         pushed = (
             "push hecho" if got.returncode == 0 else f"PUSH FALLÓ: {got.stderr.strip()}"

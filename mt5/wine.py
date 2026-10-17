@@ -6,6 +6,7 @@ import subprocess
 import time
 from pathlib import Path, PureWindowsPath
 
+from core import proc
 from core.paths import MASTER, MT5_PREFIX
 
 INSTALL = MT5_PREFIX / "drive_c" / "Program Files" / "MetaTrader 5"
@@ -98,8 +99,12 @@ def terminal_running() -> bool:
     """Whether a terminal64.exe of this prefix is up. MT5 refuses a second one on the same data."""
     # Wine shows the process as its Windows command line; matching only that keeps a shell
     # whose command merely mentions terminal64.exe from reading as a running terminal.
-    out = subprocess.run(
-        ["pgrep", "-af", r"^C:\\.*terminal64\.exe"], capture_output=True, text=True
+    out = proc.run(
+        ["pgrep", "-af", r"^C:\\.*terminal64\.exe"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
     ).stdout
     return bool(out.strip())
 
@@ -154,7 +159,9 @@ def close_terminal(wait_s: float = 90) -> bool:
         if not terminal_running():
             return True
         time.sleep(1)
-    subprocess.run(["pkill", "-TERM", "-f", r"^C:\\.*terminal64\.exe"], check=False)
+    proc.run(
+        ["pkill", "-TERM", "-f", r"^C:\\.*terminal64\.exe"], check=False, timeout=120
+    )
     time.sleep(5)
     return not terminal_running()
 
@@ -170,7 +177,9 @@ def kill_terminal() -> bool:
     """
     if not terminal_running():
         return True
-    subprocess.run(["pkill", "-KILL", "-f", r"^C:\\.*terminal64\.exe"], check=False)
+    proc.run(
+        ["pkill", "-KILL", "-f", r"^C:\\.*terminal64\.exe"], check=False, timeout=120
+    )
     time.sleep(2)
     return not terminal_running()
 
@@ -194,7 +203,7 @@ def run(
     Returns:
         The finished process, output captured as text.
     """
-    return subprocess.run(
+    return proc.run(
         ["wine", str(exe), *args],
         env=env(),
         capture_output=True,
@@ -202,4 +211,5 @@ def run(
         errors="replace",
         timeout=timeout,
         cwd=str(cwd) if cwd else None,
+        check=False,
     )

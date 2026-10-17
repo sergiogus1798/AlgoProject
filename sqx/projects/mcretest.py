@@ -3,39 +3,19 @@
 
 import argparse
 import json
-import re
 import zipfile
 from pathlib import Path
+from typing import Any, TypedDict
 from xml.etree import ElementTree
 
 from core.assetcheck import pending
 from core.assetdata import doctrine, load
 from sqx.projects import cfxio
+from sqx.projects.crosschecks import active, member_of
 from sqx.projects.databanks import set_databank
 from sqx.projects.orders import pending_orders, with_exits
 from sqx.projects.perturbations import disable, usable, write_task
 from sqx.projects.stage import own
-from core.xmlget import el, rx
-from typing import Any, TypedDict
-
-
-def active(config: str, title: str, on: bool) -> str:
-    """Switch one task of the project on or off by the title the GUI shows.
-
-    Args:
-        config: The project's config.xml as text.
-        title: The task's title attribute, e.g. "MCR 4 MinDist".
-        on: Whether SQX runs it when the project runs.
-
-    Returns:
-        The config with that task's `active` rewritten. A task the study does not want is
-        left in place and switched off rather than deleted: the decision is reversible,
-        and a project missing a task looks like a different project.
-    """
-    tag = rx(rf'<Task\b[^>]*title="{re.escape(title)}"[^>]*/>', config).group(0)
-    return config.replace(
-        tag, re.sub(r'active="[^"]*"', f'active="{str(on).lower()}"', tag), 1
-    )
 
 
 class Configured(TypedDict):
@@ -47,27 +27,6 @@ class Configured(TypedDict):
     simulations: Any
     input: str
     tasks: list[dict[str, Any]]
-
-
-def member_of(config: str, title: str) -> str | None:
-    """The task XML member the project's task with this title points at.
-
-    Args:
-        config: The project's config.xml as text.
-        title: The task's title attribute.
-
-    Returns:
-        The member name, or None when the project has no such task.
-    """
-    tag = next(
-        (
-            t
-            for t in el(ElementTree.fromstring(config).find("Tasks"))
-            if t.get("title") == title
-        ),
-        None,
-    )
-    return tag.get("taskXMLFile") if tag is not None else None
 
 
 def configure(cfx: Path, symbol: str, source: str, databank: Path | None) -> Configured:

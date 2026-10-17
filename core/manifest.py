@@ -2,11 +2,11 @@
 
 import json
 import os
-import subprocess
 from datetime import date
 from pathlib import Path
 from typing import Any
 
+from core import proc
 from core.paths import ROOT
 
 # A truthful record, not an error: exports carried over from AlgoProject_Old predate the
@@ -21,15 +21,19 @@ def code_version() -> str:
     Returns:
         Short commit hash, with "-dirty" appended when the tree has uncommitted changes.
     """
-    head = subprocess.run(
+    head = proc.run(
         ["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
         capture_output=True,
         text=True,
+        check=False,
+        timeout=120,
     ).stdout.strip()
-    dirty = subprocess.run(
+    dirty = proc.run(
         ["git", "-C", str(ROOT), "status", "--porcelain"],
         capture_output=True,
         text=True,
+        check=False,
+        timeout=120,
     ).stdout.strip()
     return head + ("-dirty" if dirty else "")
 

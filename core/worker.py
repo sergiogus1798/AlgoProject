@@ -5,15 +5,16 @@ import os
 import socket
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from time import sleep
 
-from core.paths import MASTER, WORKERS, WORKER_SH
+from core.paths import MASTER, WORKER_SH, WORKERS
 
 PROC = Path("/proc")
 READY_POLLS = 900  # x 2 s = 30 min for the databank to load; a JVM start is ~20 s
-TIMEOUT = 600  # seconds one reply may take: what sqx.projects.live's own client allows
+TIMEOUT = 600  # seconds one reply may take, on the sqcli port and on a GUI session's /project servlet alike
 MAX_HOURS = 48  # no wait on a run outlives this (ui/daemon/advance/run.py's bound)
 
 
@@ -51,6 +52,26 @@ def call(command: str, role: str = "conductor", timeout: float = TIMEOUT) -> str
     port = WORKERS[role]["port"]
     url = f"http://localhost:{port}/call?cmd=" + command.replace(" ", "%20")
     return urllib.request.urlopen(url, timeout=timeout).read().decode()
+
+
+def post(
+    port: str, token: str, action: str, params: dict, timeout: float = TIMEOUT
+) -> str:
+    """POST one form to a GUI session's `/project/<action>` servlet; the reply text (JSON).
+
+    Args:
+        port, token: What SQX wrote to the install's settings.xml (`WebServerPortUsed`, `BrowserToken`).
+        action: The servlet action, e.g. "list".
+        params: Form fields; a list value repeats the key.
+        timeout: Seconds to wait for the reply.
+    """
+    req = urllib.request.Request(
+        f"http://localhost:{port}/project/{action}",
+        data=urllib.parse.urlencode(params, doseq=True).encode(),
+        headers={"browserToken": token},
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8")
 
 
 def checked(reply: str, command: str) -> str:

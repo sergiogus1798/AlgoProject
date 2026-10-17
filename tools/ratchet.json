@@ -6,6 +6,7 @@
   "layering_allow": 19,
   "legacy_np_random": 0,
   "os_replace": 11,
+  "subprocess_run": 52,
   "pyright.core": 0,
   "pyright.engines": 0,
   "pyright.ledger": 0,

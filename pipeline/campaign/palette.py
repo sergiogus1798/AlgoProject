@@ -3,6 +3,7 @@
 import re
 import subprocess
 
+from core import proc
 from core.datapaths import template_dir
 from core.paths import CLAUDE_BIN, ROOT
 
@@ -35,7 +36,7 @@ def choose(cell: dict) -> tuple[str | None, str]:
         f"Al terminar, una línea «PALETA: {name}»."
     )
     try:
-        done = subprocess.run(
+        done = proc.run(
             [
                 str(CLAUDE_BIN),
                 "-p",
@@ -51,6 +52,7 @@ def choose(cell: dict) -> tuple[str | None, str]:
             capture_output=True,
             text=True,
             timeout=MINUTES * 60,
+            check=False,
         )
     except subprocess.TimeoutExpired:
         return None, f"el buildingBlocksExpert no contestó en {MINUTES} min"

@@ -13,7 +13,7 @@ from core import worker
 from core.datapaths import projects_backup
 from core.paths import WORKERS, worker_dir
 from sqx.projects import cfxio
-from sqx.projects.crosschecks import member_of
+from sqx.projects.crosschecks import member_of, recommended
 from sqx.variants import inputs
 
 # Which task of the TARGET project each kind rewrites, by title -- never by file name. A
@@ -183,48 +183,6 @@ def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
     inner = recommended(inner)
     task = task[: block.start()] + inner + task[block.end() :]
     return cross_check(task, "SequentialOptimization", False)
-
-
-def recommended(inner: str) -> str:
-    """Permute the recommended parameters, and nothing else.
-
-    Args:
-        inner: The `OptProfileSysParamPermutation` element.
-
-    Returns:
-        The element with `WhatToParametrize` set to SQX's "Recommended parameters" choice:
-        `type="0"`, `Recommended` true, every other family false. Picking families by hand
-        -- periods and constants and used exit parameters, which is what a donor task may
-        carry -- permutes things the strategy does not actually key on and inflates the run
-        for nothing.
-    """
-    what = re.search(r"<WhatToParametrize\b.*?</WhatToParametrize>", inner, re.S)
-    assert what is not None
-    block = re.sub(r'type="\d+"', 'type="0"', what.group(0), count=1)
-    block = re.sub(
-        r"<Recommended>(?:true|false)</Recommended>",
-        "<Recommended>true</Recommended>",
-        block,
-        count=1,
-    )
-    for family in (
-        "Periods",
-        "Shifts",
-        "Constants",
-        "OtherParams",
-        "EntryParams",
-        "EntryLogic",
-        "ExitParamsUsed",
-        "ExitParamsUnused",
-        "BooleanParams",
-    ):
-        block = re.sub(
-            rf"<{family}>(?:true|false)</{family}>",
-            f"<{family}>false</{family}>",
-            block,
-            count=1,
-        )
-    return inner[: what.start()] + block + inner[what.end() :]
 
 
 def write(cfx: Path, task: str, kind: str, role: str) -> Path:

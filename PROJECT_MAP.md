@@ -9,10 +9,10 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 |---|---|---|---|---|
 | `.claude/hooks` | INFRA | 4 | 636 | A hook bug must never block work: both let the call through on any internal error, and a shell line |
 | `.claude/skills` | INFRA | 3 | 211 | — |
-| `core` | MIXED | 43 | 6515 | Everything that more than one phase needs. Import it as a package from the project root; scripts that |
+| `core` | MIXED | 44 | 6555 | Everything that more than one phase needs. Import it as a package from the project root; scripts that |
 | `core/archive` | INFRA | 7 | 698 | A strategy that survived the sequence cost a lot of CPU. The archive freezes it — its `.sqx`, its |
 | `core/assetwrite` | INFRA | 4 | 500 | Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, file length cap). Every caller still writes |
-| `core/store` | INFRA | 11 | 1971 | A strategy that passed the gate (step 8, limbo included) is irreproducible — the build is genetic — |
+| `core/store` | INFRA | 11 | 1969 | A strategy that passed the gate (step 8, limbo included) is irreproducible — the build is genetic — |
 | `core/study` | CALC | 18 | 2167 | A study (`studies/…`, `portfolio/common/monteCarlo`) computes; this folder only says **what shape |
 | `core/surface` | CALC | 4 | 413 | A grid of parameter tuples measured in two windows. Not a databank, not a strategy: the surface |
 | `engines` | CALC | 1 | 1 | A study asks a question and ends in a verdict; an engine only computes. Every study imports |
@@ -23,20 +23,20 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `engines/resample` | CALC | 2 | 164 | Index generators: given a sequence length and a block, which positions each simulated run takes. |
 | `engines/variants` | CALC | 6 | 641 | What the studies of one mother's parameter cloud all read the same way: which points are usable, |
 | `engines/weekly` | CALC | 3 | 265 | What steps 17 (WFC), 18.5 (market surfaces) and 19 (WFM) compute the same way: trades into a |
-| `ledger` | CALC | 13 | 2410 | Every step of the chain counts its own funnel and forgets it. This module is the book that does |
-| `mt5` | MIXED | 8 | 1241 | **Since 2026-09-29 the terminal's own MCP (`metatrader5`, MetaQuotes, local scope) is the main |
-| `mt5/fleet` | MIXED | 30 | 3803 | Field list of everything below: `CONTRACT.md` (FleetBeacon schema 2, the collector, what MetaTracker shows). |
+| `ledger` | CALC | 13 | 2411 | Every step of the chain counts its own funnel and forgets it. This module is the book that does |
+| `mt5` | MIXED | 8 | 1262 | **Since 2026-09-29 the terminal's own MCP (`metatrader5`, MetaQuotes, local scope) is the main |
+| `mt5/fleet` | MIXED | 30 | 3815 | Field list of everything below: `CONTRACT.md` (FleetBeacon schema 2, the collector, what MetaTracker shows). |
 | `mt5/newsfilter` | MIXED | 11 | 1480 | SQX exports an EA with no news filter. A funded account at Hantec (or FTMO) may not open or close a |
-| `mt5/reconcile` | MIXED | 8 | 1032 | OPEN.md #78 (owner, 2026-09-29): each weekend, the SQX backtest of the strategies that are |
-| `mt5/verify` | MIXED | 12 | 2524 | The owner's design (2026-09-29, replacing encargo 34 §2's "translate SQX's history"): **one SQX |
+| `mt5/reconcile` | MIXED | 8 | 1033 | OPEN.md #78 (owner, 2026-09-29): each weekend, the SQX backtest of the strategies that are |
+| `mt5/verify` | MIXED | 12 | 2532 | The owner's design (2026-09-29, replacing encargo 34 §2's "translate SQX's history"): **one SQX |
 | `mt5/winside` | INFRA | 1 | 158 | The `MetaTrader5` package exists only for Windows, so what talks to the terminal runs inside the |
 | `perf` | INFRA | 4 | 369 | Qué cuesta cada parte cara del proyecto, en tiempo y en memoria, medido de la misma forma cada vez |
 | `perf/disk` | INFRA | 6 | 693 | Read-only over `~/Desktop/AlgoData`. Nothing here deletes, moves or rewrites anything. |
 | `perf/inputs` | INFRA | 7 | 1083 | Configuration only. Nothing here times anything; `perf/measure/` does that. |
 | `perf/measure` | INFRA | 4 | 484 | Execution only. What gets measured is `perf/inputs/`; what the number means is `perf/verdict.py`. |
 | `pipeline` | INFRA | 1 | 141 | > 2026-10-13: the old chain (`run.py`, `stages/`, `verify/`, `stubs/`, `recipe.yaml`) was deleted — no production caller. What runs is `auto |
-| `pipeline/autopilot` | MIXED | 22 | 3613 | The window's «Correr workflow» (`ui/daemon/launch/chain.py`) already runs every SQX step and |
-| `pipeline/campaign` | INFRA | 7 | 946 | The campaign walks cells (template × asset × timeframe, long only, M30/H1/H4) and runs the whole workflow |
+| `pipeline/autopilot` | MIXED | 22 | 3621 | The window's «Correr workflow» (`ui/daemon/launch/chain.py`) already runs every SQX step and |
+| `pipeline/campaign` | INFRA | 7 | 957 | The campaign walks cells (template × asset × timeframe, long only, M30/H1/H4) and runs the whole workflow |
 | `pipeline/ledger` | INFRA | 1 | 110 | One `state.json` per mother strategy, at `AlgoData/pipeline/<project>/<strategy>/state.json`. |
 | `portfolio/common` | MIXED | 107 | 14152 | Strategies that survive the generation and robustness pipeline are individually plausible; this folder |
 | `portfolio/funded` | MIXED | 40 | 5370 | Strategies that survive the generation and robustness pipeline are individually plausible; this folder |
@@ -46,11 +46,11 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `sqx/data` | INFRA | 2 | 228 | One job: run the data update the GUI's "Update all" button runs, and then make |
 | `sqx/export` | INFRA | 9 | 1501 | Every script here writes into the data root and leaves a `manifest.json` next to what it wrote. |
 | `sqx/inspect` | INFRA | 15 | 2357 | Every tool here is read-only. Opening a `project.cfx` or a `.sqx` touches no SQX state and needs no |
-| `sqx/projects` | INFRA | 45 | 8487 | **Why this exists.** A project is cloned from a donor, and the donor carries the **master's own |
+| `sqx/projects` | INFRA | 45 | 8438 | **Why this exists.** A project is cloned from a donor, and the donor carries the **master's own |
 | `sqx/snippets` | INFRA | 2 | 186 | Java that SQX compiles and runs inside itself, mirrored as `user/extend/` wants it: |
 | `sqx/structural` | INFRA | 1 | 100 | `logic.py` only: reads a strategy's entry conditions and order direction from `strategy_Portfolio.xml` |
 | `sqx/templates` | INFRA | 3 | 505 | What the owner means by "create a strategy", in his words (2026-09-22). Three steps, in order: |
-| `sqx/variants` | MIXED | 28 | 4458 | Stage 2 of the robustness protocol. A design brief comes in; **N `.sqx` files and the manifest that |
+| `sqx/variants` | MIXED | 28 | 4416 | Stage 2 of the robustness protocol. A design brief comes in; **N `.sqx` files and the manifest that |
 | `studies/breakage` | MIXED | 45 | 7493 | WORKFLOW steps 13–16. |
 | `studies/closing` | CALC | 18 | 2462 | WORKFLOW steps 20–21 (`atrCalculator`, step 24, was deleted on 2026-10-11 after its pre-registered measurement read NO PASA — see git histor |
 | `studies/data` | CALC | 26 | 3591 | Studies of the inputs rather than of a strategy: `feedQuality/` (encargo 17) and `spread/`. |
@@ -60,7 +60,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `studies/screening` | MIXED | 56 | 8211 | WORKFLOW steps 7–8. |
 | `studies/transfer` | CALC | 33 | 5048 | WORKFLOW steps 9–12. |
 | `tests` | INFRA | 382 | 63818 | A handful of tests, only where a silent break would go unnoticed for weeks: the parsers everything |
-| `tools` | INFRA | 18 | 3776 | `manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The ow |
+| `tools` | INFRA | 18 | 3812 | `manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The ow |
 | `ui/daemon` | MIXED | 192 | 26947 | FastAPI on loopback. Everything the window knows, it learns here; everything it changes, it changes |
 | `ui/desktop` | INFRA | 173 | 26836 | PySide6. Draws what the daemon says, and asks the daemon for every change. **No view here opens a |
 | `ui/text` | INFRA | 18 | 2382 | Pure-Python modules (no Qt, no FastAPI, no file read) that the window **and** the daemon |
@@ -74,7 +74,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `core` | .claude/hooks (7), tests (6), core/assetwrite (3), engines/market (1) | 49 | `load()` (187), `read()` (98), `report_dir()` (66), `hit()` (63), `worker_dir()` (58), `write()` (55), `doctrine()` (55), `databank_dir()` (53) |
 | `core/archive` | core (16), core/study (3), ui/daemon (2), tests (2) | 5 | `versions()` (10), `load()` (8), `release()` (6), `listing()` (5), `harvest_rows()` (4), `registry()` (4), `frozen()` (4), `feed_of()` (2) |
 | `core/assetwrite` | core (41) | 7 | `parse()` (4), `set_brokers()` (2), `set_segment_end()` (2), `set_cost()` (2), `set_price_rounding()` (2), `retired()` (2), `set_value()` (2), `ValueWrite` (2) |
-| `core/store` | core (47), core/archive (10), core/study (3) | 7 | `folder()` (13), `locked()` (10), `check()` (8), `atomic()` (7), `manifest()` (6), `collect()` (6), `add()` (6), `listing()` (5) |
+| `core/store` | core (60), core/archive (10), core/study (3) | 7 | `folder()` (13), `locked()` (10), `check()` (8), `manifest()` (6), `collect()` (6), `add()` (6), `listing()` (5), `exports()` (4) |
 | `core/study` | core (31), core/store (6) | 23 | `table()` (93), `tab()` (83), `envelope()` (60), `progress()` (42), `verdict()` (39), `fingerprint()` (35), `load()` (33), `population()` (32) |
 | `core/surface` | core (3) | 5 | `expected_max_sharpe()` (6), `deflated_sharpe()` (4), `distinct()` (4), `drop_sentinels()` (3), `expected_max()` (3), `plateau_area()` (3), `above_half_max()` (3), `curve_duplicates()` (2) |
 | `engines` | — | 0 | — |
@@ -85,7 +85,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `engines/resample` | — | 4 | `title()` (1), `stationary()` (1) |
 | `engines/variants` | core (11), engines/market (3), core/study (3), studies/screening (2) | 5 | `per_trade()` (10), `market()` (6), `admit()` (5), `prints()` (4), `columns()` (4), `daily()` (4), `screen()` (4), `per_year()` (3) |
 | `engines/weekly` | engines/variants (3), core (3), engines/market (2) | 3 | `spearman()` (16), `signs()` (13), `weekly()` (7), `per_trade()` (6), `straddle()` (5), `sqx_gap()` (4), `chunks()` (4), `years()` (2) |
-| `ledger` | core (33), studies/research (21), core/store (10), core/surface (9), sqx/projects (2), core/study (2) | 3 | `study_id()` (7), `read()` (4), `Overall` (1), `_judged()` (1) |
+| `ledger` | core (37), studies/research (21), core/surface (9), core/store (7), sqx/projects (2), core/study (2) | 3 | `study_id()` (7), `read()` (4), `Overall` (1), `_judged()` (1) |
 | `mt5` | core (7), tests (1) | 7 | `close_terminal()` (6), `pair()` (6), `to_zone()` (4), `data_dir()` (3), `start()` (3), `ask()` (3), `in_points()` (3), `expert()` (2) |
 | `mt5/fleet` | core (36), portfolio/funded (8), mt5 (4), mt5/reconcile (3), mt5/newsfilter (3), mt5/verify (2) | 4 | `reading()` (5), `run()` (4), `reasons()` (3), `fill()` (2), `register_rows()` (2), `light()` (2), `read()` (2), `assign()` (2) |
 | `mt5/newsfilter` | mt5 (15), core (5), mt5/verify (2), studies/optimisation (1) | 2 | `patch()` (5), `safe()` (2), `releases()` (2), `blocks()` (2), `moves()` (1), `classify()` (1), `text()` (1), `read()` (1) |
@@ -97,7 +97,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `perf/inputs` | core (49), portfolio/common (44), studies/screening (26), portfolio/funded (10), studies/research (9), studies/data (8), studies/readings (7), pipeline/autopilot (4) | 4 | `load()` (4), `resolve()` (2), `files()` (1), `bars()` (1) |
 | `perf/measure` | core (7), perf/inputs (3) | 3 | `_prepare()` (2), `measure()` (2), `text()` (1), `repeat()` (1), `triad()` (1), `_tree_rss()` (1) |
 | `pipeline` | pipeline/ledger (6), perf/disk (2), core (1) | 0 | — |
-| `pipeline/autopilot` | core (102), ui/daemon (65), sqx/projects (39), sqx/variants (12), core/store (11), sqx/curate (10), core/study (6), mt5/verify (3) | 4 | `outcomes()` (11), `resolved()` (10), `reads()` (10), `settings()` (10), `flatten()` (7), `resolve()` (5), `from_folder()` (4), `builder_argv()` (4) |
+| `pipeline/autopilot` | core (109), ui/daemon (65), sqx/projects (39), sqx/variants (12), core/store (11), sqx/curate (10), core/study (6), mt5/verify (3) | 4 | `outcomes()` (11), `resolved()` (10), `reads()` (10), `settings()` (10), `flatten()` (7), `resolve()` (5), `from_folder()` (4), `builder_argv()` (4) |
 | `pipeline/campaign` | core (46), sqx/projects (2), studies/optimisation (1) | 1 | `mark()` (2), `following()` (2), `cells()` (2), `_palette()` (1), `place()` (1), `steps()` (1), `_spent()` (1), `_stop_file()` (1) |
 | `pipeline/ledger` | core (6) | 2 | `work_dir()` (7), `read()` (2), `now()` (1), `write()` (1) |
 | `portfolio/common` | core (109), core/study (88), portfolio/funded (32), core/archive (29), ledger (11), engines/resample (9), engines/regimes (7), core/store (5) | 9 | `load()` (39), `server_days()` (14), `table()` (14), `read()` (11), `admissible()` (9), `rebuild()` (7), `build()` (7), `measured()` (6) |
@@ -108,11 +108,11 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `sqx/data` | core (12), core/assetwrite (3) | 1 | `plan()` (1), `month_end_before()` (1), `last_weekday()` (1) |
 | `sqx/export` | core (161), sqx/snippets (5), sqx/projects (3), sqx/inspect (1) | 4 | `main()` (4), `run()` (3), `take()` (3), `lineage()` (2), `sign()` (1), `held()` (1), `_mother()` (1) |
 | `sqx/inspect` | core (83), sqx/projects (2), sqx/structural (2) | 14 | `fixed_distances()` (10), `timezone()` (8), `blocks()` (5), `keep()` (4), `rules()` (4), `read()` (4), `Vocabulary` (4), `pooled_by()` (2) |
-| `sqx/projects` | core (381), sqx/inspect (12), sqx/blocks (9), core/store (9), sqx/templates (7), sqx/variants (2), engines/market (1), tests (1) | 14 | `titles()` (27), `rows()` (15), `start()` (14), `mine()` (9), `stop()` (8), `write()` (7), `sync()` (7), `members()` (6) |
+| `sqx/projects` | core (382), sqx/inspect (12), sqx/blocks (9), sqx/templates (7), core/store (3), sqx/variants (2), engines/market (1), tests (1) | 14 | `titles()` (27), `rows()` (15), `start()` (14), `mine()` (9), `stop()` (8), `write()` (7), `sync()` (7), `members()` (6) |
 | `sqx/snippets` | core (12), sqx/projects (2) | 2 | `pending()` (2), `settings()` (1), `cfx()` (1) |
 | `sqx/structural` | core (4) | 2 | `direction()` (2), `conditions()` (1) |
 | `sqx/templates` | core (22), sqx/inspect (5) | 3 | `conditions()` (7), `append()` (5), `reach()` (2) |
-| `sqx/variants` | core (122), sqx/projects (25), core/store (7), tests (1) | 5 | `legs()` (6), `draw()` (5), `awake()` (4), `table()` (4), `load()` (3), `gather()` (3), `run()` (3), `source()` (2) |
+| `sqx/variants` | core (122), sqx/projects (27), core/store (7), tests (1) | 5 | `legs()` (6), `draw()` (5), `awake()` (4), `table()` (4), `load()` (3), `gather()` (3), `run()` (3), `source()` (2) |
 | `studies/breakage` | core/study (89), core (74), core/surface (15), engines/variants (6), engines/market (5), studies/screening (1), studies/optimisation (1) | 3 | `frame()` (3), `load_sims()` (2), `tab()` (2), `run()` (2), `benchmarks()` (2), `read()` (2), `rank_stability()` (2), `real_from_trades()` (2) |
 | `studies/closing` | core/study (58), core (47), engines/inference (4), portfolio/common (3), engines/market (3), engines/nulls (3) | 2 | `run()` (5), `config()` (3), `held()` (2), `label()` (1), `states()` (1), `kept()` (1), `chosen()` (1), `verdict_table()` (1) |
 | `studies/data` | core (87), core/study (79), engines/market (38), sqx/projects (3), core/assetwrite (2) | 2 | `bars()` (2), `measure()` (2), `events()` (2), `config()` (1), `tick()` (1), `week_mask()` (1), `run_feed()` (1), `accept()` (1) |
@@ -149,8 +149,8 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 - `sqx/inspect` — uses 3, used by 14
 - `portfolio/funded` — uses 10, used by 5
 - `pipeline/autopilot` — uses 11, used by 4
-- `mt5/verify` — uses 6, used by 7
 - `studies/transfer` — uses 8, used by 5
+- `mt5/verify` — uses 6, used by 7
 
 ### Function names defined in three or more modules
 
@@ -161,36 +161,36 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 - `record()` — core/store, core/study, mt5/fleet, mt5/verify, portfolio/common, portfolio/funded, sqx/curate, sqx/export, sqx/projects, studies/optimisation, ui/daemon
 - `summary()` — ledger, pipeline/autopilot, portfolio/common, portfolio/funded, sqx/blocks, studies/breakage, studies/optimisation, studies/research, tools, ui/daemon, ui/desktop
 - `population()` — core/store, core/study, pipeline/autopilot, portfolio/common, sqx/projects, studies/breakage, studies/closing, studies/readings, studies/screening, studies/transfer, ui/daemon
-- `label()` — core, engines/variants, mt5/fleet, mt5/verify, studies/closing, studies/optimisation, studies/readings, studies/screening, ui/daemon, ui/desktop, ui/text
 - `config()` — core, engines/nulls, mt5/verify, studies/closing, studies/data, studies/optimisation, studies/readings, studies/research, studies/screening, studies/transfer, ui/daemon
+- `label()` — core, engines/variants, mt5/fleet, mt5/verify, studies/closing, studies/optimisation, studies/readings, studies/screening, ui/daemon, ui/desktop, ui/text
 - `bars()` — core/study, engines/nulls, perf/inputs, sqx/projects, sqx/variants, studies/closing, studies/data, studies/research, studies/transfer, ui/daemon
-- `text()` — core, engines/market, mt5/newsfilter, perf/measure, studies/optimisation, studies/research, studies/screening, ui/daemon, ui/desktop
 - `curve()` — portfolio/common, portfolio/testroot, studies/breakage, studies/readings, studies/research, studies/screening, studies/transfer, ui/daemon, ui/desktop
 - `grid()` — core/study, engines/nulls, portfolio/common, sqx/projects, studies/breakage, studies/closing, studies/optimisation, studies/research, ui/desktop
+- `text()` — core, engines/market, mt5/newsfilter, perf/measure, studies/optimisation, studies/research, studies/screening, ui/daemon, ui/desktop
 - `compare()` — mt5/fleet, mt5/newsfilter, perf, perf/disk, portfolio/common, studies/breakage, studies/research, studies/screening, ui/daemon
 - `mark()` — core, pipeline/autopilot, pipeline/campaign, sqx/projects, sqx/variants, studies/data, studies/screening, ui/daemon, ui/desktop
 - `plan()` — core/store, mt5/fleet, portfolio/common, portfolio/funded, sqx/data, sqx/variants, studies/data, studies/transfer, ui/daemon
-- `check()` — core, core/store, mt5/verify, portfolio/common, studies/breakage, studies/research, tools, ui/daemon
+- `resolve()` — core, core/store, core/study, ledger, perf/inputs, pipeline/autopilot, sqx/blocks, ui/desktop
 - `judge()` — perf/disk, pipeline/autopilot, portfolio/common, studies/optimisation, studies/readings, studies/research, studies/transfer, ui/daemon
 - `panel()` — engines/variants, portfolio/common, sqx/variants, studies/closing, studies/optimisation, studies/screening, studies/transfer, ui/desktop
-- `path()` — core, ledger, mt5/fleet, mt5/verify, portfolio/common, sqx/blocks, studies/research, ui/daemon
-- `daily()` — engines/regimes, engines/variants, mt5/verify, sqx/variants, studies/closing, studies/optimisation, studies/research, ui/daemon
-- `resolve()` — core, core/store, core/study, ledger, perf/inputs, pipeline/autopilot, sqx/blocks, ui/desktop
 - `window()` — core, mt5, mt5/reconcile, pipeline/autopilot, sqx/projects, studies/closing, studies/optimisation, studies/screening
+- `daily()` — engines/regimes, engines/variants, mt5/verify, sqx/variants, studies/closing, studies/optimisation, studies/research, ui/daemon
+- `check()` — core, core/store, mt5/verify, portfolio/common, studies/breakage, studies/research, tools, ui/daemon
+- `path()` — core, ledger, mt5/fleet, mt5/verify, portfolio/common, sqx/blocks, studies/research, ui/daemon
+- `export()` — mt5/newsfilter, perf/inputs, pipeline/autopilot, studies/breakage, studies/optimisation, studies/screening, ui/daemon
 - `call()` — core, mt5/newsfilter, sqx/projects, studies/closing, studies/readings, ui/daemon, ui/desktop
 - `describe()` — core, ledger, sqx/projects, studies/breakage, studies/research, tools, ui/desktop
 - `walk()` — core, ledger, pipeline/autopilot, portfolio/funded, studies/research, studies/screening, tools
 - `named()` — core/store, mt5/fleet, mt5/verify, portfolio/funded, studies/breakage, studies/research, ui/daemon
 - `names()` — core/store, mt5/fleet, mt5/verify, pipeline/autopilot, studies/closing, studies/readings, ui/daemon
-- `runs()` — engines/nulls, portfolio/common, portfolio/funded, studies/research, studies/transfer, ui/daemon, ui/desktop
-- `facts()` — portfolio/funded, studies/breakage, studies/data, studies/optimisation, studies/screening, tools, ui/daemon
-- `_table()` — core, core/archive, core/study, pipeline/campaign, portfolio/funded, studies/breakage, ui/desktop
 - `apply()` — core/store, core/study, portfolio/funded, sqx/curate, sqx/projects, tools, ui/daemon
+- `_table()` — core, core/archive, core/study, pipeline/campaign, portfolio/funded, studies/breakage, ui/desktop
 - `key()` — engines/variants, ledger, pipeline/campaign, studies/optimisation, ui/daemon, ui/desktop, ui/text
 - `tab()` — core/study, mt5/verify, portfolio/common, studies/breakage, studies/optimisation, studies/screening, ui/daemon
+- `runs()` — engines/nulls, portfolio/common, portfolio/funded, studies/research, studies/transfer, ui/daemon, ui/desktop
+- `facts()` — portfolio/funded, studies/breakage, studies/data, studies/optimisation, studies/screening, tools, ui/daemon
 - `verdict()` — core/study, portfolio/common, sqx/inspect, studies/breakage, studies/optimisation, studies/screening, ui/daemon
-- `export()` — mt5/newsfilter, perf/inputs, pipeline/autopilot, studies/breakage, studies/optimisation, studies/screening, ui/daemon
 - `sweep()` — ledger, perf/measure, pipeline, portfolio/funded, studies/research, studies/screening, tools
 - `save()` — core/study, pipeline/autopilot, sqx/blocks, sqx/data, studies/research, ui/daemon
-- `measured()` — core, portfolio/common, sqx/variants, studies/optimisation, studies/screening, ui/daemon
-- `usable()` — engines/variants, mt5/verify, sqx/projects, studies/breakage, studies/readings, studies/transfer
+- `metrics()` — core, core/store, sqx/curate, studies/optimisation, studies/screening, ui/daemon
+- `counts()` — sqx/blocks, studies/data, studies/research, studies/transfer, tools, ui/daemon

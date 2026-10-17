@@ -2,7 +2,6 @@
 
 import json
 import shutil
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -10,11 +9,12 @@ from typing import Any
 
 import pandas as pd
 
-from core import exportdrv, trades, worker
+from core import exportdrv, proc, trades, worker
 from core.paths import ROOT, WORKERS, databank_dir, worker_dir
 from sqx.projects import live, loadwait
 from ui.daemon import workerguard
-from ui.daemon.advance import run as advance_run, sqxlog
+from ui.daemon.advance import run as advance_run
+from ui.daemon.advance import sqxlog
 
 
 def say(pct: int, line: str) -> None:
@@ -55,7 +55,9 @@ def build(
         "Retest",
         "--json",
     ]
-    got = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True)
+    got = proc.run(
+        argv, cwd=ROOT, capture_output=True, text=True, check=False, timeout=1800
+    )
     if got.returncode:
         raise SystemExit(
             f"el builder no creó {name}:\n{(got.stderr or got.stdout)[-2000:]}"
@@ -183,7 +185,7 @@ def firm_trades(folders: dict[str, Path], work: Path) -> dict[str, pd.DataFrame]
 def retire(project: str, role: str) -> str:
     """Retire the Test_ project with its worker down (hard rule 6); its .cfx is archived.
     `--own`: this job built it minutes ago, so the freshness wait does not apply."""
-    got = subprocess.run(
+    got = proc.run(
         [
             sys.executable,
             "-m",
@@ -197,6 +199,8 @@ def retire(project: str, role: str) -> str:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,
+        timeout=600,
     )
     return (
         (got.stdout or got.stderr).strip().splitlines()[-1]

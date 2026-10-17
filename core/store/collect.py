@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from core import proc
 from core.paths import DATA, MIRRORS
 
 # One ssh connection for every rsync of a collect: one per file tripped gorilla's limit on new
@@ -63,7 +64,7 @@ def _rsync(src: str, dest: Path, *extra: str) -> None:
     """rsync that never overwrites what is already there; rsync's stderr is shown on failure."""
     cmd = [*RSYNC, "--ignore-existing", *extra, src, str(dest)]
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        proc.run(cmd, check=True, capture_output=True, text=True, timeout=3600)
     except subprocess.CalledProcessError as e:
         print(e.stderr, file=sys.stderr)
         raise
@@ -88,10 +89,11 @@ def _registry(project: str, source: str, dest: Path, dry: bool) -> str:
     # Fetched before the lock: a stalled ssh must not hold up a builder registering a project.
     tmp = dest / "store" / f".collect-registry-{os.getpid()}.csv"
     try:
-        subprocess.run(
+        proc.run(
             [*RSYNC, f"{source}projects/registry.csv", str(tmp)],
             check=True,
             capture_output=True,
+            timeout=600,
         )
         with tmp.open(encoding="utf-8", newline="") as fh:
             reader = csv.DictReader(fh)
@@ -185,10 +187,11 @@ def collect(
             out.append(f"traería   ledger {name} -> ledger/{mine.name}")
             continue
         try:
-            subprocess.run(
+            proc.run(
                 [*RSYNC, f"{source}{LEDGER}/{name}", str(tmp)],
                 check=True,
                 capture_output=True,
+                timeout=600,
             )
             new = [
                 r
@@ -225,8 +228,12 @@ def fetch_plans(
         "ledger/*.jsonl",
     ):
         cmd += ["--include", rule]
-    r = subprocess.run(
-        [*cmd, "--exclude", "*", source, f"{scratch}/"], capture_output=True, text=True
+    r = proc.run(
+        [*cmd, "--exclude", "*", source, f"{scratch}/"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=3600,
     )
     if r.returncode:
         raise RuntimeError(f"no se pudo leer {server} ({source}): {r.stderr.strip()}")

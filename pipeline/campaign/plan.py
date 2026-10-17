@@ -3,7 +3,6 @@
 import argparse
 import csv
 import json
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +10,7 @@ from typing import Any
 
 import yaml
 
+from core import proc
 from core.assetdata import load
 from core.datapaths import campaign_dir, template_dir
 from core.paths import DATA, ROOT, feed_quality_dir
@@ -51,8 +51,12 @@ def _costed(symbol: str) -> bool:
     """
     return (
         feed_quality_dir(load(symbol)["sqx_symbol"]) / "summary.json"
-    ).exists() and subprocess.run(
-        [sys.executable, "-m", "core.assets", symbol], cwd=ROOT, capture_output=True
+    ).exists() and proc.run(
+        [sys.executable, "-m", "core.assets", symbol],
+        cwd=ROOT,
+        capture_output=True,
+        check=False,
+        timeout=120,
     ).returncode == 0
 
 
