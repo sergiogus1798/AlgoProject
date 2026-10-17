@@ -169,7 +169,7 @@ def versus_original(
             start[0], min(end[-1], g["Close time"].max()), periods=points
         )
 
-        def at(frame: pd.DataFrame) -> list[float]:
+        def at(frame: pd.DataFrame, grid: pd.DatetimeIndex = grid) -> list[float]:
             """Cumulative profit of `frame` at each grid date."""
             cum = np.concatenate(
                 [[0.0], np.cumsum(frame["Profit/Loss"].to_numpy(dtype=float))]
@@ -181,7 +181,7 @@ def versus_original(
                     grid.to_numpy(),
                     side="right",
                 )
-            ]  # noqa: B023 called within iteration
+            ]
 
         out[str(cell)] = {
             "x": [d.date().isoformat() for d in grid],

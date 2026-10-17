@@ -29,10 +29,12 @@ def eta_squared(
         out[metric] = {
             p: grouped.groupby(p)[metric]
             .apply(
-                lambda s: len(s) * (pd.Series(pd.to_numeric(s)).mean() - y.mean()) ** 2
+                lambda s, y=y: (
+                    len(s) * (pd.Series(pd.to_numeric(s)).mean() - y.mean()) ** 2
+                )
             )
             .sum()
-            / total  # noqa: B023 apply runs immediately
+            / total
             for p in parameters
         }
     return pd.DataFrame(out).loc[parameters]
