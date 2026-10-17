@@ -77,7 +77,10 @@ from the store is `pipeline.autopilot.resume`.
 
 `rekey` moves the store's folders and manifests, then carries every `identity-map-*.csv` into the
 loose CSVs that are later matched against a fresh `sqxfile.identity` (dry run 2026-10-16: 19,030
-old cells in 1,271 files, not yet rewritten). The rest:
+old cells in 1,271 files, not yet rewritten). Two folders of one cell whose `.sqx` now give one identity are
+the same strategy saved twice: `rekey` folds the older into the latest `saved_at` — every study file
+the keeper lacks, with its manifest entry and step — and archives it under `backups/store-rekey-<day>/merged/`
+(owner, K76b C, 2026-10-17). Twins in two cells still stop it. The rest:
 
 | holder | where | handling |
 |---|---|---|

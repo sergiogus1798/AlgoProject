@@ -5,6 +5,7 @@ import io
 import json
 import os
 import shutil
+from collections import defaultdict
 from datetime import date
 from pathlib import Path
 
@@ -23,16 +24,21 @@ def _target(here: Path, new: str) -> Path:
     return here.with_name(f"{here.name.rsplit(' ', 1)[0]} {new[:8]}")
 
 
-def plan(root: Path) -> list[tuple[Path, str, str]]:
+def plan(
+    root: Path, gone: frozenset[Path] = frozenset()
+) -> list[tuple[Path, str, str]]:
     """(folder, old identity, new identity) of every stored strategy whose identity moved.
 
     Raises:
         SystemExit: two stored folders would become one identity (the same strategy saved
-            twice: the owner decides, encargo 76 D), two would share their 8 letters, or a
-            folder's new name is already taken on disk.
+            twice in two cells: the owner decides, encargo 76 D), two would share their 8
+            letters, or a folder's new name is already taken on disk. Twins in ONE cell are
+            `twins`' and `merge`'s (K76b C); `gone` names the folders merge will archive.
     """
     rows = []
     for m in sorted(root.glob(f"*/*/{MANIFEST}")):
+        if m.parent in gone:
+            continue
         old = json.loads(m.read_text(encoding="utf-8"))["identity"]
         rows.append((m.parent, old, sqxfile.identity(m.parent / SQX)))
     seen: dict[str, Path] = {}
@@ -74,11 +80,74 @@ def apply(rows: list[tuple[Path, str, str]], backup: Path, out: Path) -> None:
                 ).encode(),
                 durable=True,
             )
-            with out.open("a", newline="", encoding="utf-8") as fh:
-                w = csv.writer(fh)
-                if not fh.tell():
-                    w.writerow(["cell", "folder", "old", "new"])
-                w.writerow((here.parent.name, here.name, old, new))
+            _record(out, (here.parent.name, here.name, old, new))
+
+
+def _record(out: Path, row: tuple[str, str, str, str]) -> None:
+    """Append one old→new row to the month's map."""
+    with out.open("a", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        if not fh.tell():
+            w.writerow(["cell", "folder", "old", "new"])
+        w.writerow(row)
+
+
+def twins(root: Path) -> dict[Path, list[Path]]:
+    """{keeper: the other folders of its cell whose .sqx has the same new identity}.
+
+    The keeper is the latest `saved_at`: 🔬 gorilla held 29 such pairs on 2026-10-17, saved
+    seconds apart on 2026-10-08/09, and in half of them the older one held more studies.
+    """
+    groups: dict[tuple[str, str], list[Path]] = defaultdict(list)
+    for m in sorted(root.glob(f"*/*/{MANIFEST}")):
+        groups[(m.parent.parent.name, sqxfile.identity(m.parent / SQX))].append(
+            m.parent
+        )
+    out = {}
+    for folders in groups.values():
+        if len(folders) > 1:
+            saved = {
+                f: json.loads((f / MANIFEST).read_text(encoding="utf-8")).get(
+                    "saved_at", ""
+                )
+                for f in folders
+            }
+            keeper = max(folders, key=lambda f: (saved[f], f.name))
+            out[keeper] = [f for f in folders if f != keeper]
+    return out
+
+
+def merge(groups: dict[Path, list[Path]], backup: Path, out: Path) -> None:
+    """Fold each twin into its keeper (owner, K76b C): the keeper gains every study file it
+    lacks with its manifest entry and step, keeps its own on a clash, and the twin goes to
+    `backup/merged/` with its old identity mapped to the new one."""
+    for keeper, others in groups.items():
+        with locked(keeper.parent):
+            doc = json.loads((keeper / MANIFEST).read_text(encoding="utf-8"))
+            new = sqxfile.identity(keeper / SQX)
+            for other in others:
+                theirs = json.loads((other / MANIFEST).read_text(encoding="utf-8"))
+                for name, entry in theirs.get("files", {}).items():
+                    if (
+                        name not in doc.setdefault("files", {})
+                        and (other / name).exists()
+                    ):
+                        shutil.copy2(other / name, keeper / name)
+                        doc["files"][name] = entry
+                doc["steps"] = {**theirs.get("steps", {}), **doc.get("steps", {})}
+            atomic_write(
+                keeper / MANIFEST,
+                json.dumps(doc, ensure_ascii=False, indent=1, default=str).encode(),
+                durable=True,
+            )
+            for other in others:
+                old = json.loads((other / MANIFEST).read_text(encoding="utf-8"))[
+                    "identity"
+                ]
+                dest = backup / "merged" / other.parent.name / other.name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(other), dest)
+                _record(out, (other.parent.name, other.name, old, new))
 
 
 def mapping(root: Path) -> dict[str, str]:
@@ -137,11 +206,12 @@ def tables(m: dict[str, str], dry_run: bool) -> tuple[int, int]:
     return files, cells
 
 
-def _store(root: Path, rows: list[tuple[Path, str, str]]) -> None:
-    """Back up the manifests, re-key the folders and extend the month's map."""
+def _store(root: Path, groups: dict[Path, list[Path]]) -> None:
+    """Merge the twins, back up the manifests, re-key the folders and extend the month's map."""
     backup = DATA / "backups" / f"store-rekey-{date.today().isoformat()}"
     out = root / f"identity-map-{date.today():%Y-%m}.csv"
-    apply(rows, backup, out)
+    merge(groups, backup, out)
+    apply(plan(root), backup, out)
     print(f"mapa: {out} · copia de los manifiestos: {backup}")
 
 
@@ -149,10 +219,13 @@ def main(dry_run: bool) -> None:
     """Print the map; unless `dry_run`, back up, write `identity-map-<month>.csv`, re-key, and
     carry every map so far into the loose tables (run it with no workflow running)."""
     root = store_dir()
-    rows = plan(root)
-    print(f"{len(rows)} identidades cambian")
-    if not dry_run and rows:
-        _store(root, rows)
+    groups = twins(root)
+    rows = plan(root, frozenset(f for others in groups.values() for f in others))
+    print(
+        f"{len(rows)} identidades cambian · {len(groups)} carpetas absorben a su gemela"
+    )
+    if not dry_run and (rows or groups):
+        _store(root, groups)
     files, cells = tables(mapping(root), dry_run)
     print(
         f"tablas sueltas: {cells} identidades viejas en {files} CSV"

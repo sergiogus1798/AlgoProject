@@ -65,7 +65,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/store/collect.py` | 268 | Bring a gorilla project's survivors to leaseWeb for step 26 (owner, 2026-10-15, D-1 = A). | core | — |
 | `core/store/extra.py` | 296 | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | core | pandas |
 | `core/store/late.py` | 259 | What steps 13 to 20 leave outside the report folders: the rest of each export, and the variant batch. | core | — |
-| `core/store/rekey.py` | 160 | Re-key the store after `core.sqxfile.identity` changed: each folder and manifest to the identity its own .sqx has now. | core | — |
+| `core/store/rekey.py` | 233 | Re-key the store after `core.sqxfile.identity` changed: each folder and manifest to the identity its own .sqx has now. | core | — |
 | `core/store/save.py` | 338 | Save a project's gate survivors into the store: the .sqx once, then one file per set of tests. | core | — |
 | `core/store/verify.py` | 70 | Whether a stored strategy is whole: its file carries its identity and every file its recorded hash. | core | — |
 | `core/store/write.py` | 272 | Write into a strategy's folder so that a cut leaves it as it was or as it will be, never half. | core | — |
@@ -1269,7 +1269,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_store.py` | 212 | The store under injected faults: a cut write, a missing file, a flipped byte, an orphan. | core | pandas, pytest |
 | `tests/test_store_collect.py` | 54 | collect's races and hangs (encargo 76 E): the registry append waits for the registry's lock, temps carry the PID, rsync gives up. | core, tests | pytest |
 | `tests/test_store_late.py` | 172 | Steps 13 to 20 in the store: who a renamed identity belongs to, and the audit that nothing is left out. | core, sqx | pandas, pytest |
-| `tests/test_store_rekey.py` | 67 | `core.store.rekey` (encargo 76 D): a folder moves to its new identity; two that become one stop it. | core | pytest |
+| `tests/test_store_rekey.py` | 94 | `core.store.rekey` (encargo 76 D): a folder moves to its new identity; two that become one stop it. | core | pytest |
 | `tests/test_strategymeta.py` | 148 | Golden-file test for sqx.inspect.strategymeta: the fields the strategy panel shows. | core, sqx | — |
 | `tests/test_strategymeta_fixed_distance.py` | 143 | Test for sqx.inspect.strategymeta.fixed_distance: fixed pips found, ATR/percent/level not. | sqx | pytest |
 | `tests/test_studycontract.py` | 175 | The study contract refuses what the window cannot draw, and every kind renders. | core | numpy, pandas |
