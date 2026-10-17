@@ -22,7 +22,7 @@ from core.paths import DATA, ROOT  # noqa: E402
 from ledger import gate  # noqa: E402
 from ui.daemon.workflow import derive  # noqa: E402
 from ui.daemon.workflow.api import ROUTER  # noqa: E402
-from ui.daemon.workflow.steps import STEPS  # noqa: E402
+from sqx.workflow.steps import STEPS  # noqa: E402
 
 # Since F13 (2026-09-28): the USDJPY Donchian project — 8 done, 17-19 not all run. Retired
 # from the custodian on 2026-09-29; its exports and reports stay under the data root.

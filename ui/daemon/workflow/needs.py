@@ -4,8 +4,8 @@ from typing import Any
 
 from sqx.projects.stage import titles
 from ui.daemon.workflow.derive import BLIND
-from ui.daemon.workflow.records import Context
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.records import Context
+from sqx.workflow.steps import STEPS
 
 ORDER = [s["n"] for s in STEPS]
 BY_N = {s["n"]: s for s in STEPS}

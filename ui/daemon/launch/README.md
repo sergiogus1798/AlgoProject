@@ -19,7 +19,6 @@ watcher it reuses.
 | `liverun.py` | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | imported | preflight → `{title: (before, after)}` |
 | `preflight.py` | Whether «Lanzar en SQX» may start one task of a project now, and every reason it may not. | imported | project, task(s) or step → `{ok, reasons, chosen, off, …}` |
 | `run.py` | «Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop. | `python3 -m ui.daemon.launch.run --project P --task CONSTRUCCION` (repeatable) or `--step 13` (the window queues it) | a project → its tasks run, worker stopped |
-| `steps.py` | Which SQX tasks one workflow step launches from the window, and the SQX steps it cannot launch. | imported | step, project.cfx → titles |
 
 ## The chain's stop rule
 

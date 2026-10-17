@@ -9,10 +9,11 @@ from sqx.projects.stage import titles
 from ui.daemon import runs
 from sqx import jobs
 from ui.daemon.runner import batch, table, where
-from ui.daemon.workflow import sources, tests
+from sqx.workflow import sources
+from ui.daemon.workflow import tests
 from ui.daemon.workflow.derive import BLIND
-from ui.daemon.workflow.records import BackfillOffer, Context, Started
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.records import BackfillOffer, Context, Started
+from sqx.workflow.steps import STEPS
 
 BY_N = {s["n"]: s for s in STEPS}
 ROOTS = ("raw", "harvest", "metrics", "reports")

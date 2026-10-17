@@ -6,8 +6,8 @@ from core import cfx
 from core.paths import DATA
 from sqx.projects.stage import titles
 from ui.daemon.databank import cells, metrics, table
-from ui.daemon.workflow import sources
-from ui.daemon.workflow.records import Door
+from sqx.workflow import sources
+from sqx.workflow.records import Door
 
 # The top row as the mock fixed it (encargo 22 §4.3, kept by the owner after wave 1), each tab
 # with the workflow stage whose task writes its databank and its sub-panels: (name, studies,

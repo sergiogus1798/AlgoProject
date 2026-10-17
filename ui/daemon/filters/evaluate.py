@@ -9,7 +9,7 @@ from ledger import gate
 from ui.daemon.databank.table import Column, Table
 from ui.daemon.filters import dists
 from ui.daemon.results.catalogue import STUDIES
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.steps import STEPS
 from ui.text.glossary import label
 
 # Studies whose figures read OOS2 whatever the asset (encargo 22 §7.1: never a filter on OOS2 --

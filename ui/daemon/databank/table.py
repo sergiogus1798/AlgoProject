@@ -11,7 +11,7 @@ from ui.daemon.databank import batches, cells, metrics
 from ui.daemon.loader import find
 from ui.daemon.results import catalogue, store
 from ui.daemon.workflow import ledgerview
-from ui.daemon.workflow.records import Door
+from sqx.workflow.records import Door
 
 # Read together or not at all (WORKFLOW.md «los tres a la vez»), and step 20 after them: while
 # the ledger's door is shut none of their figures leaves the daemon.

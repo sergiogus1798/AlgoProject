@@ -20,7 +20,7 @@ from sqx import progress
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher
-from ui.daemon.launch import steps as launchsteps
+from sqx.workflow import launchsteps
 from ui.daemon.loader import afterrun, find, state
 from ui.daemon.launch.run import assets, compare, counts, record, snapshot
 

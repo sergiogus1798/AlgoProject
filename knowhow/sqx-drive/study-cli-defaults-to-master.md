@@ -12,7 +12,7 @@ them, CLAUDE.md rule 3). The window showed «Decaimiento IS/OOS» reading a data
 in it, feedback 2026-09-29 §1.4.
 
 ## Evidence
-`ui.daemon.workflow.sources.install(project)` already resolves this for the databank panel
+`sqx.workflow.sources.install(project)` already resolves this for the databank panel
 (`ui/daemon/databank/layout.py`) and for `sqx/export/export_spp.py`'s `--role` CLI flag
 (`driving-a-role`). `decay`'s runner command (`ui/daemon/runner/screening.py`) built its argv with
 no such lookup, so it always read the master regardless of where the project's Cross Market H1

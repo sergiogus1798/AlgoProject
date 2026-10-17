@@ -7,8 +7,8 @@ from core.assetdata import load
 from sqx.projects.crosstfload import phase2_tasks
 from sqx.projects.stage import titles
 from sqx import jobs
-from ui.daemon.workflow import sources
-from ui.daemon.workflow.records import Context, StepRow
+from sqx.workflow import sources
+from sqx.workflow.records import Context, StepRow
 
 BLIND = ("17", "18", "19")
 

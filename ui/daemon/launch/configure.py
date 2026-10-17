@@ -9,7 +9,7 @@ from typing import Any
 
 from core.paths import ROOT
 from sqx.projects import stage
-from ui.daemon.launch.steps import silenced
+from sqx.workflow.launchsteps import silenced
 
 
 def run(pre: dict[str, Any], say: Callable[[int, str], None]) -> list[str]:

@@ -14,8 +14,8 @@ import pyarrow.parquet as pq
 from pipeline.autopilot import batchfacts, tffacts
 from pipeline.autopilot.batchfacts import number
 from studies.transfer.crossTF.verdict import MEANS
-from ui.daemon.workflow import sources
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow import sources
+from sqx.workflow.steps import STEPS
 
 BY_N = {s["n"]: s for s in STEPS}
 # A scaled sibling's name ends in its target timeframe (`sqx.projects.crosstfload.SIBLING`).

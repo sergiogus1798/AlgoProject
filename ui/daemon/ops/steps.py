@@ -9,7 +9,7 @@ from core.researchpaths import autopilot_runs
 from sqx.projects import stage
 from sqx import jobs, progress, tasklog
 from ui.daemon.workflow import api as workflow, derive
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.steps import STEPS
 
 # The step each SQX stage belongs to (the workflow's number, 16.5 for the WFC legs).
 STAGE_STEP = {

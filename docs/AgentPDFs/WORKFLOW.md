@@ -10,7 +10,7 @@ Qué NO es: un plan de reparto entre agentes (el plan y el protocolo del 21-09 s
 
 **Cuántos pasos son.** Veintiséis numerados (1-26) y cuatro intermedios que no renumeran nada
 (10.5, 16.5, 18.5): 29 filas en la tabla. La lista de la ventana,
-`ui/daemon/workflow/steps.py`, tiene las mismas 29 y `tools/checks.py` («workflow table») falla si
+`sqx/workflow/steps.py`, tiene las mismas 29 y `tools/checks.py` («workflow table») falla si
 difieren en número o título. «Los 20 pasos» y «los 25 pasos» de otros textos son cifras de antes
 del 2026-09-29, cuando se añadió el 26; cualquier cifra distinta de 26 es un texto sin actualizar.
 

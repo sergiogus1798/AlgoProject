@@ -54,7 +54,7 @@ conocida, lo que cambia qué datos se generan antes de gastar CPU, el corte y el
 | `e_principal` (denominador de P7) | **ya no espera al paso 8**: lo calcula crossmarket (`travel/run.py:88` `_e_principal`, 2026-10-09). Tarjeta `knowhow/pipeline/step10-p1-p7-never-have-data.md` |
 | pasos 10.5-12, núcleo T0-T4 | `studies/transfer/crossTF/tf/{inputs,null,rules,run,table}.py`, tests `tests/test_crosstf_tf_{null,rules}.py` |
 | fabricación escalada: `ranges.yaml`, cociente `c`, M15 | `sqx/variants/{ranges.yaml,ranges.py}`, `tests/test_scale_ranges.py`, tarjeta `knowhow/sqx-drive/crosstf-scaling-coefficients.md` |
-| tareas de fase 2, pilotos 11.5 y 11.7, hechos `crossTF.tf.*`, filas de la ventana | `tests/test_crosstf_phase2.py`, `pipeline/autopilot/tffacts.py`, `tests/test_autopilot_crosstf_cascade.py`, `ui/daemon/workflow/steps.py` (commit `7224b58`) |
+| tareas de fase 2, pilotos 11.5 y 11.7, hechos `crossTF.tf.*`, filas de la ventana | `tests/test_crosstf_phase2.py`, `pipeline/autopilot/tffacts.py`, `tests/test_autopilot_crosstf_cascade.py`, `sqx/workflow/steps.py` (commit `7224b58`) |
 | ventana, paso 10: `CHOICES` de `knobs.py`, un «?» por hoja de `travel`, `only_options` con el principal y etiqueta `alias`, ejemplos de `table.py` | `ui/daemon/results/knobs.py`, `studies/transfer/crossmarket/tooltips.py`, `ui/daemon/runner/transfer.py` (2026-10-09) |
 
 **Decisiones del dueño ya tomadas que acotan este frente:**

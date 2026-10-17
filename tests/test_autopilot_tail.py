@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import gate, record
 from ledger import study as studymod
 from pipeline.autopilot import blind, call, plan, run, survivors, tail
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.steps import STEPS
 
 MT5 = {
     "start": "2024-01-01",

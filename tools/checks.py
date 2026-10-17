@@ -278,7 +278,7 @@ def workflow_drift(files: list[Path]) -> list[str]:
 
     Returns:
         One message per step whose number or title differs, in either direction. The rail
-        stays a list in code (`ui/daemon/workflow/steps.py`, its `doc` field) so that a
+        stays a list in code (`sqx/workflow/steps.py`, its `doc` field) so that a
         person editing the table cannot break the window; this check makes the drift loud.
     """
     table = ROOT / "docs" / "AgentPDFs" / "WORKFLOW.md"
@@ -286,7 +286,7 @@ def workflow_drift(files: list[Path]) -> list[str]:
         r"^\|\s*([0-9.]+)\s*\|\s*\*\*(.+?)\*\*", table.read_text(encoding="utf-8"), re.M
     )
     tree = ast.parse(
-        (ROOT / "ui" / "daemon" / "workflow" / "steps.py").read_text(encoding="utf-8")
+        (ROOT / "sqx" / "workflow" / "steps.py").read_text(encoding="utf-8")
     )
     rows = next(
         ast.literal_eval(n.value)

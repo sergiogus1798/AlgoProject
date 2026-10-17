@@ -223,7 +223,7 @@ resultado, no un error: diagnostica la fila que falla (reloj o coste) y repite *
   obligación) → K-3.
 - **Quién lo lee — grep hecho el 2026-10-09:** ni `portfolio/` ni la zona PORTFOLIOS de `ui/` importan
   `mt5.verify.pool` ni abren `AlgoData/pool/`. Sólo lo tocan `mt5/verify/` y sus llamadores
-  (`pipeline/autopilot/finalists.py:59`, `ui/daemon/mt5bridge/`, `ui/daemon/workflow/sources.py`). La
+  (`pipeline/autopilot/finalists.py:59`, `ui/daemon/mt5bridge/`, `sqx/workflow/sources.py`). La
   «pool» de `portfolio/` (`portfolio/PLAN.md:47`, `portfolio/common/construct/inputs/pool.py`) es **otro
   pool**: el declarado y congelado de la búsqueda, no el validado en MT5. **Es decir, el requisito de ex 34 §5
   punto 4 («el módulo de cartera y la zona PORTFOLIOS lista sólo lo validado») no está cumplido.**

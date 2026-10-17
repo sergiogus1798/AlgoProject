@@ -6,7 +6,7 @@ from ledger import record, study as studymod
 from sqx.projects.stage import titles
 from ui.daemon.databank import layout
 from ui.daemon.runner import where
-from ui.daemon.workflow.steps import STAGE, STEPS
+from sqx.workflow.steps import STAGE, STEPS
 
 # Stages whose databanks hold OOS2 figures: nothing there is filtered (encargo 22 §7.1).
 OOS2_STAGES = {"wfc", "wfm"}

@@ -10,7 +10,7 @@ from core.assetdata import load
 from core.paths import feed_quality_dir
 from pipeline.autopilot import tail
 from ui.daemon.launch import chainplan
-from ui.daemon.launch.steps import ELSEWHERE
+from sqx.workflow.launchsteps import ELSEWHERE
 
 
 class Plan(tail.Walked):

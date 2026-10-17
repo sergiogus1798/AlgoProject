@@ -26,6 +26,7 @@ Rules for anyone (human or agent) editing here: [`CLAUDE.md`](CLAUDE.md). Facts 
 | `data/` | Runs the GUI's "Update all" data download on the master and reconciles `assets/_policy.yaml` with what SQX now holds |
 | `views/` | The SQX "Export Data View" column set the exports read |
 | `worker/` | `guard.py`: whether a worker is up, and the marker a launcher job leaves while the worker it started runs; `winddown.py`: a cancelled launcher job stops its own worker |
+| `workflow/` | `steps.py`: the steps of WORKFLOW.md and where the disk says each happened; `sources.py`: what the disk holds for one project; `records.py`: the typed records between them; `launchsteps.py`: which SQX tasks one step launches from the window |
 | `databank/` | `fingerprint.py`: a databank's strategies reduced to one signature, so an export can tell a resave from a change |
 | `daylog.py` | Today's SQX log of an install, as the lines that say which project runs and how far. | imported | log → lines |
 | `log.py` | SQX's own log from the moment of a launch on, across midnight: only the lines written since |

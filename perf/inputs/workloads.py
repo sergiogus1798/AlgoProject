@@ -22,7 +22,7 @@ from studies.screening.falsePositives import (
     model as fp_model,
 )
 from studies.closing.blindJoint import inputs as joint
-from ui.daemon.workflow import sources
+from sqx.workflow import sources
 
 
 def montecarlo_stream(cfg: dict) -> sample.Workload:

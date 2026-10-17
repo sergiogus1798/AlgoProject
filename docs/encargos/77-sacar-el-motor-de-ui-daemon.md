@@ -6,8 +6,8 @@
 |---|---|---|---|---|
 | 1 | `workerguard` → `sqx/worker/guard.py`; `advance/sqxlog` → `sqx/log.py`; `loader/fingerprint` → `sqx/databank/fingerprint.py`; además `daylog` → `sqx/daylog.py` (lo pedía `sqx/log.py`) | ~13 | hecho 2026-10-17 | `9c019fc` |
 | 2 | `jobs` → `sqx/jobs.py` (no `core/`: su cancelación para el worker con `winddown`); `progress`, `tasklog`, `projdisk`, `proof` → `sqx/`; `winddown` → `sqx/worker/`; `diskmemo` se queda (huella de las fuentes del demonio) | ~45 | hecho 2026-10-17 | `b83304f` |
-| 3 | `loader/find`, `loader/state`, `advance/preflight` → `sqx/databank/` y `sqx/worker/` | ~50 | pendiente | |
-| 4 | `launch/steps`, `workflow/steps`+`sources` → `sqx/workflow/` | ~30 | pendiente | |
+| 3 | `loader/find`, `loader/state`, `advance/preflight` → `sqx/databank/` y `sqx/worker/`; con ellos `filters/discards` (hoja) y `diskmemo` → `core/` con la huella del código como argumento | ~50 | pendiente (después del 4) | |
+| 4 | `launch/steps` → `sqx/workflow/launchsteps.py`; `workflow/steps`+`sources` y la hoja `records` → `sqx/workflow/` (va antes que el 3: `preflight` los importa) | ~30 | hecho 2026-10-17 | (este) |
 | 5 | `launch/*` y `advance/run`+`buildcap` → `sqx/run/`; `chainplan` se funde en el plan del autopiloto | ~25 | pendiente | |
 | 6 | `runner/where`+`table` → `studies/run/` | ~20 | pendiente | |
 | 7 | `mt5bridge/runs` → `mt5/verify/`; fuera los `ui → mt5.*` directos | ~6 | pendiente | |
@@ -20,6 +20,8 @@
 
 - 2026-10-17, paso 1 (algoproject-df): movidos los tres más `daylog`, que `sqx/log.py` necesitaba para no importar `ui.daemon.progress`; fuera la fila `ALLOW` de `pipeline/autopilot/closing.py`, que ya no se usaba.
 - 2026-10-17, paso 2 (algoproject-df): `jobs` a `sqx/` y no a `core/`, porque `core` no puede importar `sqx.worker.winddown`; en `ui/daemon/portfolios/` (congelada) sólo cambian la línea de import y su README.
+- 2026-10-17, paso 3 parado sin tocar nada: `find` → `diskmemo` → `ui.daemon.version` y `preflight` → `launch/steps` y `workflow/steps`. Se hace el 4 primero; `diskmemo` va a `core/` y cada llamador le pasa su huella (`find` sólo la de `core/sqxfile.py`).
+- 2026-10-17, paso 4 (algoproject-df): `launch/steps` se llama `launchsteps.py` en `sqx/workflow/` porque ya hay un `steps.py`; fuera las filas `ALLOW` de `perf/inputs/workloads.py` y `pipeline/autopilot/facts.py`.
 
 ## Tu oficio
 

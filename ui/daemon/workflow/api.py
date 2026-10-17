@@ -8,9 +8,10 @@ from pydantic import BaseModel
 from sqx import jobs
 from ui.daemon.launch import chainplan
 from ui.daemon.runner import where
-from ui.daemon.workflow import derive, ledgerview, needs, run, sources, tests
-from ui.daemon.workflow.records import Context, Rail, StepRow
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow import sources
+from ui.daemon.workflow import derive, ledgerview, needs, run, tests
+from sqx.workflow.records import Context, Rail, StepRow
+from sqx.workflow.steps import STEPS
 
 ROUTER = APIRouter()
 # The databank panel's top tabs, in the order the rail meets them (encargo 22 §4.3).

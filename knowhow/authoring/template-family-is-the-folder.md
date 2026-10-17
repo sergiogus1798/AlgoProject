@@ -15,7 +15,7 @@ looks signed with the project as family (E1's tests) live in another study and n
 - `registry.csv`, 2026-09-27: all 4 rows with a template point at `…/library/donchianUpperCrossUp/template.sqx`;
   `ls library/*/` → 5 folders, 5 `template.sqx`, no other `.sqx`.
 - The rail printed «Plantilla template» for `Test_USDJPY_donchianUpperCrossUp_M30` until
-  `ui/daemon/workflow/sources.template` took the folder (2026-09-27).
+  `sqx/workflow/sources.template` took the folder (2026-09-27).
 - The same project's steps 17-18 rows sit in `USDJPY_M30_Test_USDJPY_donchianUpperCrossUp_M30`
   (family = project, E1's run), the template's in `USDJPY_M30_donchianUpperCrossUp`; since
   2026-09-27 `ledgerview.door` asks the gate over the latter only → «faltan [17, 18, 19] (en el estudio …)».

@@ -12,7 +12,7 @@ from core.assetyaml import hint, read
 from core.paths import ROOT
 from core.researchpaths import autopilot_runs
 from ui.daemon.results.catalogue import STUDIES
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.steps import STEPS
 from ui.text.glossary import label
 
 # The file the autopilot judges with and the history of what the window changed in it. A dict

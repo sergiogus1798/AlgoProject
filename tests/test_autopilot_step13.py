@@ -17,7 +17,7 @@ from pipeline.autopilot import judge, neighbours, plan, survivors, tailrun
 from sqx.inspect.keep_tasks import keep
 from sqx.projects import builder, crosstfload, stage, workflow as wf
 from sqx.projects.databanks import chain_databanks
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.steps import STEPS
 
 NS = [s["n"] for s in STEPS]
 

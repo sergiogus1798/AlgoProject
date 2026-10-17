@@ -7,7 +7,7 @@ import pandas as pd
 from ledger import gate, spend, study as studymod
 from ui.daemon.runner import where
 from ui.daemon.runs import guess_asset
-from ui.daemon.workflow.records import Door, Oos2Gauge
+from sqx.workflow.records import Door, Oos2Gauge
 from ui.text.numbers import num
 
 

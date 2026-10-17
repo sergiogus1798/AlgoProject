@@ -9,8 +9,8 @@ from core import worker
 from core.datapaths import project_registry, template_dir, template_runs
 from core.paths import DATA, MT5_DATA
 from sqx import progress, tasklog
-from ui.daemon.workflow.records import Result, SqxView
-from ui.daemon.workflow.steps import BATCH_ROOTS, DROP
+from sqx.workflow.records import Result, SqxView
+from sqx.workflow.steps import BATCH_ROOTS, DROP
 
 # Which install holds a project when more than one does: the workers run the workflow; the
 # master only ever holds a copy the owner made to look at (CLAUDE.md rule 3).

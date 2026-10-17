@@ -3,9 +3,9 @@
 from collections.abc import Mapping
 from typing import Any
 
-from ui.daemon.launch.steps import ELSEWHERE
-from ui.daemon.workflow.records import Plan
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.launchsteps import ELSEWHERE
+from sqx.workflow.records import Plan
+from sqx.workflow.steps import STEPS
 
 
 HOW = {s["n"]: s["how"] for s in STEPS}

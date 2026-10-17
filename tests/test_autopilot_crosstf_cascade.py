@@ -17,10 +17,11 @@ from pipeline.autopilot import criteria, judge, plan, selection, tffacts
 from sqx.projects import cfxio, workflow as wf
 from sqx.projects.workflow import CROSSTF_BUILD
 from studies.transfer.crossTF.tf import inputs as tfinputs
-from ui.daemon.launch import chainplan, steps as launchsteps
+from sqx.workflow import launchsteps
+from ui.daemon.launch import chainplan
 from ui.daemon.results import tfrows
 from ui.daemon.workflow import derive
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.steps import STEPS
 
 TWINS = ["CrossTF M15 build", "CrossTF H1 build"]
 RULE = {"fact": "crossTF.tf.state", "pass": ">= 1", "limbo": ">= 0"}

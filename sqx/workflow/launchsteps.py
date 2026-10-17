@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 from core import xmlget
 from sqx.projects import crosstfload, stage
 from sqx.projects.workflow import CROSSTF_BUILD
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.steps import STEPS
 
 BY_N: dict[str, dict[str, Any]] = {s["n"]: s for s in STEPS}
 

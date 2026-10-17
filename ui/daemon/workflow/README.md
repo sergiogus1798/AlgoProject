@@ -29,7 +29,7 @@ else: an SQX step's own task is never a test — the rail's ▶ SQX goes to `ui/
 **Consumed by:** `ui/daemon/routers.py` (includes `ROUTER`), `ui/desktop/workspace/rail.py`,
 `ui/daemon/launch/chain.py` (the plan, the context, the tests' commands) ·
 **Checked by:** `tools/checks.py` («workflow table»):
-the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, word for word.
+the numbers and the `doc` titles of `sqx/workflow/steps.py` must equal WORKFLOW.md's table, word for word.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
@@ -37,10 +37,7 @@ the numbers and the `doc` titles of `steps.py` must equal WORKFLOW.md's table, w
 | `derive.py` | Each step's state, funnel and Spanish why, from what the disk and the ledger hold. | imported | context → step |
 | `ledgerview.py` | The ledger as the rail reads it: which studies are this project's, the oos2 budget, the blind door. | imported | ledger → dicts |
 | `needs.py` | Which earlier steps each step needs first: the producer of its input, the judge of that input, the row before. | imported | step, context → step numbers |
-| `records.py` | The records the rail passes between its modules: the step row, the install view, the context. | — | — |
 | `run.py` | The rail's run buttons: ticked tests into the runner's jobs, and the backfill of the blind steps' rows. | imported | request → jobs |
-| `sources.py` | What the disk holds for one project: its install, its tasks, its study results, its template. | imported | disk → dicts |
-| `steps.py` | The steps of docs/AgentPDFs/WORKFLOW.md: where the disk says each happened, its tests and its tab. | imported | — |
 | `tests.py` | The tests of each step: which studies, their state on this project, their configuration in one line. | imported | step → tests |
 
 ## Where a test runs

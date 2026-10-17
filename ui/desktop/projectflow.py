@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 # What Proyecto and Estrategia show now, so a zone is refilled only when SELECTION moved on.
 SHOWN: dict[str, object] = {"Proyecto": None, "Estrategia": None}
 # The databank panel tab a ficha opens from when the panel's own tab is not one it knows.
-# It is the panel tab of step 8 (`daemon/workflow/steps.py`), not the retired zone.
+# It is the panel tab of step 8 (`sqx/workflow/steps.py`), not the retired zone.
 FIRST_PANEL = "Puerta IS/OOS"
 
 

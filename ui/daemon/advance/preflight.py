@@ -13,8 +13,8 @@ from sqx.projects.configure import BY_TASK, DEFAULT_SEGMENT
 from sqx import progress
 from sqx.worker import guard as workerguard
 from ui.daemon.filters import discards
-from ui.daemon.launch.steps import Refusal, unconfigured
-from ui.daemon.workflow.steps import STEPS
+from sqx.workflow.launchsteps import Refusal, unconfigured
+from sqx.workflow.steps import STEPS
 
 # QUIET_MIN's job narrowed once the owner lock (OPEN.md #32) existed: a live holder is now
 # caught directly (the lock, the port, or a live PID below), so this heuristic is not what

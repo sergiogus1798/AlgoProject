@@ -3,7 +3,7 @@
 Steps 22 to 25 do not exist: deleted 2026-10-11.
 
 Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{stages.yaml,workflow.py}`,
-`ui/daemon/launch/steps.py`, a real `plan.json` (`Test_NIKKEI225_M30_simpleL_fin/20261005-160743`).
+`sqx/workflow/launchsteps.py`, a real `plan.json` (`Test_NIKKEI225_M30_simpleL_fin/20261005-160743`).
 `?` = not established by those sources. A judge row after a python step is the same step number.
 
 | step | kind | what runs | reads | fills | cut (criteria.yaml) |
