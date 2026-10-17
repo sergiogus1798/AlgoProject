@@ -8,11 +8,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core import worker  # noqa: E402
-from tests.test_advance import P  # noqa: E402
+from core import proc, worker  # noqa: E402
 from sqx import jobs, projdisk
-from sqx.worker import winddown  # noqa: E402
 from sqx.worker import guard as workerguard  # noqa: E402
+from sqx.worker import winddown  # noqa: E402
+from tests.test_advance import P  # noqa: E402
 from ui.daemon.launch import chain  # noqa: E402
 
 
@@ -104,7 +104,7 @@ def test_cancel_python_and_snapshot(root: Path) -> None:
     got = {}
     runner = threading.Thread(
         target=lambda: got.update(
-            slow=chain.command(["-c", "import time; time.sleep(30)"])
+            slow=proc.command(["-c", "import time; time.sleep(30)"])
         )
     )
     began = time.time()

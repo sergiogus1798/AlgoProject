@@ -4,7 +4,7 @@ from typing import Any
 
 from sqx.worker import preflight as advance
 from sqx.workflow import chainplan
-from ui.daemon.launch import preflight
+from sqx.workflow import launchcheck as preflight
 from ui.daemon.workflow import api as workflow
 
 

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from core import proc
 from core.datapaths import variants_dir
 from core.paths import DATA, databank_dir, report_dir, worker_dir
 from ledger import blind as rebuilt
@@ -15,7 +16,7 @@ from pipeline.autopilot import call, survivors
 from sqx import jobs
 from sqx.databank import state as loader
 from sqx.projects import stage
-from ui.daemon.launch import chain, preflight
+from sqx.workflow import launchcheck as preflight
 
 # The flag that adds a study's oos2 reading to the one that decides without it (18.5).
 OOS2 = {"marketSurfaces": "--oos2"}
@@ -234,7 +235,7 @@ def oos2read(project: str) -> str:
     Exit 3 is the ledger refusing a fourth look («solo vivo»): the step goes on, writes no
     fact, and `criteria.yaml` reads a missing fact as limbo, so nobody is cut on it.
     """
-    rc, text = chain.command(
+    rc, text = proc.command(
         ["-m", "studies.optimisation.oos2Reading.report", "--project", project]
     )
     if rc == REFUSED:

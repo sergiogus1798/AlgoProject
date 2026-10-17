@@ -20,8 +20,9 @@ from sqx.projdisk import compare, counts, snapshot
 from sqx.projects import crosstfload, exiting, live, stage
 from sqx.projects.workflow import CROSSTF
 from sqx.worker.session import assets, say
+from sqx.workflow import launchcheck as preflight
+from sqx.workflow import launchconfigure as configure
 from sqx.workflow import launchsteps
-from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher
 from ui.daemon.launch.run import record
 from ui.daemon.loader import afterrun

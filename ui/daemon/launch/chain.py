@@ -3,10 +3,8 @@
 
 import argparse
 import json
-import os
 import re
 import signal
-import subprocess
 import sys
 import threading
 import time
@@ -17,27 +15,26 @@ from typing import Any
 
 import psutil
 
-from core.paths import ROOT
+from core import proc
 from sqx import jobs
 from sqx.databank import state as loader
 from sqx.projects import stage
 from sqx.worker.session import graceful, say
+from sqx.workflow import launchcheck as preflight
 from sqx.workflow.records import Context
-from ui.daemon.launch import chaincheck, preflight
+from ui.daemon.launch import chaincheck
 from ui.daemon.launch import run as launcher
 from ui.daemon.loader import afterrun
 from ui.daemon.runner import batch
 from ui.daemon.workflow import api as workflow
 from ui.daemon.workflow import run as rail
 
-TAIL = 4  # lines of a failed command's output the chain's log keeps
 # The python lane's rules (`jobs.FLOOR_GB`, `jobs.SLOTS`): a command starts when its weight fits
 # the cores and its RAM estimate fits above the floor, or when nothing else of the chain runs.
 # "gb" and "cores" are what the running commands reserved (a child has not eaten its RAM yet
 # when the next one measures the free figure).
 _RUNNING = {"n": 0, "stop": False, "gb": 0.0, "cores": 0}
 GB_PER_WEIGHT = 0.25  # 🔬 2026-09-27: a light study (weight 3) is 0.2-0.7 GB; ponytail: flat per unit
-CHILDREN: set[subprocess.Popen] = set()  # the tests and exports running now
 _GATE = threading.Lock()
 
 
@@ -53,31 +50,12 @@ def feeds(n: str, ctx: Context) -> list[str]:
     )
 
 
-def command(argv: list[str]) -> tuple[int, str]:
-    """Run one `python3 -m …` to its end; its return code and the tail of what it printed.
-    Held in `CHILDREN` while it runs, so a cancel can end it at once (`cancelled`)."""
-    proc = subprocess.Popen(
-        [sys.executable, *argv],
-        cwd=ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        env={**os.environ, "PYTHONUTF8": "1"},
-    )
-    CHILDREN.add(proc)
-    try:
-        out, _ = proc.communicate()
-    finally:
-        CHILDREN.discard(proc)
-    return proc.returncode, " / ".join(out.strip().splitlines()[-TAIL:])
-
-
 def cancelled(signum: int, frame: object) -> None:
     """SIGTERM: end the tests and exports running now, then leave as `run.graceful` does —
     during an SQX step its `finally` stops the worker; during a Python step none is up."""
     _RUNNING["stop"] = True  # the tests still queued in the pool never start
-    for proc in list(CHILDREN):
-        proc.kill()
+    for child in list(proc.CHILDREN):
+        child.kill()
     graceful(signum, frame)
 
 
@@ -114,7 +92,7 @@ def floored(
             1
         )  # psutil and a lock: cheap, so a freed slot is taken within a second
     try:
-        return command(argv)
+        return proc.command(argv)
     finally:
         with _GATE:
             _RUNNING["n"] -= 1
@@ -144,7 +122,7 @@ def load(project: str, databank: str) -> list[str]:
         ):
             continue  # the harvest's --exports wrote them
         print(f"cargando {piece} de {databank}", flush=True)
-        rc, tail = command(argv)
+        rc, tail = proc.command(argv)
         if piece == "harvest":
             done = argv
         if rc:

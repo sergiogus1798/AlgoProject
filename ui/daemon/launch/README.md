@@ -14,9 +14,7 @@ watcher it reuses.
 | `api.py` | The routes of «Lanzar en SQX» and «Correr workflow»: tasks, steps, preflights and the jobs that run them. | imported | request → JSON |
 | `chain.py` | «Correr workflow»: every pending step in WORKFLOW.md's order, SQX and Python, up to the next decision. | `python3 -m ui.daemon.launch.chain --project P` (the window queues it) | a project → steps run up to the next decision |
 | `chaincheck.py` | «Correr workflow», before the press: whether the chain may start, what it would run, the sentence to confirm. | imported by `api.py` and `chain.py` | project → ok, reasons, plan |
-| `configure.py` | Run the configurator of every chosen task still unconfigured, as its skill does, with the worker stopped. | imported | preflight → configured tasks |
 | `liverun.py` | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | imported | preflight → `{title: (before, after)}` |
-| `preflight.py` | Whether «Lanzar en SQX» may start one task of a project now, and every reason it may not. | imported | project, task(s) or step → `{ok, reasons, chosen, off, …}` |
 | `run.py` | «Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop. | `python3 -m ui.daemon.launch.run --project P --task CONSTRUCCION` (repeatable) or `--step 13` (the window queues it) | a project → its tasks run, worker stopped |
 
 ## The chain's stop rule
@@ -36,7 +34,7 @@ The job runs **the plan the owner confirmed**: the rail posts the plan it showed
 refuses when a fresh plan differs, writes it to `AlgoData/logs/ui/chain-<P>-<stamp>.json` and
 passes `--plan`. Before each step the job re-reads the rail: a step now running, or — before any
 SQX step of this job ran — in another state than confirmed, halts it. Before each SQX step it
-re-checks safety (`preflight.check`, `own_log` once the job ran anything, `filled` = outputs of
+re-checks safety (`launchcheck.check`, `own_log` once the job ran anything, `filled` = outputs of
 the SQX steps it already ran) and that the step's titles are the confirmed ones.
 
 ## Traps

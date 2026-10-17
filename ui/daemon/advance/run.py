@@ -17,8 +17,8 @@ from sqx.databank import discards
 from sqx.projects import crosstfload, stage
 from sqx.worker import preflight, session
 from sqx.worker.session import graceful, say
+from sqx.workflow import launchconfigure as configure
 from ui.daemon.filters import ledgerrow
-from ui.daemon.launch import configure
 
 
 def verdict(pre: dict[str, Any], folder: Path) -> tuple[Path, int]:

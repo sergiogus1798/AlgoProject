@@ -16,9 +16,8 @@ from sqx import progress
 from sqx.projects import crosstfload
 from sqx.projects.workflow import CROSSTF_BUILD
 from sqx.worker import preflight as advance
-from sqx.workflow import launchsteps
+from sqx.workflow import confirm, launchsteps
 from sqx.workflow.launchsteps import Refusal
-from ui.daemon.advance import confirm
 
 BUILD = "Build"
 ROLES = {

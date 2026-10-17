@@ -13,16 +13,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from core import worker  # noqa: E402
+from core import proc, worker  # noqa: E402
 from sqx import jobs  # noqa: E402
 from sqx.projects import stage  # noqa: E402
 from sqx.worker import guard as workerguard  # noqa: E402
 from sqx.workflow import chainplan  # noqa: E402
+from sqx.workflow import launchcheck as launch_preflight  # noqa: E402
 from sqx.workflow.steps import STEPS  # noqa: E402
 from tests.test_advance import CALLS, P  # noqa: E402
 from tests.test_launch import scratch  # noqa: E402
 from ui.daemon.launch import api, chain, chaincheck, run  # noqa: E402
-from ui.daemon.launch import preflight as launch_preflight  # noqa: E402
 from ui.daemon.workflow.tests import SPENDS  # noqa: E402
 
 MCR = stage.titles("mcretest")
@@ -179,7 +179,7 @@ def test_chain_runs(root: Path) -> None:
     chain.rail.plan = lambda spec, k, ctx, db, picked: [
         {"label": k, "argv": ["-m", k], "about": {}}
     ]
-    chain.command = lambda argv: (CALLS.append(("cmd", argv[1])), (0, ""))[1]
+    proc.command = lambda argv: (CALLS.append(("cmd", argv[1])), (0, ""))[1]
     got = chaincheck.check(P)
     assert got["ok"], got
     assert "Se para antes del paso 9" in chaincheck.text(got, P)

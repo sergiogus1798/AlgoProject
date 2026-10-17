@@ -20,7 +20,8 @@ from sqx.worker import guard as workerguard
 from sqx.worker import preflight as advance
 from sqx.worker import session
 from sqx.worker.session import assets, graceful, say
-from ui.daemon.launch import configure, preflight
+from sqx.workflow import launchcheck as preflight
+from sqx.workflow import launchconfigure as configure
 
 
 def record(pre: dict[str, Any], project: str, built: int) -> str:

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from sqx import jobs, proof
 from sqx.worker import preflight, winddown
-from ui.daemon.advance import confirm
+from sqx.workflow import confirm
 
 ROUTER = APIRouter()
 LABEL = "advance"

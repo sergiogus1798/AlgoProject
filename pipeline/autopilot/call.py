@@ -4,8 +4,8 @@ import contextlib
 from collections.abc import Callable
 from typing import TypeVar
 
+from core import proc
 from sqx.projects import live
-from ui.daemon.launch import chain
 from ui.daemon.runner import table
 
 # SQX's own transient crash (a fastutil NullPointerException right after «Task finished»,
@@ -81,10 +81,10 @@ def run(argv: list[str]) -> None:
         argv: What follows `python3`, e.g. ["-m", "studies.readings.edgeCost.report", "--project", …].
 
     Nothing the command printed is shown: under the ledger's door a blind step's numbers
-    must not be read before 17, 18 and 19 are all registered. Held in `chain.CHILDREN` while
+    must not be read before 17, 18 and 19 are all registered. Held in `proc.CHILDREN` while
     it runs, so a cancel ends it at once.
     """
-    rc, tail = chain.command(argv)
+    rc, tail = proc.command(argv)
     if rc:
         raise SystemExit(f"{argv[1]}: {tail}")
 
